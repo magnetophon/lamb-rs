@@ -33,4 +33,4 @@ debug = true
 strip = "none"
 
 [build-dependencies]
-faust-build = { git = "https://github.com/Frando/rust-faust", optional=true}
+faust-build = { git = "https://github.com/Frando/rust-faust" }
