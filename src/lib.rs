@@ -4,7 +4,6 @@ use std::sync::Arc;
 mod buffer;
 mod dsp;
 use buffer::*;
-use nih_faust_macros::nih_params_from_faust;
 
 const MAX_BLOCK_SIZE: usize = 1024;
 // This is a shortened version of the gain example with most comments removed, check out
@@ -27,7 +26,7 @@ impl Default for GainFaustNihPlug {
     }
 }
 
-nih_params_from_faust!();
+include!("params.rs");
 
 impl Plugin for GainFaustNihPlug {
     const NAME: &'static str = "lowpass-lr4-faust-nih-plug";
@@ -100,7 +99,7 @@ impl Plugin for GainFaustNihPlug {
         let output = buffer.as_slice();
 
         self.dsp
-            .set_param(faust_types::ParamIndex(0), self.params.cut_off.value());
+            .set_param(faust_types::ParamIndex(0), self.params.cutoff.value());
         self.dsp
             .compute(count, &self.accum_buffer.slice2d(), output);
         ProcessStatus::Normal

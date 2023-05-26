@@ -456,6 +456,7 @@ dependencies = [
 name = "nih-faust-macros"
 version = "0.1.0"
 dependencies = [
+ "once_cell",
  "quote",
  "syn 2.0.16",
 ]

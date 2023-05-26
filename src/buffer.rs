@@ -24,7 +24,6 @@
     You should have received a copy of the GNU General Public License along with
     OneTrick.  If not, see <http://www.gnu.org/licenses/>.
 */
-
 use nih_plug::prelude::*;
 
 #[derive(Default)]
@@ -32,6 +31,7 @@ pub struct TempBuffer {
     data: Vec<Vec<f32>>,
 }
 
+#[allow(unused)]
 impl TempBuffer {
     pub fn channel_count(&self) -> usize {
         self.data.len()

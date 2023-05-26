@@ -1,8 +1,8 @@
 mod dsp {
     /* ------------------------------------------------------------
 name: "gain"
-Code generated with Faust 2.59.5 (https://faust.grame.fr)
-Compilation options: -a /tmp/.tmp2BPiwT -lang rust -ct 1 -es 1 -mcd 16 -single -ftz 0
+Code generated with Faust 2.59.6 (https://faust.grame.fr)
+Compilation options: -a /tmp/.tmpnYdMtk -lang rust -ct 1 -es 1 -mcd 16 -single -ftz 0
 ------------------------------------------------------------ */
 #![allow(clippy::all)]
 #![allow(unused_parens)]
@@ -64,7 +64,7 @@ impl FaustDsp for mydsp {
 		}
 	}
 	fn metadata(&self, m: &mut dyn Meta) { 
-		m.declare("compile_options", "-a /tmp/.tmp2BPiwT -lang rust -ct 1 -es 1 -mcd 16 -single -ftz 0");
+		m.declare("compile_options", "-a /tmp/.tmpnYdMtk -lang rust -ct 1 -es 1 -mcd 16 -single -ftz 0");
 		m.declare("filename", "gain.dsp");
 		m.declare("filters.lib/lowpass0_highpass1", "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>");
 		m.declare("filters.lib/lowpassLR4:author", "Dario Sanfilippo");
@@ -157,7 +157,7 @@ impl FaustDsp for mydsp {
 	
 	fn build_user_interface_static(ui_interface: &mut dyn UI<Self::T>) {
 		ui_interface.open_vertical_box("gain");
-		ui_interface.add_horizontal_slider("fq", ParamIndex(0), 1.0, 0.0, 1.0, 0.001);
+		ui_interface.add_horizontal_slider("CutOff", ParamIndex(0), 1.0, 0.0, 1.0, 0.001);
 		ui_interface.close_box();
 	}
 	
