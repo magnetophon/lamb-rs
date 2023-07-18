@@ -32,11 +32,13 @@ impl CollectParameters {
     pub fn write_nih_params_struct(&self, to: &Path, struct_name: &str) -> io::Result<()> {
         let mut file = std::fs::File::create(to)?;
         let mut content = format!("#[derive(Params)]\nstruct {} {{\n", struct_name);
-        for parameter in &self.collected {
+        for (index, parameter) in self.collected.iter().enumerate() {
+            let is_last = index == self.collected.len() - 1;
             match parameter {
                 Param::Normal { label, .. } => {
                     content += &format!("    #[id = \"{}\"]\n", label);
-                    content += &format!("    {}: FloatParam\n", label.to_lowercase());
+                    content += &format!("    {}: FloatParam", label.to_lowercase());
+                    content += &format!("{}\n", if is_last { "" } else { "," });
                 }
             }
         }
@@ -44,7 +46,8 @@ impl CollectParameters {
         content += &format!("impl Default for {} {{\n", struct_name);
         content += "    fn default() -> Self {\n";
         content += "        Self {\n";
-        for parameter in &self.collected {
+        for (index, parameter) in self.collected.iter().enumerate() {
+            let is_last = index == self.collected.len() - 1;
             match parameter {
                 Param::Normal {
                     label,
@@ -54,7 +57,8 @@ impl CollectParameters {
                     ..
                 } => {
                     // TODO: Properly format floats, {:.01} is just a hack
-                    content += &format!("            {}: FloatParam::new(\"{}\", {:.01}, FloatRange::Linear {{ min: {:.01}, max: {:.01}}})\n", label.to_lowercase(), label, init, min, max);
+                    content += &format!("            {}: FloatParam::new(\"{}\", {:.01}, FloatRange::Linear {{ min: {:.01}, max: {:.01}}})", label.to_lowercase(), label, init, min, max);
+                    content += &format!("{}\n", if is_last { "" } else { "," });
                 }
             }
         }
