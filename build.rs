@@ -71,22 +71,17 @@ impl CollectParameters {
 
         content += "\n";
 
-        content += "pub fn faust_param_index(label: &str) -> ParamIndex {\n";
-        content += "    match label {\n";
-        for (index, parameter) in self.collected.iter().enumerate() {
+        for parameter in &self.collected {
             match parameter {
                 Param::Normal { label, param, .. } => {
                     content += &format!(
-                        "       \"{}\" => ParamIndex({}),\n",
-                        label.to_lowercase(),
+                        "pub const {}_PI: ParamIndex = ParamIndex({});\n",
+                        label.to_uppercase(),
                         param
                     );
                 }
             }
         }
-        content += "       _ => panic!(\"Unknown label: {}\", label)\n";
-        content += "    }\n";
-        content += "}\n";
 
         file.write_all(content.as_bytes())?;
         Ok(())

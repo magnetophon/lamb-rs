@@ -17,10 +17,5 @@ impl Default for GainFaustNihPlugParams {
     }
 }
 
-pub fn faust_param_index(label: &str) -> ParamIndex {
-    match label {
-       "cutoff" => ParamIndex(0),
-       "resonance" => ParamIndex(1),
-       _ => panic!("Unknown label: {}", label)
-    }
-}
+pub const CUTOFF_PI: ParamIndex = ParamIndex(0);
+pub const RESONANCE_PI: ParamIndex = ParamIndex(1);
