@@ -2,7 +2,7 @@ mod dsp {
     /* ------------------------------------------------------------
 name: "gain"
 Code generated with Faust 2.60.3 (https://faust.grame.fr)
-Compilation options: -a /tmp/.tmpi6MLP1 -lang rust -ct 1 -es 1 -mcd 16 -single -ftz 0
+Compilation options: -a /tmp/.tmpwxWgvF -lang rust -ct 1 -es 1 -mcd 16 -single -ftz 0
 ------------------------------------------------------------ */
 #![allow(clippy::all)]
 #![allow(unused_parens)]
@@ -60,7 +60,7 @@ impl FaustDsp for mydsp {
 		}
 	}
 	fn metadata(&self, m: &mut dyn Meta) { 
-		m.declare("compile_options", "-a /tmp/.tmpi6MLP1 -lang rust -ct 1 -es 1 -mcd 16 -single -ftz 0");
+		m.declare("compile_options", "-a /tmp/.tmpwxWgvF -lang rust -ct 1 -es 1 -mcd 16 -single -ftz 0");
 		m.declare("filename", "gain.dsp");
 		m.declare("filters.lib/lowpass0_highpass1", "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>");
 		m.declare("filters.lib/name", "Faust Filters Library");

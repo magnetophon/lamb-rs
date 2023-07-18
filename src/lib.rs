@@ -94,12 +94,19 @@ impl Plugin for GainFaustNihPlug {
         _aux: &mut AuxiliaryBuffers,
         _context: &mut impl ProcessContext<Self>,
     ) -> ProcessStatus {
+        macro_rules! dsp_update_param {
+            ($param: ident) => {
+                self.dsp
+                    .set_param(faust_param_index("$param"), self.params.$param.value());
+            };
+        }
         let count = buffer.samples() as i32;
         self.accum_buffer.read_from_buffer(buffer);
         let output = buffer.as_slice();
 
-        self.dsp
-            .set_param(faust_types::ParamIndex(0), self.params.cutoff.value());
+        dsp_update_param!(resonance);
+        dsp_update_param!(cutoff);
+
         self.dsp
             .compute(count, &self.accum_buffer.slice2d(), output);
         ProcessStatus::Normal
