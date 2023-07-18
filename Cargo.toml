@@ -20,7 +20,6 @@ nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git", features = ["a
 # Uncomment the below line to disable the on-by-default VST3 feature to remove
 # the GPL compatibility requirement
 # nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git", default_features = false, features = ["assert_process_allocs"] }
-nih-faust-macros = { path = "./nih-faust-macros" }
 faust-types = { git = "https://github.com/Frando/rust-faust" }
 
 [profile.release]
