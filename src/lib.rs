@@ -100,7 +100,7 @@ impl Plugin for GainFaustNihPlug {
 
         self.dsp
             .set_param(RESONANCE_PI, self.params.resonance.value());
-        self.dsp.set_param(CUTOFF_PI, self.params.resonance.value());
+        self.dsp.set_param(CUTOFF_PI, self.params.cutoff.value());
 
         self.dsp
             .compute(count, &self.accum_buffer.slice2d(), output);
