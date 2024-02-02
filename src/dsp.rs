@@ -1,8 +1,8 @@
 mod dsp {
     /* ------------------------------------------------------------
 name: "gain"
-Code generated with Faust 2.60.3 (https://faust.grame.fr)
-Compilation options: -a /tmp/.tmpWFzvOY -lang rust -ct 1 -es 1 -mcd 16 -single -ftz 0
+Code generated with Faust 2.70.3 (https://faust.grame.fr)
+Compilation options: -a /run/user/1001/.tmpdzjLEd -lang rust -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -single -ftz 0
 ------------------------------------------------------------ */
 #![allow(clippy::all)]
 #![allow(unused_parens)]
@@ -60,26 +60,26 @@ impl FaustDsp for mydsp {
 		}
 	}
 	fn metadata(&self, m: &mut dyn Meta) { 
-		m.declare("compile_options", "-a /tmp/.tmpWFzvOY -lang rust -ct 1 -es 1 -mcd 16 -single -ftz 0");
-		m.declare("filename", "gain.dsp");
-		m.declare("filters.lib/lowpass0_highpass1", "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>");
-		m.declare("filters.lib/name", "Faust Filters Library");
-		m.declare("filters.lib/svf:author", "Oleg Nesterov");
-		m.declare("filters.lib/svf:copyright", "Copyright (C) 2020 Oleg Nesterov <oleg@redhat.com>");
-		m.declare("filters.lib/svf:license", "MIT-style STK-4.3 license");
-		m.declare("filters.lib/version", "1.3.0");
-		m.declare("maths.lib/author", "GRAME");
-		m.declare("maths.lib/copyright", "GRAME");
-		m.declare("maths.lib/license", "LGPL with exception");
-		m.declare("maths.lib/name", "Faust Math Library");
-		m.declare("maths.lib/version", "2.6.0");
-		m.declare("name", "gain");
-		m.declare("platform.lib/name", "Generic Platform Library");
-		m.declare("platform.lib/version", "1.3.0");
-		m.declare("routes.lib/name", "Faust Signal Routing Library");
-		m.declare("routes.lib/version", "1.2.0");
-		m.declare("signals.lib/name", "Faust Signal Routing Library");
-		m.declare("signals.lib/version", "1.3.0");
+		m.declare("compile_options", r"-a /run/user/1001/.tmpdzjLEd -lang rust -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -single -ftz 0");
+		m.declare("filename", r"gain.dsp");
+		m.declare("filters.lib/lowpass0_highpass1", r"Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>");
+		m.declare("filters.lib/name", r"Faust Filters Library");
+		m.declare("filters.lib/svf:author", r"Oleg Nesterov");
+		m.declare("filters.lib/svf:copyright", r"Copyright (C) 2020 Oleg Nesterov <oleg@redhat.com>");
+		m.declare("filters.lib/svf:license", r"MIT-style STK-4.3 license");
+		m.declare("filters.lib/version", r"1.3.0");
+		m.declare("maths.lib/author", r"GRAME");
+		m.declare("maths.lib/copyright", r"GRAME");
+		m.declare("maths.lib/license", r"LGPL with exception");
+		m.declare("maths.lib/name", r"Faust Math Library");
+		m.declare("maths.lib/version", r"2.7.0");
+		m.declare("name", r"gain");
+		m.declare("platform.lib/name", r"Generic Platform Library");
+		m.declare("platform.lib/version", r"1.3.0");
+		m.declare("routes.lib/name", r"Faust Signal Routing Library");
+		m.declare("routes.lib/version", r"1.2.0");
+		m.declare("signals.lib/name", r"Faust Signal Routing Library");
+		m.declare("signals.lib/version", r"1.5.0");
 	}
 
 	fn get_sample_rate(&self) -> i32 {
@@ -100,27 +100,27 @@ impl FaustDsp for mydsp {
 	}
 	fn instance_clear(&mut self) {
 		for l0 in 0..2 {
-			self.fRec3[(l0) as usize] = 0.0;
+			self.fRec3[l0 as usize] = 0.0;
 		}
 		for l1 in 0..2 {
-			self.fRec4[(l1) as usize] = 0.0;
+			self.fRec4[l1 as usize] = 0.0;
 		}
 		for l2 in 0..2 {
-			self.fRec0[(l2) as usize] = 0.0;
+			self.fRec0[l2 as usize] = 0.0;
 		}
 		for l3 in 0..2 {
-			self.fRec1[(l3) as usize] = 0.0;
+			self.fRec1[l3 as usize] = 0.0;
 		}
 		for l4 in 0..2 {
-			self.fRec5[(l4) as usize] = 0.0;
+			self.fRec5[l4 as usize] = 0.0;
 		}
 		for l5 in 0..2 {
-			self.fRec6[(l5) as usize] = 0.0;
+			self.fRec6[l5 as usize] = 0.0;
 		}
 	}
 	fn instance_constants(&mut self, sample_rate: i32) {
 		self.fSampleRate = sample_rate;
-		let mut fConst0: F32 = F32::min(1.92e+05, F32::max(1.0, ((self.fSampleRate) as F32)));
+		let mut fConst0: F32 = F32::min(1.92e+05, F32::max(1.0, (self.fSampleRate) as F32));
 		self.fConst1 = 44.1 / fConst0;
 		self.fConst2 = 1.0 - self.fConst1;
 		self.fConst3 = 0.5 * fConst0 + -4e+01;
