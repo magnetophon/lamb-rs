@@ -1879,6 +1879,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
 
 [[package]]
+name = "lamb"
+version = "0.1.0"
+dependencies = [
+ "atomic_float",
+ "faust-build",
+ "faust-types",
+ "nih_plug",
+ "nih_plug_vizia",
+]
+
+[[package]]
 name = "lazy-bytes-cast"
 version = "5.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1976,17 +1987,6 @@ name = "log"
 version = "0.4.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5e6163cb8c49088c2c36f57875e58ccd8c87c7427f7fbd50ea6710b2f3f2e8f"
-
-[[package]]
-name = "lowpass-lr4-faust-nih-plug"
-version = "0.1.0"
-dependencies = [
- "atomic_float",
- "faust-build",
- "faust-types",
- "nih_plug",
- "nih_plug_vizia",
-]
 
 [[package]]
 name = "lru"

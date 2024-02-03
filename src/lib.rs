@@ -17,8 +17,8 @@ mod editor;
 /// The time it takes for the peak meter to decay by 12 dB after switching to complete silence.
 const PEAK_METER_DECAY_MS: f64 = 150.0;
 
-pub struct GainFaustNihPlug {
-    params: Arc<GainFaustNihPlugParams>,
+pub struct Lamb {
+    params: Arc<LambParams>,
     dsp: dsp::Gain,
     accum_buffer: TempBuffer,
 
@@ -31,10 +31,10 @@ pub struct GainFaustNihPlug {
     /// This is stored as voltage gain.
     peak_meter: Arc<AtomicF32>,
 }
-impl Default for GainFaustNihPlug {
+impl Default for Lamb {
     fn default() -> Self {
         Self {
-            params: Arc::new(GainFaustNihPlugParams::default()),
+            params: Arc::new(LambParams::default()),
 
             peak_meter_decay_weight: 1.0,
             peak_meter: Arc::new(AtomicF32::new(util::MINUS_INFINITY_DB)),
@@ -48,11 +48,11 @@ impl Default for GainFaustNihPlug {
 
 include!("params.rs");
 
-impl Plugin for GainFaustNihPlug {
-    const NAME: &'static str = "lowpass-lr4-faust-nih-plug";
-    const VENDOR: &'static str = "obsoleszenz";
+impl Plugin for Lamb {
+    const NAME: &'static str = "lamb";
+    const VENDOR: &'static str = "magnetophon";
     const URL: &'static str = env!("CARGO_PKG_HOMEPAGE");
-    const EMAIL: &'static str = "obsoleszenz@riseup.net";
+    const EMAIL: &'static str = "bart@magnetophon.nl";
 
     const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
@@ -177,9 +177,9 @@ impl Plugin for GainFaustNihPlug {
     }
 }
 
-impl ClapPlugin for GainFaustNihPlug {
-    const CLAP_ID: &'static str = "com.obsoleszenz.faust-nih-plug";
-    const CLAP_DESCRIPTION: Option<&'static str> = Some("A short description of your plugin");
+impl ClapPlugin for Lamb {
+    const CLAP_ID: &'static str = "magnetophon.nl lamb";
+    const CLAP_DESCRIPTION: Option<&'static str> = Some("A lookahead compressor/limiter that's soft as a lamb");
     const CLAP_MANUAL_URL: Option<&'static str> = Some(Self::URL);
     const CLAP_SUPPORT_URL: Option<&'static str> = None;
 
@@ -187,13 +187,13 @@ impl ClapPlugin for GainFaustNihPlug {
     const CLAP_FEATURES: &'static [ClapFeature] = &[ClapFeature::AudioEffect, ClapFeature::Stereo];
 }
 
-impl Vst3Plugin for GainFaustNihPlug {
-    const VST3_CLASS_ID: [u8; 16] = *b"obsoleszenz-gain";
+impl Vst3Plugin for Lamb {
+    const VST3_CLASS_ID: [u8; 16] = *b"magnetophon lamb";
 
     // And also don't forget to change these categories
     const VST3_SUBCATEGORIES: &'static [Vst3SubCategory] =
         &[Vst3SubCategory::Fx, Vst3SubCategory::Dynamics];
 }
 
-// nih_export_clap!(GainFaustNihPlug);
-nih_export_vst3!(GainFaustNihPlug);
+// nih_export_clap!(Lamb);
+nih_export_vst3!(Lamb);

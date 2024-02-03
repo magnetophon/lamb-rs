@@ -1,11 +1,11 @@
 [package]
-name = "lowpass-lr4-faust-nih-plug"
+name = "lamb"
 version = "0.1.0"
 edition = "2021"
-authors = ["obsoleszenz <obsoleszenz@riseup.net>"]
-license = "GPL-3.0-or-later"
-homepage = "codeberg.org/obsoleszenz"
-description = "A short description of your plugin"
+authors = ["magnetophon <bart@magnetophon.nl>"]
+license = "AGPL-3.0"
+homepage = "magnetophon.nl"
+description = "A lookahead compressor/limiter that's soft as a lamb"
 
 [workspace]
 members = ["xtask"]

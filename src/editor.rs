@@ -7,11 +7,11 @@ use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::GainFaustNihPlugParams;
+use crate::LambParams;
 
 #[derive(Lens)]
 struct Data {
-    params: Arc<GainFaustNihPlugParams>,
+    params: Arc<LambParams>,
     peak_meter: Arc<AtomicF32>,
 }
 
@@ -19,11 +19,11 @@ impl Model for Data {}
 
 // Makes sense to also define this here, makes it a bit easier to keep track of
 pub(crate) fn default_state() -> Arc<ViziaState> {
-    ViziaState::new(|| (200, 600))
+    ViziaState::new(|| (200, 550))
 }
 
 pub(crate) fn create(
-    params: Arc<GainFaustNihPlugParams>,
+    params: Arc<LambParams>,
     peak_meter: Arc<AtomicF32>,
     editor_state: Arc<ViziaState>,
 ) -> Option<Box<dyn Editor>> {
