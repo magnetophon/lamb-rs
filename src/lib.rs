@@ -10,7 +10,7 @@ const MAX_BLOCK_SIZE: usize = 1024;
 // https://github.com/robbert-vdh/nih-plug/blob/master/plugins/examples/gain/src/lib.rs to get
 // started
 
-struct GainFaustNihPlug {
+pub struct GainFaustNihPlug {
     params: Arc<GainFaustNihPlugParams>,
     dsp: dsp::Gain,
     accum_buffer: TempBuffer,
@@ -98,15 +98,23 @@ impl Plugin for GainFaustNihPlug {
         self.accum_buffer.read_from_buffer(buffer);
         let output = buffer.as_slice();
 
-        self.dsp
-            .set_param(RESONANCE_PI, self.params.resonance.value());
-        self.dsp.set_param(CUTOFF_PI, self.params.cutoff.value());
+
+
+        self.dsp.set_param(INPUT_GAIN_PI, self.params.input_gain.value());
+        self.dsp.set_param(STRENGTH_PI, self.params.strength.value());
+        self.dsp.set_param(THRESH_PI, self.params.thresh.value());
+        self.dsp.set_param(ATTACK_PI, self.params.attack.value());
+        self.dsp.set_param(ATTACK_SHAPE_PI, self.params.attack_shape.value());
+        self.dsp.set_param(RELEASE_PI, self.params.release.value());
+        self.dsp.set_param(RELEASE_SHAPE_PI, self.params.release_shape.value());
+        self.dsp.set_param(KNEE_PI, self.params.knee.value());
+        self.dsp.set_param(LINK_PI, self.params.link.value());
 
         self.dsp
             .compute(count, &self.accum_buffer.slice2d(), output);
         ProcessStatus::Normal
-    }
-}
+                                                                 }
+                                              }
 
 impl ClapPlugin for GainFaustNihPlug {
     const CLAP_ID: &'static str = "com.obsoleszenz.faust-nih-plug";
@@ -126,5 +134,5 @@ impl Vst3Plugin for GainFaustNihPlug {
         &[Vst3SubCategory::Fx, Vst3SubCategory::Dynamics];
 }
 
-nih_export_clap!(GainFaustNihPlug);
+// nih_export_clap!(GainFaustNihPlug);
 nih_export_vst3!(GainFaustNihPlug);
