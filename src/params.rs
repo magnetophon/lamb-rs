@@ -31,15 +31,37 @@ impl Default for LambParams {
         Self {
             editor_state: editor::default_state(),
 
-            input_gain: FloatParam::new("input_gain", 0.0, FloatRange::Linear { min: -24.0, max: 24.0}),
-            strength: FloatParam::new("strength", 100.0, FloatRange::Linear { min: 0.0, max: 100.0}),
-            thresh: FloatParam::new("thresh", -1.0, FloatRange::Linear { min: -30.0, max: 0.0}),
-            attack: FloatParam::new("attack", 30.0, FloatRange::Linear { min: 0.0, max: 100.0}),
-            attack_shape: FloatParam::new("attack_shape", 2.0, FloatRange::Linear { min: -4.0, max: 4.0}),
-            release: FloatParam::new("release", 42.0, FloatRange::Linear { min: 1.0, max: 1000.0}),
-            release_shape: FloatParam::new("release_shape", -3.0, FloatRange::Linear { min: -4.0, max: 4.0}),
-            knee: FloatParam::new("knee", 2.0, FloatRange::Linear { min: 0.0, max: 30.0}),
+            input_gain: FloatParam::new("input_gain", 0.0, FloatRange::Linear { min: -24.0, max: 24.0})
+                .with_unit(" dB")
+                .with_step_size(0.1),
+            strength: FloatParam::new("strength", 100.0, FloatRange::Linear { min: 0.0, max: 100.0})
+                .with_unit(" %")
+                .with_step_size(1.0),
+            thresh: FloatParam::new("thresh", -1.0, FloatRange::Linear { min: -30.0, max: 0.0})
+                .with_unit(" dB")
+                .with_step_size(0.1),
+            attack: FloatParam::new("attack", 30.0, FloatRange::Skewed {
+                min: 0.0, max: 100.0,
+                factor: FloatRange::skew_factor(-2.0),
+            })
+                .with_unit(" ms")
+                .with_step_size(0.01),
+            attack_shape: FloatParam::new("attack_shape", 2.0, FloatRange::Linear { min: -4.0, max: 4.0})
+                .with_step_size(0.1),
+            release: FloatParam::new("release", 42.0, FloatRange::Skewed {
+                min: 0.0, max: 1000.0,
+                factor: FloatRange::skew_factor(-2.0),
+            })
+                .with_unit(" ms")
+                .with_step_size(0.01),
+            release_shape: FloatParam::new("release_shape", -3.0, FloatRange::Linear { min: -4.0, max: 4.0})
+                .with_step_size(0.1),
+            knee: FloatParam::new("knee", 2.0, FloatRange::Linear { min: 0.0, max: 30.0})
+                .with_unit(" dB")
+                .with_step_size(0.1),
             link: FloatParam::new("link", 100.0, FloatRange::Linear { min: 0.0, max: 100.0})
+                .with_unit(" %")
+                .with_step_size(1.0)
         }
     }
 }

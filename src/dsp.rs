@@ -5,7 +5,7 @@ license: "AGPLv3"
 name: "lamb"
 version: "0.1"
 Code generated with Faust 2.70.3 (https://faust.grame.fr)
-Compilation options: -a /run/user/1001/.tmpszpXKj -lang rust -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -single -ftz 0
+Compilation options: -a /run/user/1001/.tmpeYT0di -lang rust -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -single -ftz 0
 ------------------------------------------------------------ */
 #![allow(clippy::all)]
 #![allow(unused_parens)]
@@ -77,9 +77,10 @@ fn mydsp_faustpower2_f(value: F32) -> F32 {
 #[repr(C)]
 #[derive(Debug,Clone)]
 pub struct mydsp {
-	fHslider0: F32,
 	fSampleRate: i32,
+	fConst0: F32,
 	fConst1: F32,
+	fHslider0: F32,
 	fHslider1: F32,
 	fHslider2: F32,
 	fConst2: F32,
@@ -87,8 +88,8 @@ pub struct mydsp {
 	fHslider3: F32,
 	fRec3: [F32;2],
 	IOTA0: i32,
-	fVec0: [F32;32768],
-	fVec1: [F32;32768],
+	fVec0: [F32;262144],
+	fVec1: [F32;262144],
 	fHslider4: F32,
 	fHslider5: F32,
 	fVec2: [F32;2],
@@ -110,7 +111,6 @@ pub struct mydsp {
 	fVec16: [F32;2],
 	fHslider8: F32,
 	fVec17: [F32;2],
-	fConst4: F32,
 	fRec0: [F32;2],
 	fRec1: [F32;2],
 	fHbargraph0: F32,
@@ -140,9 +140,10 @@ impl FaustDsp for mydsp {
 		
 	fn new() -> mydsp { 
 		mydsp {
-			fHslider0: 0.0,
 			fSampleRate: 0,
+			fConst0: 0.0,
 			fConst1: 0.0,
+			fHslider0: 0.0,
 			fHslider1: 0.0,
 			fHslider2: 0.0,
 			fConst2: 0.0,
@@ -150,8 +151,8 @@ impl FaustDsp for mydsp {
 			fHslider3: 0.0,
 			fRec3: [0.0;2],
 			IOTA0: 0,
-			fVec0: [0.0;32768],
-			fVec1: [0.0;32768],
+			fVec0: [0.0;262144],
+			fVec1: [0.0;262144],
 			fHslider4: 0.0,
 			fHslider5: 0.0,
 			fVec2: [0.0;2],
@@ -173,7 +174,6 @@ impl FaustDsp for mydsp {
 			fVec16: [0.0;2],
 			fHslider8: 0.0,
 			fVec17: [0.0;2],
-			fConst4: 0.0,
 			fRec0: [0.0;2],
 			fRec1: [0.0;2],
 			fHbargraph0: 0.0,
@@ -211,7 +211,7 @@ impl FaustDsp for mydsp {
 		m.declare("basics.lib/tabulateNd:author", r"Bart Brouns");
 		m.declare("basics.lib/tabulateNd:license", r"AGPL-3.0");
 		m.declare("basics.lib/version", r"1.12.0");
-		m.declare("compile_options", r"-a /run/user/1001/.tmpszpXKj -lang rust -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -single -ftz 0");
+		m.declare("compile_options", r"-a /run/user/1001/.tmpeYT0di -lang rust -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -single -ftz 0");
 		m.declare("filename", r"gain.dsp");
 		m.declare("interpolators.lib/interpolate_linear:author", r"Stéphane Letz");
 		m.declare("interpolators.lib/interpolate_linear:licence", r"MIT");
@@ -264,10 +264,10 @@ impl FaustDsp for mydsp {
 			self.fRec3[l1 as usize] = 0.0;
 		}
 		self.IOTA0 = 0;
-		for l2 in 0..32768 {
+		for l2 in 0..262144 {
 			self.fVec0[l2 as usize] = 0.0;
 		}
-		for l3 in 0..32768 {
+		for l3 in 0..262144 {
 			self.fVec1[l3 as usize] = 0.0;
 		}
 		for l4 in 0..2 {
@@ -381,11 +381,10 @@ impl FaustDsp for mydsp {
 	}
 	fn instance_constants(&mut self, sample_rate: i32) {
 		self.fSampleRate = sample_rate;
-		let mut fConst0: F32 = F32::min(1.92e+05, F32::max(1.0, (self.fSampleRate) as F32));
-		self.fConst1 = 0.001 * fConst0;
-		self.fConst2 = 44.1 / fConst0;
+		self.fConst0 = F32::min(1.92e+05, F32::max(1.0, (self.fSampleRate) as F32));
+		self.fConst1 = 1.0 / self.fConst0;
+		self.fConst2 = 44.1 / self.fConst0;
 		self.fConst3 = 1.0 - self.fConst2;
-		self.fConst4 = 1e+03 / fConst0;
 	}
 	fn instance_init(&mut self, sample_rate: i32) {
 		self.instance_constants(sample_rate);
@@ -418,7 +417,7 @@ impl FaustDsp for mydsp {
 		ui_interface.declare(Some(ParamIndex(5)), "06", "");
 		ui_interface.declare(Some(ParamIndex(5)), "scale", "log");
 		ui_interface.declare(Some(ParamIndex(5)), "unit", "ms");
-		ui_interface.add_horizontal_slider("release", ParamIndex(5), 42.0, 1.0, 1e+03, 1.0);
+		ui_interface.add_horizontal_slider("release", ParamIndex(5), 42.0, 0.0, 1e+03, 1.0);
 		ui_interface.declare(Some(ParamIndex(6)), "07", "");
 		ui_interface.add_horizontal_slider("release_shape", ParamIndex(6), -3.0, -4.0, 4.0, 0.1);
 		ui_interface.declare(Some(ParamIndex(7)), "08", "");
@@ -484,8 +483,8 @@ impl FaustDsp for mydsp {
 		} else {
 			panic!("wrong number of outputs");
 		};
-		let mut fSlow0: F32 = self.fHslider0;
-		let mut fSlow1: F32 = self.fConst1 * fSlow0;
+		let mut fSlow0: F32 = F32::max(self.fConst1, 0.001 * self.fHslider0);
+		let mut fSlow1: F32 = self.fConst0 * fSlow0;
 		let mut fSlow2: F32 = fSlow1 + 1.0;
 		let mut iSlow3: i32 = (F32::floor(fSlow2)) as i32 % 2;
 		let mut fSlow4: F32 = self.fHslider1;
@@ -522,17 +521,17 @@ impl FaustDsp for mydsp {
 		let mut iSlow35: i32 = i32::wrapping_add(iSlow33, i32::wrapping_mul(2048, iSlow32));
 		let mut fSlow36: F32 = self.fHslider6 + 4.0;
 		let mut fSlow37: F32 = self.fHslider7 + 4.0;
-		let mut fSlow38: F32 = self.fHslider8;
+		let mut fSlow38: F32 = F32::max(self.fConst1, 0.001 * self.fHslider8);
 		let mut iSlow39: i32 = (fSlow1) as i32;
 		let zipped_iterators = inputs0.zip(inputs1).zip(outputs0).zip(outputs1);
 		for (((input0, input1), output0), output1) in zipped_iterators {
 			self.fRec3[0] = fSlow8 + self.fConst3 * self.fRec3[1];
 			let mut fTemp9: F32 = F32::powf(1e+01, 0.05 * self.fRec3[0]);
 			let mut fTemp10: F32 = *input0 * fTemp9;
-			self.fVec0[(self.IOTA0 & 32767) as usize] = fTemp10;
+			self.fVec0[(self.IOTA0 & 262143) as usize] = fTemp10;
 			let mut fTemp11: F32 = F32::abs(fTemp10);
 			let mut fTemp12: F32 = *input1 * fTemp9;
-			self.fVec1[(self.IOTA0 & 32767) as usize] = fTemp12;
+			self.fVec1[(self.IOTA0 & 262143) as usize] = fTemp12;
 			let mut fTemp13: F32 = F32::abs(fTemp12);
 			let mut fTemp14: F32 = F32::max(fTemp11, fTemp13);
 			let mut fTemp15: F32 = 2e+01 * F32::log10(F32::max(1.1754944e-38, fTemp11 + fSlow9 * (fTemp14 - fTemp11)));
@@ -577,7 +576,7 @@ impl FaustDsp for mydsp {
 			let mut fTemp39: F32 = 0.5 * (fTemp35 - (fTemp36 + fTemp38 * (fTemp37 - (unsafe { ftbl0mydspSIG0[(i32::wrapping_add(iTemp34, 294913)) as usize] } - fTemp35))));
 			let mut fTemp40: F32 = fSlow0 * ((fTemp30 < 0.0) as i32) as u32 as F32 + fSlow38 * (iTemp31) as F32;
 			self.fVec17[0] = fTemp40;
-			let mut fTemp41: F32 = self.fConst4 / fTemp40;
+			let mut fTemp41: F32 = self.fConst1 / fTemp40;
 			let mut fTemp42: F32 = 65535.0 * (fTemp41 + 0.5);
 			let mut iTemp43: i32 = (fTemp42) as i32;
 			let mut fTemp44: F32 = unsafe { ftbl0mydspSIG0[(std::cmp::max(0, std::cmp::min(i32::wrapping_add(iTemp34, i32::wrapping_mul(9, i32::wrapping_add(iTemp43, 1))), 589823))) as usize] };
@@ -599,7 +598,7 @@ impl FaustDsp for mydsp {
 			let mut iTemp60: i32 = i32::wrapping_add(iTemp34, i32::wrapping_mul(9, iTemp58));
 			let mut fTemp61: F32 = unsafe { ftbl0mydspSIG0[(std::cmp::max(0, std::cmp::min(iTemp60, 589823))) as usize] };
 			let mut fTemp62: F32 = unsafe { ftbl0mydspSIG0[(std::cmp::max(0, std::cmp::min(i32::wrapping_add(iTemp60, 1), 589823))) as usize] } - fTemp61;
-			let mut fTemp63: F32 = 65535.0 * (self.fRec0[1] + self.fConst4 * (1.0 / fTemp40 + 1.0 / self.fVec17[1]));
+			let mut fTemp63: F32 = 65535.0 * (self.fRec0[1] + self.fConst1 * (1.0 / fTemp40 + 1.0 / self.fVec17[1]));
 			let mut iTemp64: i32 = (fTemp63) as i32;
 			let mut fTemp65: F32 = unsafe { ftbl0mydspSIG0[(std::cmp::max(0, std::cmp::min(i32::wrapping_add(iTemp34, i32::wrapping_mul(9, i32::wrapping_add(iTemp64, 1))), 589823))) as usize] };
 			let mut iTemp66: i32 = i32::wrapping_add(i32::wrapping_mul(9, iTemp64), iTemp34);
@@ -895,7 +894,7 @@ impl FaustDsp for mydsp {
 			let mut fTemp355: F32 = fTemp30 * (fTemp38 * (fTemp354 - fTemp347) + fTemp353 + (fTemp349 - (iTemp350) as F32) * (fTemp351 - (fTemp353 + fTemp38 * (fTemp354 - (unsafe { ftbl0mydspSIG0[(std::cmp::max(0, std::cmp::min(i32::wrapping_add(iTemp352, 10), 589823))) as usize] } - fTemp351)))) - (fTemp346 + fTemp348)) / (1.0 - (fTemp346 + fTemp38 * fTemp347 + fTemp348));
 			self.fRec1[0] = self.fRec1[1] + if iTemp31 != 0 {F32::min(fTemp30, fTemp355)} else {F32::max(fTemp30, fTemp355)};
 			self.fHbargraph0 = F32::min(0.0, F32::max(-24.0, 2e+01 * F32::log10(F32::max(1.1754944e-38, self.fRec1[0]))));
-			*output0 = self.fVec0[((i32::wrapping_sub(self.IOTA0, iSlow39)) & 32767) as usize] * self.fRec1[0];
+			*output0 = self.fVec0[((i32::wrapping_sub(self.IOTA0, iSlow39)) & 262143) as usize] * self.fRec1[0];
 			let mut fTemp356: F32 = 2e+01 * F32::log10(F32::max(1.1754944e-38, fTemp13 + fSlow9 * (fTemp14 - fTemp13)));
 			let mut iTemp357: i32 = ((fTemp356 > fSlow10) as i32) + ((fTemp356 > fSlow7) as i32);
 			let mut fTemp358: F32 = fTemp356 - fSlow6;
@@ -938,7 +937,7 @@ impl FaustDsp for mydsp {
 			let mut fTemp380: F32 = 0.5 * (fTemp376 - (fTemp377 + fTemp379 * (fTemp378 - (unsafe { ftbl0mydspSIG0[(i32::wrapping_add(iTemp375, 294913)) as usize] } - fTemp376))));
 			let mut fTemp381: F32 = fSlow0 * ((fTemp371 < 0.0) as i32) as u32 as F32 + fSlow38 * (iTemp372) as F32;
 			self.fVec33[0] = fTemp381;
-			let mut fTemp382: F32 = self.fConst4 / fTemp381;
+			let mut fTemp382: F32 = self.fConst1 / fTemp381;
 			let mut fTemp383: F32 = 65535.0 * (fTemp382 + 0.5);
 			let mut iTemp384: i32 = (fTemp383) as i32;
 			let mut fTemp385: F32 = unsafe { ftbl0mydspSIG0[(std::cmp::max(0, std::cmp::min(i32::wrapping_add(iTemp375, i32::wrapping_mul(9, i32::wrapping_add(iTemp384, 1))), 589823))) as usize] };
@@ -960,7 +959,7 @@ impl FaustDsp for mydsp {
 			let mut iTemp401: i32 = i32::wrapping_add(iTemp375, i32::wrapping_mul(9, iTemp399));
 			let mut fTemp402: F32 = unsafe { ftbl0mydspSIG0[(std::cmp::max(0, std::cmp::min(iTemp401, 589823))) as usize] };
 			let mut fTemp403: F32 = unsafe { ftbl0mydspSIG0[(std::cmp::max(0, std::cmp::min(i32::wrapping_add(iTemp401, 1), 589823))) as usize] } - fTemp402;
-			let mut fTemp404: F32 = 65535.0 * (self.fRec4[1] + self.fConst4 * (1.0 / fTemp381 + 1.0 / self.fVec33[1]));
+			let mut fTemp404: F32 = 65535.0 * (self.fRec4[1] + self.fConst1 * (1.0 / fTemp381 + 1.0 / self.fVec33[1]));
 			let mut iTemp405: i32 = (fTemp404) as i32;
 			let mut fTemp406: F32 = unsafe { ftbl0mydspSIG0[(std::cmp::max(0, std::cmp::min(i32::wrapping_add(iTemp375, i32::wrapping_mul(9, i32::wrapping_add(iTemp405, 1))), 589823))) as usize] };
 			let mut iTemp407: i32 = i32::wrapping_add(i32::wrapping_mul(9, iTemp405), iTemp375);
@@ -1256,7 +1255,7 @@ impl FaustDsp for mydsp {
 			let mut fTemp696: F32 = fTemp371 * (fTemp379 * (fTemp695 - fTemp688) + fTemp694 + (fTemp690 - (iTemp691) as F32) * (fTemp692 - (fTemp694 + fTemp379 * (fTemp695 - (unsafe { ftbl0mydspSIG0[(std::cmp::max(0, std::cmp::min(i32::wrapping_add(iTemp693, 10), 589823))) as usize] } - fTemp692)))) - (fTemp687 + fTemp689)) / (1.0 - (fTemp687 + fTemp379 * fTemp688 + fTemp689));
 			self.fRec5[0] = self.fRec5[1] + if iTemp372 != 0 {F32::min(fTemp371, fTemp696)} else {F32::max(fTemp371, fTemp696)};
 			self.fHbargraph1 = F32::min(0.0, F32::max(-24.0, 2e+01 * F32::log10(F32::max(1.1754944e-38, self.fRec5[0]))));
-			*output1 = self.fVec1[((i32::wrapping_sub(self.IOTA0, iSlow39)) & 32767) as usize] * self.fRec5[0];
+			*output1 = self.fVec1[((i32::wrapping_sub(self.IOTA0, iSlow39)) & 262143) as usize] * self.fRec5[0];
 			self.fRec3[1] = self.fRec3[0];
 			self.IOTA0 = i32::wrapping_add(self.IOTA0, 1);
 			self.fVec2[1] = self.fVec2[0];
