@@ -189,6 +189,7 @@ fn main() {
     let mut my_ui = CollectParameters::new();
     dsp::mydsp::build_user_interface_static(&mut my_ui);
     my_ui
-        .write_nih_params_struct(Path::new("src/params.rs"), "GainFaustNihPlugParams")
+        .write_nih_params_struct(Path::new("src/params_auto.rs"), "GainFaustNihPlugParams")
+    // .write_nih_params_struct(Path::new("src/params.rs"), "GainFaustNihPlugParams")
         .expect("Failed writing nih params");
 }

@@ -1,5 +1,7 @@
 use faust_types::FaustDsp;
 use nih_plug::prelude::*;
+use nih_plug_vizia::ViziaState;
+use atomic_float::AtomicF32;
 use std::sync::Arc;
 mod buffer;
 mod dsp;
@@ -10,15 +12,33 @@ const MAX_BLOCK_SIZE: usize = 1024;
 // https://github.com/robbert-vdh/nih-plug/blob/master/plugins/examples/gain/src/lib.rs to get
 // started
 
+mod editor;
+
+/// The time it takes for the peak meter to decay by 12 dB after switching to complete silence.
+const PEAK_METER_DECAY_MS: f64 = 150.0;
+
 pub struct GainFaustNihPlug {
     params: Arc<GainFaustNihPlugParams>,
     dsp: dsp::Gain,
     accum_buffer: TempBuffer,
+
+    /// Needed to normalize the peak meter's response based on the sample rate.
+    peak_meter_decay_weight: f32,
+    /// The current data for the peak meter. This is stored as an [`Arc`] so we can share it between
+    /// the GUI and the audio processing parts. If you have more state to share, then it's a good
+    /// idea to put all of that in a struct behind a single `Arc`.
+    ///
+    /// This is stored as voltage gain.
+    peak_meter: Arc<AtomicF32>,
 }
 impl Default for GainFaustNihPlug {
     fn default() -> Self {
         Self {
             params: Arc::new(GainFaustNihPlugParams::default()),
+
+            peak_meter_decay_weight: 1.0,
+            peak_meter: Arc::new(AtomicF32::new(util::MINUS_INFINITY_DB)),
+
             dsp: dsp::Gain::new(),
 
             accum_buffer: TempBuffer::default(),
@@ -80,12 +100,28 @@ impl Plugin for GainFaustNihPlug {
         // function if you do not need it.
         self.dsp.init(buffer_config.sample_rate as i32);
         self.accum_buffer.resize(2, MAX_BLOCK_SIZE);
+
+        // After `PEAK_METER_DECAY_MS` milliseconds of pure silence, the peak meter's value should
+        // have dropped by 12 dB
+        self.peak_meter_decay_weight = 0.25f64
+                                        .powf((buffer_config.sample_rate as f64 * PEAK_METER_DECAY_MS / 1000.0).recip())
+                                        as f32;
+
+
         true
     }
 
     fn reset(&mut self) {
         // Reset buffers and envelopes here. This can be called from the audio thread and may not
         // allocate. You can remove this function if you do not need it.
+    }
+
+    fn editor(&mut self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
+        editor::create(
+            self.params.clone(),
+            self.peak_meter.clone(),
+            self.params.editor_state.clone(),
+        )
     }
 
     fn process(
@@ -96,9 +132,33 @@ impl Plugin for GainFaustNihPlug {
     ) -> ProcessStatus {
         let count = buffer.samples() as i32;
         self.accum_buffer.read_from_buffer(buffer);
+
+
+        for channel_samples in buffer.iter_samples() {
+            let mut amplitude = 0.0;
+            let num_samples = channel_samples.len();
+
+            for sample in channel_samples {
+                amplitude += *sample;
+            }
+            // To save resources, a plugin can (and probably should!) only perform expensive
+            // calculations that are only displayed on the GUI while the GUI is open
+            if self.params.editor_state.is_open() {
+                amplitude = (amplitude / num_samples as f32).abs();
+                let current_peak_meter = self.peak_meter.load(std::sync::atomic::Ordering::Relaxed);
+                let new_peak_meter = if amplitude > current_peak_meter {
+                    amplitude
+                } else {
+                    current_peak_meter * self.peak_meter_decay_weight
+                        + amplitude * (1.0 - self.peak_meter_decay_weight)
+                };
+
+                self.peak_meter
+                    .store(new_peak_meter, std::sync::atomic::Ordering::Relaxed);
+            }
+        }
+
         let output = buffer.as_slice();
-
-
 
         self.dsp.set_param(INPUT_GAIN_PI, self.params.input_gain.value());
         self.dsp.set_param(STRENGTH_PI, self.params.strength.value());
@@ -113,8 +173,9 @@ impl Plugin for GainFaustNihPlug {
         self.dsp
             .compute(count, &self.accum_buffer.slice2d(), output);
         ProcessStatus::Normal
-                                                                 }
-                                              }
+
+    }
+}
 
 impl ClapPlugin for GainFaustNihPlug {
     const CLAP_ID: &'static str = "com.obsoleszenz.faust-nih-plug";

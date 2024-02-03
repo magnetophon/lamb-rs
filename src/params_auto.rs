@@ -20,18 +20,12 @@ struct GainFaustNihPlugParams {
     #[id = "knee"]
     knee: FloatParam,
     #[id = "link"]
-    link: FloatParam,
-    /// The editor state, saved together with the parameter state so the custom scaling can be
-    /// restored.
-    #[persist = "editor-state"]
-    editor_state: Arc<ViziaState>,
+    link: FloatParam
 }
 
 impl Default for GainFaustNihPlugParams {
     fn default() -> Self {
         Self {
-            editor_state: editor::default_state(),
-
             input_gain: FloatParam::new("input_gain", 0.0, FloatRange::Linear { min: -24.0, max: 24.0}),
             strength: FloatParam::new("strength", 100.0, FloatRange::Linear { min: 0.0, max: 100.0}),
             thresh: FloatParam::new("thresh", -1.0, FloatRange::Linear { min: -30.0, max: 0.0}),
