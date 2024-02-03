@@ -19,7 +19,7 @@ impl Model for Data {}
 
 // Makes sense to also define this here, makes it a bit easier to keep track of
 pub(crate) fn default_state() -> Arc<ViziaState> {
-    ViziaState::new(|| (200, 550))
+    ViziaState::new(|| (200, 600))
 }
 
 pub(crate) fn create(

@@ -22,6 +22,8 @@ pub struct Lamb {
     dsp: dsp::Gain,
     accum_buffer: TempBuffer,
 
+    /// sample rate
+    sample_rate: f32,
     /// Needed to normalize the peak meter's response based on the sample rate.
     peak_meter_decay_weight: f32,
     /// The current data for the peak meter. This is stored as an [`Arc`] so we can share it between
@@ -42,6 +44,7 @@ impl Default for Lamb {
             dsp: dsp::Gain::new(),
 
             accum_buffer: TempBuffer::default(),
+            sample_rate: 48000.0,
         }
     }
 }
@@ -93,7 +96,7 @@ impl Plugin for Lamb {
         &mut self,
         _audio_io_layout: &AudioIOLayout,
         buffer_config: &BufferConfig,
-        _context: &mut impl InitContext<Self>,
+        context: &mut impl InitContext<Self>,
     ) -> bool {
         // Resize buffers and perform other potentially expensive initialization operations here.
         // The `reset()` function is always called right after this function. You can remove this
@@ -107,6 +110,7 @@ impl Plugin for Lamb {
                                         .powf((buffer_config.sample_rate as f64 * PEAK_METER_DECAY_MS / 1000.0).recip())
                                         as f32;
 
+        self.sample_rate = buffer_config.sample_rate;
 
         true
     }
@@ -128,11 +132,10 @@ impl Plugin for Lamb {
         &mut self,
         buffer: &mut Buffer,
         _aux: &mut AuxiliaryBuffers,
-        _context: &mut impl ProcessContext<Self>,
+        context: &mut impl ProcessContext<Self>,
     ) -> ProcessStatus {
         let count = buffer.samples() as i32;
         self.accum_buffer.read_from_buffer(buffer);
-
 
         for channel_samples in buffer.iter_samples() {
             let mut amplitude = 0.0;
@@ -172,6 +175,10 @@ impl Plugin for Lamb {
 
         self.dsp
             .compute(count, &self.accum_buffer.slice2d(), output);
+
+        let mut latency_samples = self.params.attack.value()*0.001*self.sample_rate;
+        context.set_latency_samples(latency_samples as u32);
+
         ProcessStatus::Normal
 
     }
