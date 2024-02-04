@@ -75,3 +75,5 @@ pub const RELEASE_PI: ParamIndex = ParamIndex(5);
 pub const RELEASE_SHAPE_PI: ParamIndex = ParamIndex(6);
 pub const KNEE_PI: ParamIndex = ParamIndex(7);
 pub const LINK_PI: ParamIndex = ParamIndex(8);
+pub const GR_L_PI: ParamIndex = ParamIndex(9);
+pub const GR_R_PI: ParamIndex = ParamIndex(10);

@@ -8,11 +8,12 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use crate::LambParams;
+use crate::MetersStruct;
 
 #[derive(Lens)]
 struct Data {
     params: Arc<LambParams>,
-    peak_meter: Arc<AtomicF32>,
+    meters: Arc<MetersStruct>,
 }
 
 impl Model for Data {}
@@ -24,7 +25,7 @@ pub(crate) fn default_state() -> Arc<ViziaState> {
 
 pub(crate) fn create(
     params: Arc<LambParams>,
-    peak_meter: Arc<AtomicF32>,
+    meters: Arc<MetersStruct>,
     editor_state: Arc<ViziaState>,
 ) -> Option<Box<dyn Editor>> {
     create_vizia_editor(editor_state, ViziaTheming::Custom, move |cx, _| {
@@ -33,7 +34,7 @@ pub(crate) fn create(
 
         Data {
             params: params.clone(),
-            peak_meter: peak_meter.clone(),
+            meters: meters.clone(),
         }
         .build(cx);
 
@@ -65,10 +66,12 @@ pub(crate) fn create(
             Label::new(cx, "link");
             ParamSlider::new(cx, Data::params, |params| &params.link);
 
+            Label::new(cx, "input level");
             PeakMeter::new(
                 cx,
-                Data::peak_meter
-                    .map(|peak_meter| util::gain_to_db(peak_meter.load(Ordering::Relaxed))),
+                // Data::meters_struct.peak_meter
+                Data::meters
+                    .map(|peak_meter| util::gain_to_db(meters.peak_meter.load(Ordering::Relaxed))),
                 Some(Duration::from_millis(600)),
             )
             // This is how adding padding works in vizia

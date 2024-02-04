@@ -31,15 +31,41 @@ pub struct Lamb {
     /// idea to put all of that in a struct behind a single `Arc`.
     ///
     /// This is stored as voltage gain.
-    peak_meter: Arc<AtomicF32>,
+    // peak_meter: Arc<AtomicF32>,
+    meters: Arc<MetersStruct>,
 }
+
+pub struct MetersStruct {
+    peak_meter: AtomicF32,
+    gr_l_meter: AtomicF32,
+    gr_r_meter: AtomicF32,
+}
+
+impl MetersStruct {
+    pub fn new(
+        peak_meter: AtomicF32,
+        gr_l_meter: AtomicF32,
+        gr_r_meter: AtomicF32,
+    ) -> Self {
+        Self { peak_meter,
+               gr_l_meter,
+               gr_r_meter
+        }
+    }
+}
+
 impl Default for Lamb {
     fn default() -> Self {
         Self {
             params: Arc::new(LambParams::default()),
 
             peak_meter_decay_weight: 1.0,
-            peak_meter: Arc::new(AtomicF32::new(util::MINUS_INFINITY_DB)),
+            meters: Arc::new(
+                MetersStruct::new(
+                    AtomicF32::new(util::MINUS_INFINITY_DB),
+                    AtomicF32::new(0.0),
+                    AtomicF32::new(0.0)
+                )),
 
             dsp: dsp::Gain::new(),
 
@@ -123,7 +149,7 @@ impl Plugin for Lamb {
     fn editor(&mut self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
         editor::create(
             self.params.clone(),
-            self.peak_meter.clone(),
+            self.meters.clone(),
             self.params.editor_state.clone(),
         )
     }
@@ -148,7 +174,7 @@ impl Plugin for Lamb {
             // calculations that are only displayed on the GUI while the GUI is open
             if self.params.editor_state.is_open() {
                 amplitude = (amplitude / num_samples as f32).abs();
-                let current_peak_meter = self.peak_meter.load(std::sync::atomic::Ordering::Relaxed);
+                let current_peak_meter = self.meters.peak_meter.load(std::sync::atomic::Ordering::Relaxed);
                 let new_peak_meter = if amplitude > current_peak_meter {
                     amplitude
                 } else {
@@ -156,8 +182,8 @@ impl Plugin for Lamb {
                         + amplitude * (1.0 - self.peak_meter_decay_weight)
                 };
 
-                self.peak_meter
-                    .store(new_peak_meter, std::sync::atomic::Ordering::Relaxed);
+                self.meters.peak_meter
+                           .store(new_peak_meter, std::sync::atomic::Ordering::Relaxed);
             }
         }
 
