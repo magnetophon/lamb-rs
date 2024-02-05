@@ -32,6 +32,8 @@ pub struct Lamb {
     ///
     /// This is stored as voltage gain.
     peak_meter: Arc<AtomicF32>,
+    gain_reduction_left: Arc<AtomicF32>,
+    gain_reduction_right: Arc<AtomicF32>,
 }
 impl Default for Lamb {
     fn default() -> Self {
@@ -40,6 +42,8 @@ impl Default for Lamb {
 
             peak_meter_decay_weight: 1.0,
             peak_meter: Arc::new(AtomicF32::new(util::MINUS_INFINITY_DB)),
+            gain_reduction_left: Arc::new(AtomicF32::new(0.0)),
+            gain_reduction_right: Arc::new(AtomicF32::new(0.0)),
 
             dsp: dsp::Gain::new(),
 
@@ -124,6 +128,8 @@ impl Plugin for Lamb {
         editor::create(
             self.params.clone(),
             self.peak_meter.clone(),
+            self.gain_reduction_left.clone(),
+            self.gain_reduction_right.clone(),
             self.params.editor_state.clone(),
         )
     }
@@ -158,6 +164,10 @@ impl Plugin for Lamb {
 
                 self.peak_meter
                     .store(new_peak_meter, std::sync::atomic::Ordering::Relaxed);
+                self.gain_reduction_left
+                    .store(self.dsp.get_param(GAIN_REDUCTION_LEFT_PI).expect("no GR read"), std::sync::atomic::Ordering::Relaxed);
+                self.gain_reduction_right
+                    .store(self.dsp.get_param(GAIN_REDUCTION_RIGHT_PI).expect("no GR read"), std::sync::atomic::Ordering::Relaxed);
             }
         }
 

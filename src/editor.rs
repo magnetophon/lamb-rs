@@ -13,18 +13,22 @@ use crate::LambParams;
 struct Data {
     params: Arc<LambParams>,
     peak_meter: Arc<AtomicF32>,
+    gain_reduction_left: Arc<AtomicF32>,
+    gain_reduction_right: Arc<AtomicF32>,
 }
 
 impl Model for Data {}
 
 // Makes sense to also define this here, makes it a bit easier to keep track of
 pub(crate) fn default_state() -> Arc<ViziaState> {
-    ViziaState::new(|| (200, 600))
+    ViziaState::new(|| (200, 685))
 }
 
 pub(crate) fn create(
     params: Arc<LambParams>,
     peak_meter: Arc<AtomicF32>,
+    gain_reduction_left: Arc<AtomicF32>,
+    gain_reduction_right: Arc<AtomicF32>,
     editor_state: Arc<ViziaState>,
 ) -> Option<Box<dyn Editor>> {
     create_vizia_editor(editor_state, ViziaTheming::Custom, move |cx, _| {
@@ -34,6 +38,8 @@ pub(crate) fn create(
         Data {
             params: params.clone(),
             peak_meter: peak_meter.clone(),
+            gain_reduction_left: gain_reduction_left.clone(),
+            gain_reduction_right: gain_reduction_right.clone(),
         }
         .build(cx);
 
@@ -50,15 +56,15 @@ pub(crate) fn create(
             ParamSlider::new(cx, Data::params, |params| &params.input_gain);
             Label::new(cx, "strength");
             ParamSlider::new(cx, Data::params, |params| &params.strength);
-            Label::new(cx, "thresh");
+            Label::new(cx, "threshold");
             ParamSlider::new(cx, Data::params, |params| &params.thresh);
             Label::new(cx, "attack");
             ParamSlider::new(cx, Data::params, |params| &params.attack);
-            Label::new(cx, "attack_shape");
+            Label::new(cx, "attack shape");
             ParamSlider::new(cx, Data::params, |params| &params.attack_shape);
             Label::new(cx, "release");
             ParamSlider::new(cx, Data::params, |params| &params.release);
-            Label::new(cx, "release_shape");
+            Label::new(cx, "release shape");
             ParamSlider::new(cx, Data::params, |params| &params.release_shape);
             Label::new(cx, "knee");
             ParamSlider::new(cx, Data::params, |params| &params.knee);
@@ -67,12 +73,26 @@ pub(crate) fn create(
 
 
             Label::new(cx, "input level")
-                .top(Pixels(10.0));
+                .top(Pixels(20.0));
             PeakMeter::new(
                 cx,
                 Data::peak_meter
                     .map(|peak_meter| util::gain_to_db(peak_meter.load(Ordering::Relaxed))),
                 Some(Duration::from_millis(600)),
+            );
+            Label::new(cx, "gain reduction left");
+            PeakMeter::new(
+                cx,
+                Data::gain_reduction_left
+                    .map(|gain_reduction_left| gain_reduction_left.load(Ordering::Relaxed)),
+                Some(Duration::from_millis(0)),
+            );
+            Label::new(cx, "gain reduction right");
+            PeakMeter::new(
+                cx,
+                Data::gain_reduction_right
+                    .map(|gain_reduction_right| gain_reduction_right.load(Ordering::Relaxed)),
+                Some(Duration::from_millis(0)),
             )
             // This is how adding padding works in vizia
                 .top(Pixels(10.0));
