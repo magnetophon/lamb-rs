@@ -85,14 +85,14 @@ pub(crate) fn create(
                 cx,
                 Data::gain_reduction_left
                     .map(|gain_reduction_left| gain_reduction_left.load(Ordering::Relaxed)),
-                Some(Duration::from_millis(0)),
+                Some(Duration::from_millis(600)),
             );
             Label::new(cx, "gain reduction right");
             PeakMeter::new(
                 cx,
                 Data::gain_reduction_right
                     .map(|gain_reduction_right| gain_reduction_right.load(Ordering::Relaxed)),
-                Some(Duration::from_millis(0)),
+                Some(Duration::from_millis(600)),
             )
             // This is how adding padding works in vizia
                 .top(Pixels(10.0));
