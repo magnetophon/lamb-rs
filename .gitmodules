@@ -1,0 +1,3 @@
+[submodule "dsp"]
+	path = dsp
+	url = git@github.com:magnetophon/lamb.git
