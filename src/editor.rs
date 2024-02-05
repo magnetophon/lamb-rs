@@ -9,6 +9,8 @@ use std::time::Duration;
 
 use crate::LambParams;
 
+include!("gain_reduction_meter.rs");
+
 #[derive(Lens)]
 struct Data {
     params: Arc<LambParams>,
@@ -81,14 +83,14 @@ pub(crate) fn create(
                 Some(Duration::from_millis(600)),
             );
             Label::new(cx, "gain reduction left");
-            PeakMeter::new(
+            GainReductionMeter::new(
                 cx,
                 Data::gain_reduction_left
                     .map(|gain_reduction_left| gain_reduction_left.load(Ordering::Relaxed)),
                 Some(Duration::from_millis(600)),
             );
             Label::new(cx, "gain reduction right");
-            PeakMeter::new(
+            GainReductionMeter::new(
                 cx,
                 Data::gain_reduction_right
                     .map(|gain_reduction_right| gain_reduction_right.load(Ordering::Relaxed)),
