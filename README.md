@@ -1,7 +1,10 @@
 # lamb
 
-
 A lookahead compressor/limiter that's soft as a lamb. 
+
+<p align=”center”>
+    <img src="images/lamb.png" alt="screenshot">
+</p>
 
 The secret sauce is all in the attack/release:
 you can change both the length and the shape of their curve.  
