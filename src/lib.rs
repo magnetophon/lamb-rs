@@ -19,7 +19,7 @@ const PEAK_METER_DECAY_MS: f64 = 150.0;
 
 pub struct Lamb {
     params: Arc<LambParams>,
-    dsp: dsp::Gain,
+    dsp: dsp::Lamb,
     accum_buffer: TempBuffer,
 
     /// sample rate
@@ -45,7 +45,7 @@ impl Default for Lamb {
             gain_reduction_left: Arc::new(AtomicF32::new(0.0)),
             gain_reduction_right: Arc::new(AtomicF32::new(0.0)),
 
-            dsp: dsp::Gain::new(),
+            dsp: dsp::Lamb::new(),
 
             accum_buffer: TempBuffer::default(),
             sample_rate: 48000.0,

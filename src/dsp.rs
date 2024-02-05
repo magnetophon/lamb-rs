@@ -5,7 +5,7 @@ license: "AGPLv3"
 name: "lamb"
 version: "0.1"
 Code generated with Faust 2.70.3 (https://faust.grame.fr)
-Compilation options: -a /run/user/1001/.tmpZ47rmD -lang rust -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -single -ftz 0
+Compilation options: -a /run/user/1001/.tmpB8K61F -lang rust -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -single -ftz 0
 ------------------------------------------------------------ */
 #![allow(clippy::all)]
 #![allow(unused_parens)]
@@ -219,8 +219,8 @@ impl FaustDsp for mydsp {
 		m.declare("basics.lib/tabulateNd:author", r"Bart Brouns");
 		m.declare("basics.lib/tabulateNd:license", r"AGPL-3.0");
 		m.declare("basics.lib/version", r"1.12.0");
-		m.declare("compile_options", r"-a /run/user/1001/.tmpZ47rmD -lang rust -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -single -ftz 0");
-		m.declare("filename", r"gain.dsp");
+		m.declare("compile_options", r"-a /run/user/1001/.tmpB8K61F -lang rust -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -single -ftz 0");
+		m.declare("filename", r"lamb.dsp");
 		m.declare("interpolators.lib/interpolate_linear:author", r"Stéphane Letz");
 		m.declare("interpolators.lib/interpolate_linear:licence", r"MIT");
 		m.declare("interpolators.lib/name", r"Faust Interpolator Library");
@@ -1326,4 +1326,4 @@ impl FaustDsp for mydsp {
 
 
 }
-pub use dsp::mydsp as Gain;
+pub use dsp::mydsp as Lamb;

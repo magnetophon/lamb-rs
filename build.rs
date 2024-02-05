@@ -183,7 +183,7 @@ impl UI<f32> for CollectParameters {
 }
 
 fn main() {
-    faust_build::build_dsp_to_destination("dsp/gain.dsp", "src/dsp.rs");
+    faust_build::build_dsp_to_destination("dsp/lamb.dsp", "src/dsp.rs");
 
     println!("cargo:rerun-if-changed=dsp");
     let mut my_ui = CollectParameters::new();
