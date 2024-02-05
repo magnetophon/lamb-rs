@@ -65,6 +65,9 @@ pub(crate) fn create(
             Label::new(cx, "link");
             ParamSlider::new(cx, Data::params, |params| &params.link);
 
+
+            Label::new(cx, "input level")
+                .top(Pixels(10.0));
             PeakMeter::new(
                 cx,
                 Data::peak_meter
@@ -72,7 +75,7 @@ pub(crate) fn create(
                 Some(Duration::from_millis(600)),
             )
             // This is how adding padding works in vizia
-            .top(Pixels(10.0));
+                .top(Pixels(10.0));
         })
         .row_between(Pixels(0.0))
         .child_left(Stretch(1.0))

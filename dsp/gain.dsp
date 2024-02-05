@@ -1,3 +1,4 @@
+
 declare name "lamb";
 declare version "0.1";
 declare author "Bart Brouns";
@@ -10,7 +11,7 @@ import("stdfaust.lib");
 ///////////////////////////////////////////////////////////////////////////////
 
 
-SampleRate = 48000;
+MaxSampleRate = 192000;
 // Make sure you set this correctly for proper functioning of the plugin
 
 NrChannels = 2;
@@ -39,7 +40,7 @@ process =
 
 attackSamples = ba.sec2samp(attack);
 maxAttackSamples =
-  maxAttack*SampleRate
+  maxAttack*MaxSampleRate
 ;
 
 SIN(attack,release) = loop~(_,_)
@@ -199,19 +200,19 @@ SINsmoo(1) =
   AB(testingFeatures,checkbox("SIN / 4-pole smoother"));
 
 ab = checkbox("[1]a/b");
-inputGain = AB(testingFeatures,hslider("[00]input_gain", 0, -24, 24, 1)):si.smoo;
+inputGain = AB(testingFeatures,hslider("[00]input gain", 0, -24, 24, 1)):si.smoo;
 strength = AB(testingFeatures,strengthP);
 strengthP = hslider("[02]strength", 100, 0, 100, 1) * 0.01;
 thresh = AB(testingFeatures,threshP);
 threshP = hslider("[03]thresh",-1,-30,0,1);
 attack = AB(testingFeatures,attackP);
-attackP = hslider("[04]attack[unit:ms] [scale:log]",30, 0, maxAttack*1000,1)*0.001:max(1/ma.SR);
+attackP = hslider("[04]attack[unit:ms] [scale:log]",30, 0, maxAttack*1000,1)*0.001;
 attackShape = AB(testingFeatures,attackShapeP);
-attackShapeP = half+hslider("[05]attack_shape" , 2, 0-half, half, 0.1);
+attackShapeP = half+hslider("[05]attack shape" , 2, 0-half, half, 0.1);
 release = AB(testingFeatures,releaseP);
-releaseP = hslider("[06]release[unit:ms] [scale:log]",42,0,1000,1)*0.001:max(1/ma.SR);
+releaseP = hslider("[06]release[unit:ms] [scale:log]",42,1,1000,1)*0.001;
 releaseShape = AB(testingFeatures,releaseShapeP);
-releaseShapeP = half+hslider("[07]release_shape" , -3, 0-half, half, 0.1);
+releaseShapeP = half+hslider("[07]release shape" , -3, 0-half, half, 0.1);
 knee = AB(testingFeatures,kneeP);
 kneeP = hslider("[08]knee",2,0,30,1);
 link = AB(testingFeatures,linkP);
