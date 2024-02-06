@@ -46,7 +46,7 @@ pub(crate) fn create(
         .build(cx);
 
         VStack::new(cx, |cx| {
-            Label::new(cx, "lamb limiter")
+            Label::new(cx, "lamb")
                 .font_family(vec![FamilyOwned::Name(String::from(assets::NOTO_SANS))])
                 .font_weight(FontWeightKeyword::Thin)
                 .font_size(30.0)
