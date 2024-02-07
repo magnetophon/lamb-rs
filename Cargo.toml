@@ -24,7 +24,7 @@ nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git", features = ["a
 faust-types = { git = "https://github.com/Frando/rust-faust" }
 nih_plug_vizia = { git = "https://github.com/robbert-vdh/nih-plug.git" }
 atomic_float = "0.1"
-
+rubato = "0.14"
 
 
 [profile.release]
