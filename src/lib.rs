@@ -206,11 +206,9 @@ impl Plugin for Lamb {
         context: &mut impl ProcessContext<Self>,
     ) -> ProcessStatus {
         let count = buffer.samples() as i32;
-        for (_, block) in buffer.iter_blocks(count as usize) {
 
-            // self.accum_buffer.read_from_buffer(buffer);
-
-            for channel_samples in buffer.iter_samples() {
+        for (_, block) in buffer.iter_blocks(MAX_BLOCK_SIZE as usize) {
+            for channel_samples in block.iter_samples() {
                 let mut amplitude = 0.0;
                 let num_samples = channel_samples.len();
 
@@ -238,12 +236,20 @@ impl Plugin for Lamb {
                         .store(self.dsp.get_param(GAIN_REDUCTION_RIGHT_PI).expect("no GR read"), std::sync::atomic::Ordering::Relaxed);
                 }
             }
+
+            let mut block_channels = block.into_iter();
+            let mut stereo_slice = &[
+                block_channels.next().unwrap(),
+                block_channels.next().unwrap(),
+            ];
             if let Some(upsampler) = &mut self.upsampler {
                 if let Some(upsampler_buffer) = &mut self.upsampler_buffer {
-                    upsampler.process_into_buffer(&buffer.as_slice(), upsampler_buffer, None);
+                    upsampler.process_into_buffer(stereo_slice, upsampler_buffer, None);
                 }
             }
-            let dsp_output = buffer.as_slice();
+            let my_slice: Vec<&mut [f32]> = stereo_slice.iter().map(|arr| arr.as_mut()).collect();
+
+            let dsp_output = my_slice;
 
             self.dsp.set_param(INPUT_GAIN_PI, self.params.input_gain.value());
             self.dsp.set_param(STRENGTH_PI, self.params.strength.value());
@@ -255,54 +261,49 @@ impl Plugin for Lamb {
             self.dsp.set_param(KNEE_PI, self.params.knee.value());
             self.dsp.set_param(LINK_PI, self.params.link.value());
 
-            // self.accum_buffer.read_from_buffer(self.upsampler_buffer);
-            // let data: &[&[f32]] = &self.upsampler_buffer.unwrap().iter().map(|inner| inner.as_slice()).collect::<Vec<_>>();
-            // let data: &[&[f32]] = &<Option<Vec<Vec<f32>>> as Clone>::clone(&self.upsampler_buffer).unwrap().iter().map(|inner| inner.as_slice()).collect::<Vec<_>>();
-            // let data: &[&[f32]] = &<Option<Vec<Vec<f32>>> as Clone>::clone(&self.upsampler_buffer).unwrap().into_iter().map(|inner| inner.as_slice()).collect::<Vec<_>>();
             let binding = <Option<Vec<Vec<f32>>> as Clone>::clone(&self.upsampler_buffer).unwrap();
             let data: &[&[f32]] = &binding.iter().map(|inner| inner.as_slice()).collect::<Vec<_>>();
 
+            let dsp_output_slice = stereo_slice;
+
             self.dsp
-            // .compute(count, &self.accum_buffer.slice2d(), dsp_output);
-            .compute(count, &data, dsp_output);
+                .compute(count, &data, dsp_output_slice);
 
-        if let Some(downsampler) = &mut self.downsampler {
-            if let Some(downsampler_buffer) = &mut self.downsampler_buffer {
-                downsampler.process_into_buffer(&dsp_output, downsampler_buffer, None);
-            }
-        }
-
-        // for (i, mut samples) in buffer.iter_samples().enumerate() {
-        // for (ch, s) in samples.iter_mut().enumerate() {
-        // *s = self.downsampler_buffer[ch][i];
-        // }
-        // }
-
-        for (i, mut samples) in buffer.iter_samples().enumerate() {
-            // Ensure downsampler_buffer is Some and then take its value out
-            if let Some(ref mut downsampler_buffer) = self.downsampler_buffer {
-                for (ch, s) in samples.iter_mut().enumerate() {
-                    // Now we can safely index into downsampler_buffer
-                    *s = downsampler_buffer[ch][i];
+            if let Some(downsampler) = &mut self.downsampler {
+                if let Some(downsampler_buffer) = &mut self.downsampler_buffer {
+                    downsampler.process_into_buffer(&dsp_output, downsampler_buffer, None);
                 }
-            } else {
-                // Handle the case where downsampler_buffer is None
-                // This could involve setting a default value, logging an error, etc.
-                // For now, we'll just panic, but you should replace this with appropriate logic
-                // panic!("downsampler_buffer was None");
             }
-            }
-        // buffer = self.downsampler_buffer;
 
+            // for (i, mut samples) in buffer.iter_samples().enumerate() {
+            // for (ch, s) in samples.iter_mut().enumerate() {
+            // *s = self.downsampler_buffer[ch][i];
+            // }
+            // }
 
-            // TODO: get the actual value from the dsp, use a hbargraph?
-            let latency_samples = self.params.attack.value()*0.001*self.sample_rate;
-            context.set_latency_samples(latency_samples as u32);
-
+            for (i, mut samples) in block.iter_samples().enumerate() {
+                // Ensure downsampler_buffer is Some and then take its value out
+                if let Some(ref mut downsampler_buffer) = self.downsampler_buffer {
+                    for (ch, s) in samples.iter_mut().enumerate() {
+                        // Now we can safely index into downsampler_buffer
+                        *s = downsampler_buffer[ch][i];
+                    }
+                } else {
+                    // Handle the case where downsampler_buffer is None
+                    // This could involve setting a default value, logging an error, etc.
+                    // For now, we'll just panic, but you should replace this with appropriate logic
+                    // panic!("downsampler_buffer was None");
+                }
+                }
         }
+
+        // TODO: get the actual value from the dsp, use a hbargraph?
+        let latency_samples = self.params.attack.value()*0.001*self.sample_rate;
+        context.set_latency_samples(latency_samples as u32);
+
         ProcessStatus::Normal
 
-    }
+        }
 }
 
 impl ClapPlugin for Lamb {
