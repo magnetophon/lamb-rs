@@ -93,11 +93,11 @@ impl GainReductionMeter {
                             Element::new(cx).class("ticks__tick");
                         }
 
-                        let font_size = {
+                        let _font_size = {
                             let event_cx = EventContext::new(cx);
                             event_cx.font_size() * event_cx.scale_factor()
                         };
-                        let label = if first_tick {
+                        let _label = if first_tick {
                             // Label::new(cx, "-inf")
                             Label::new(cx, &MIN_TICK.to_string())
                                 .class("ticks__label")

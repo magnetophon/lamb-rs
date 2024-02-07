@@ -105,7 +105,7 @@ impl Plugin for Lamb {
         &mut self,
         _audio_io_layout: &AudioIOLayout,
         buffer_config: &BufferConfig,
-        context: &mut impl InitContext<Self>,
+        _context: &mut impl InitContext<Self>,
     ) -> bool {
         let target_rate = 192000;
         // Resize buffers and perform other potentially expensive initialization operations here.
@@ -236,7 +236,7 @@ impl Plugin for Lamb {
             .compute(count, &data, output);
 
         // TODO: get the actual value from the dsp, use a hbargraph?
-        let mut latency_samples = self.params.attack.value()*0.001*self.sample_rate;
+        let latency_samples = self.params.attack.value()*0.001*self.sample_rate;
         context.set_latency_samples(latency_samples as u32);
 
         ProcessStatus::Normal
