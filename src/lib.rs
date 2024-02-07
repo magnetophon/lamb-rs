@@ -6,7 +6,7 @@ use std::sync::Arc;
 mod buffer;
 mod dsp;
 use buffer::*;
-use rubato::{FftFixedOut, Resampler};
+use rubato::{FftFixedOut, FftFixedIn, Resampler};
 
 const MAX_BLOCK_SIZE: usize = 1024;
 // This is a shortened version of the gain example with most comments removed, check out
@@ -35,8 +35,10 @@ pub struct Lamb {
     peak_meter: Arc<AtomicF32>,
     gain_reduction_left: Arc<AtomicF32>,
     gain_reduction_right: Arc<AtomicF32>,
-    resampler: Option<FftFixedOut<f32>>,
-    resampler_buffer: Option<Vec<Vec<f32>>>,
+    upsampler: Option<FftFixedOut<f32>>,
+    upsampler_buffer: Option<Vec<Vec<f32>>>,
+    downsampler: Option<FftFixedIn<f32>>,
+    downsampler_buffer: Option<Vec<Vec<f32>>>,
 }
 impl Default for Lamb {
     fn default() -> Self {
@@ -52,8 +54,10 @@ impl Default for Lamb {
 
             accum_buffer: TempBuffer::default(),
             sample_rate: 48000.0,
-            resampler: None,
-            resampler_buffer: None,
+            upsampler: None,
+            upsampler_buffer: None,
+            downsampler: None,
+            downsampler_buffer: None,
         }
     }
 }
@@ -107,7 +111,7 @@ impl Plugin for Lamb {
         buffer_config: &BufferConfig,
         _context: &mut impl InitContext<Self>,
     ) -> bool {
-        let target_rate = 192000;
+        let target_rate = 192000; // TODO: use integer ratio
         // Resize buffers and perform other potentially expensive initialization operations here.
         // The `reset()` function is always called right after this function. You can remove this
         // function if you do not need it.
@@ -122,7 +126,7 @@ impl Plugin for Lamb {
                                         as f32;
 
         self.sample_rate = buffer_config.sample_rate;
-        //Setup resampler
+        //Setup upsampler
         // Parameters are:
         // - `sample_rate_input`: Input sample rate, must be > 0.
         // - `sample_rate_output`: Output sample rate, must be > 0.
@@ -130,7 +134,7 @@ impl Plugin for Lamb {
         // - `sub_chunks`: desired number of subchunks for processing, actual number may be different.
         // - `nbr_channels`: number of channels in input/output.
 
-        self.resampler = match FftFixedOut::<f32>::new(
+        self.upsampler = match FftFixedOut::<f32>::new(
             self.sample_rate as usize,
             target_rate,
             MAX_BLOCK_SIZE,
@@ -140,15 +144,36 @@ impl Plugin for Lamb {
             Ok(sampler) => Some(sampler),
             Err(e) => {
                 nih_error!(
-                    "Failed to create resampler, audio processing will be disabled {:?}",
+                    "Failed to create upsampler, audio processing will be disabled {:?}",
                     e
                 );
                 None
             }
         };
 
-        if let Some(resampler) = &self.resampler {
-            self.resampler_buffer = Some(resampler.output_buffer_allocate(true));
+        if let Some(upsampler) = &self.upsampler {
+            self.upsampler_buffer = Some(upsampler.output_buffer_allocate(true));
+        }
+
+        self.downsampler = match FftFixedIn::<f32>::new(
+            target_rate,
+            self.sample_rate as usize,
+            MAX_BLOCK_SIZE,
+            2, // TODO: figure out what this means
+            2,
+        ) {
+            Ok(sampler) => Some(sampler),
+            Err(e) => {
+                nih_error!(
+                    "Failed to create downsampler, audio processing will be disabled {:?}",
+                    e
+                );
+                None
+            }
+        };
+
+        if let Some(downsampler) = &self.downsampler {
+            self.downsampler_buffer = Some(downsampler.output_buffer_allocate(true));
         }
 
         true
@@ -207,12 +232,12 @@ impl Plugin for Lamb {
                     .store(self.dsp.get_param(GAIN_REDUCTION_RIGHT_PI).expect("no GR read"), std::sync::atomic::Ordering::Relaxed);
             }
         }
-        if let Some(resampler) = &mut self.resampler {
-            if let Some(resampler_buffer) = &mut self.resampler_buffer {
-                resampler.process_into_buffer(&buffer.as_slice(), resampler_buffer, None);
+        if let Some(upsampler) = &mut self.upsampler {
+            if let Some(upsampler_buffer) = &mut self.upsampler_buffer {
+                upsampler.process_into_buffer(&buffer.as_slice(), upsampler_buffer, None);
             }
         }
-        let output = buffer.as_slice();
+        let dsp_output = buffer.as_slice();
 
         self.dsp.set_param(INPUT_GAIN_PI, self.params.input_gain.value());
         self.dsp.set_param(STRENGTH_PI, self.params.strength.value());
@@ -224,16 +249,25 @@ impl Plugin for Lamb {
         self.dsp.set_param(KNEE_PI, self.params.knee.value());
         self.dsp.set_param(LINK_PI, self.params.link.value());
 
-        // self.accum_buffer.read_from_buffer(self.resampler_buffer);
-        // let data: &[&[f32]] = &self.resampler_buffer.unwrap().iter().map(|inner| inner.as_slice()).collect::<Vec<_>>();
-        // let data: &[&[f32]] = &<Option<Vec<Vec<f32>>> as Clone>::clone(&self.resampler_buffer).unwrap().iter().map(|inner| inner.as_slice()).collect::<Vec<_>>();
-        // let data: &[&[f32]] = &<Option<Vec<Vec<f32>>> as Clone>::clone(&self.resampler_buffer).unwrap().into_iter().map(|inner| inner.as_slice()).collect::<Vec<_>>();
-        let binding = <Option<Vec<Vec<f32>>> as Clone>::clone(&self.resampler_buffer).unwrap();
+        // self.accum_buffer.read_from_buffer(self.upsampler_buffer);
+        // let data: &[&[f32]] = &self.upsampler_buffer.unwrap().iter().map(|inner| inner.as_slice()).collect::<Vec<_>>();
+        // let data: &[&[f32]] = &<Option<Vec<Vec<f32>>> as Clone>::clone(&self.upsampler_buffer).unwrap().iter().map(|inner| inner.as_slice()).collect::<Vec<_>>();
+        // let data: &[&[f32]] = &<Option<Vec<Vec<f32>>> as Clone>::clone(&self.upsampler_buffer).unwrap().into_iter().map(|inner| inner.as_slice()).collect::<Vec<_>>();
+        let binding = <Option<Vec<Vec<f32>>> as Clone>::clone(&self.upsampler_buffer).unwrap();
         let data: &[&[f32]] = &binding.iter().map(|inner| inner.as_slice()).collect::<Vec<_>>();
 
         self.dsp
-        // .compute(count, &self.accum_buffer.slice2d(), output);
-            .compute(count, &data, output);
+        // .compute(count, &self.accum_buffer.slice2d(), dsp_output);
+            .compute(count, &data, dsp_output);
+
+        if let Some(downsampler) = &mut self.downsampler {
+            if let Some(downsampler_buffer) = &mut self.downsampler_buffer {
+                downsampler.process_into_buffer(&dsp_output, downsampler_buffer, None);
+            }
+        }
+
+        buffer = self.downsampler_buffer;
+
 
         // TODO: get the actual value from the dsp, use a hbargraph?
         let latency_samples = self.params.attack.value()*0.001*self.sample_rate;
