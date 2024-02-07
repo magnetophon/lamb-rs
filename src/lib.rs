@@ -155,6 +155,11 @@ impl Plugin for Lamb {
             self.upsampler_buffer = Some(upsampler.output_buffer_allocate(true));
         }
 
+        // - `sample_rate_input`: Input sample rate, must be > 0.
+        // - `sample_rate_output`: Output sample rate, must be > 0.
+        // - `chunk_size_in`: length of input data in frames.
+        // - `sub_chunks`: desired number of subchunks for processing, actual number used may be different.
+        // - `nbr_channels`: number of channels in input/output.
         self.downsampler = match FftFixedIn::<f32>::new(
             target_rate,
             self.sample_rate as usize,
@@ -201,63 +206,64 @@ impl Plugin for Lamb {
         context: &mut impl ProcessContext<Self>,
     ) -> ProcessStatus {
         let count = buffer.samples() as i32;
+        for (_, block) in buffer.iter_blocks(count as usize) {
 
-        // self.accum_buffer.read_from_buffer(buffer);
+            // self.accum_buffer.read_from_buffer(buffer);
 
-        for channel_samples in buffer.iter_samples() {
-            let mut amplitude = 0.0;
-            let num_samples = channel_samples.len();
+            for channel_samples in buffer.iter_samples() {
+                let mut amplitude = 0.0;
+                let num_samples = channel_samples.len();
 
 
-            for sample in channel_samples {
-                amplitude += *sample;
+                for sample in channel_samples {
+                    amplitude += *sample;
+                }
+                // To save resources, a plugin can (and probably should!) only perform expensive
+                // calculations that are only displayed on the GUI while the GUI is open
+                if self.params.editor_state.is_open() {
+                    amplitude = (amplitude / num_samples as f32).abs();
+                    let current_peak_meter = self.peak_meter.load(std::sync::atomic::Ordering::Relaxed);
+                    let new_peak_meter = if amplitude > current_peak_meter {
+                        amplitude
+                    } else {
+                        current_peak_meter * self.peak_meter_decay_weight
+                            + amplitude * (1.0 - self.peak_meter_decay_weight)
+                    };
+
+                    self.peak_meter
+                        .store(new_peak_meter, std::sync::atomic::Ordering::Relaxed);
+                    self.gain_reduction_left
+                        .store(self.dsp.get_param(GAIN_REDUCTION_LEFT_PI).expect("no GR read"), std::sync::atomic::Ordering::Relaxed);
+                    self.gain_reduction_right
+                        .store(self.dsp.get_param(GAIN_REDUCTION_RIGHT_PI).expect("no GR read"), std::sync::atomic::Ordering::Relaxed);
+                }
             }
-            // To save resources, a plugin can (and probably should!) only perform expensive
-            // calculations that are only displayed on the GUI while the GUI is open
-            if self.params.editor_state.is_open() {
-                amplitude = (amplitude / num_samples as f32).abs();
-                let current_peak_meter = self.peak_meter.load(std::sync::atomic::Ordering::Relaxed);
-                let new_peak_meter = if amplitude > current_peak_meter {
-                    amplitude
-                } else {
-                    current_peak_meter * self.peak_meter_decay_weight
-                        + amplitude * (1.0 - self.peak_meter_decay_weight)
-                };
-
-                self.peak_meter
-                    .store(new_peak_meter, std::sync::atomic::Ordering::Relaxed);
-                self.gain_reduction_left
-                    .store(self.dsp.get_param(GAIN_REDUCTION_LEFT_PI).expect("no GR read"), std::sync::atomic::Ordering::Relaxed);
-                self.gain_reduction_right
-                    .store(self.dsp.get_param(GAIN_REDUCTION_RIGHT_PI).expect("no GR read"), std::sync::atomic::Ordering::Relaxed);
+            if let Some(upsampler) = &mut self.upsampler {
+                if let Some(upsampler_buffer) = &mut self.upsampler_buffer {
+                    upsampler.process_into_buffer(&buffer.as_slice(), upsampler_buffer, None);
+                }
             }
-        }
-        if let Some(upsampler) = &mut self.upsampler {
-            if let Some(upsampler_buffer) = &mut self.upsampler_buffer {
-                upsampler.process_into_buffer(&buffer.as_slice(), upsampler_buffer, None);
-            }
-        }
-        let dsp_output = buffer.as_slice();
+            let dsp_output = buffer.as_slice();
 
-        self.dsp.set_param(INPUT_GAIN_PI, self.params.input_gain.value());
-        self.dsp.set_param(STRENGTH_PI, self.params.strength.value());
-        self.dsp.set_param(THRESH_PI, self.params.thresh.value());
-        self.dsp.set_param(ATTACK_PI, self.params.attack.value());
-        self.dsp.set_param(ATTACK_SHAPE_PI, self.params.attack_shape.value());
-        self.dsp.set_param(RELEASE_PI, self.params.release.value());
-        self.dsp.set_param(RELEASE_SHAPE_PI, self.params.release_shape.value());
-        self.dsp.set_param(KNEE_PI, self.params.knee.value());
-        self.dsp.set_param(LINK_PI, self.params.link.value());
+            self.dsp.set_param(INPUT_GAIN_PI, self.params.input_gain.value());
+            self.dsp.set_param(STRENGTH_PI, self.params.strength.value());
+            self.dsp.set_param(THRESH_PI, self.params.thresh.value());
+            self.dsp.set_param(ATTACK_PI, self.params.attack.value());
+            self.dsp.set_param(ATTACK_SHAPE_PI, self.params.attack_shape.value());
+            self.dsp.set_param(RELEASE_PI, self.params.release.value());
+            self.dsp.set_param(RELEASE_SHAPE_PI, self.params.release_shape.value());
+            self.dsp.set_param(KNEE_PI, self.params.knee.value());
+            self.dsp.set_param(LINK_PI, self.params.link.value());
 
-        // self.accum_buffer.read_from_buffer(self.upsampler_buffer);
-        // let data: &[&[f32]] = &self.upsampler_buffer.unwrap().iter().map(|inner| inner.as_slice()).collect::<Vec<_>>();
-        // let data: &[&[f32]] = &<Option<Vec<Vec<f32>>> as Clone>::clone(&self.upsampler_buffer).unwrap().iter().map(|inner| inner.as_slice()).collect::<Vec<_>>();
-        // let data: &[&[f32]] = &<Option<Vec<Vec<f32>>> as Clone>::clone(&self.upsampler_buffer).unwrap().into_iter().map(|inner| inner.as_slice()).collect::<Vec<_>>();
-        let binding = <Option<Vec<Vec<f32>>> as Clone>::clone(&self.upsampler_buffer).unwrap();
-        let data: &[&[f32]] = &binding.iter().map(|inner| inner.as_slice()).collect::<Vec<_>>();
+            // self.accum_buffer.read_from_buffer(self.upsampler_buffer);
+            // let data: &[&[f32]] = &self.upsampler_buffer.unwrap().iter().map(|inner| inner.as_slice()).collect::<Vec<_>>();
+            // let data: &[&[f32]] = &<Option<Vec<Vec<f32>>> as Clone>::clone(&self.upsampler_buffer).unwrap().iter().map(|inner| inner.as_slice()).collect::<Vec<_>>();
+            // let data: &[&[f32]] = &<Option<Vec<Vec<f32>>> as Clone>::clone(&self.upsampler_buffer).unwrap().into_iter().map(|inner| inner.as_slice()).collect::<Vec<_>>();
+            let binding = <Option<Vec<Vec<f32>>> as Clone>::clone(&self.upsampler_buffer).unwrap();
+            let data: &[&[f32]] = &binding.iter().map(|inner| inner.as_slice()).collect::<Vec<_>>();
 
-        self.dsp
-        // .compute(count, &self.accum_buffer.slice2d(), dsp_output);
+            self.dsp
+            // .compute(count, &self.accum_buffer.slice2d(), dsp_output);
             .compute(count, &data, dsp_output);
 
         if let Some(downsampler) = &mut self.downsampler {
@@ -266,13 +272,34 @@ impl Plugin for Lamb {
             }
         }
 
-        buffer = self.downsampler_buffer;
+        // for (i, mut samples) in buffer.iter_samples().enumerate() {
+        // for (ch, s) in samples.iter_mut().enumerate() {
+        // *s = self.downsampler_buffer[ch][i];
+        // }
+        // }
+
+        for (i, mut samples) in buffer.iter_samples().enumerate() {
+            // Ensure downsampler_buffer is Some and then take its value out
+            if let Some(ref mut downsampler_buffer) = self.downsampler_buffer {
+                for (ch, s) in samples.iter_mut().enumerate() {
+                    // Now we can safely index into downsampler_buffer
+                    *s = downsampler_buffer[ch][i];
+                }
+            } else {
+                // Handle the case where downsampler_buffer is None
+                // This could involve setting a default value, logging an error, etc.
+                // For now, we'll just panic, but you should replace this with appropriate logic
+                // panic!("downsampler_buffer was None");
+            }
+            }
+        // buffer = self.downsampler_buffer;
 
 
-        // TODO: get the actual value from the dsp, use a hbargraph?
-        let latency_samples = self.params.attack.value()*0.001*self.sample_rate;
-        context.set_latency_samples(latency_samples as u32);
+            // TODO: get the actual value from the dsp, use a hbargraph?
+            let latency_samples = self.params.attack.value()*0.001*self.sample_rate;
+            context.set_latency_samples(latency_samples as u32);
 
+        }
         ProcessStatus::Normal
 
     }
