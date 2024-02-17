@@ -208,17 +208,16 @@ impl Plugin for Lamb {
         let count = buffer.samples() as i32;
 
         for (_, block) in buffer.iter_blocks(MAX_BLOCK_SIZE as usize) {
-            for channel_samples in block.iter_samples() {
-                let mut amplitude = 0.0;
-                let num_samples = channel_samples.len();
 
-
-                for sample in channel_samples {
-                    amplitude += *sample;
-                }
-                // To save resources, a plugin can (and probably should!) only perform expensive
-                // calculations that are only displayed on the GUI while the GUI is open
-                if self.params.editor_state.is_open() {
+            // To save resources, a plugin can (and probably should!) only perform expensive
+            // calculations that are only displayed on the GUI while the GUI is open
+            if self.params.editor_state.is_open() {
+                for channel_samples in block.iter_samples() {
+                    let mut amplitude = 0.0;
+                    let num_samples = channel_samples.len();
+                    for sample in channel_samples {
+                        amplitude += *sample;
+                    }
                     amplitude = (amplitude / num_samples as f32).abs();
                     let current_peak_meter = self.peak_meter.load(std::sync::atomic::Ordering::Relaxed);
                     let new_peak_meter = if amplitude > current_peak_meter {
@@ -229,11 +228,12 @@ impl Plugin for Lamb {
                     };
 
                     self.peak_meter
-                        .store(new_peak_meter, std::sync::atomic::Ordering::Relaxed);
-                    self.gain_reduction_left
-                        .store(self.dsp.get_param(GAIN_REDUCTION_LEFT_PI).expect("no GR read"), std::sync::atomic::Ordering::Relaxed);
-                    self.gain_reduction_right
-                        .store(self.dsp.get_param(GAIN_REDUCTION_RIGHT_PI).expect("no GR read"), std::sync::atomic::Ordering::Relaxed);
+                    .store(new_peak_meter, std::sync::atomic::Ordering::Relaxed);
+
+                self.gain_reduction_left
+                    .store(self.dsp.get_param(GAIN_REDUCTION_LEFT_PI).expect("no GR read"), std::sync::atomic::Ordering::Relaxed);
+                self.gain_reduction_right
+                    .store(self.dsp.get_param(GAIN_REDUCTION_RIGHT_PI).expect("no GR read"), std::sync::atomic::Ordering::Relaxed);
                 }
             }
 
@@ -247,9 +247,6 @@ impl Plugin for Lamb {
                     upsampler.process_into_buffer(stereo_slice, upsampler_buffer, None);
                 }
             }
-            let my_slice: Vec<&mut [f32]> = stereo_slice.iter().map(|arr| arr.as_mut()).collect();
-
-            let dsp_output = my_slice;
 
             self.dsp.set_param(INPUT_GAIN_PI, self.params.input_gain.value());
             self.dsp.set_param(STRENGTH_PI, self.params.strength.value());
@@ -261,25 +258,14 @@ impl Plugin for Lamb {
             self.dsp.set_param(KNEE_PI, self.params.knee.value());
             self.dsp.set_param(LINK_PI, self.params.link.value());
 
-            let binding = <Option<Vec<Vec<f32>>> as Clone>::clone(&self.upsampler_buffer).unwrap();
-            let data: &[&[f32]] = &binding.iter().map(|inner| inner.as_slice()).collect::<Vec<_>>();
-
-            let dsp_output_slice = stereo_slice;
-
             self.dsp
-                .compute(count, &data, dsp_output_slice);
+                .compute(count, self.upsampler_buffer, stereo_slice);
 
             if let Some(downsampler) = &mut self.downsampler {
                 if let Some(downsampler_buffer) = &mut self.downsampler_buffer {
-                    downsampler.process_into_buffer(&dsp_output, downsampler_buffer, None);
+                    downsampler.process_into_buffer(stereo_slice, downsampler_buffer, None);
                 }
             }
-
-            // for (i, mut samples) in buffer.iter_samples().enumerate() {
-            // for (ch, s) in samples.iter_mut().enumerate() {
-            // *s = self.downsampler_buffer[ch][i];
-            // }
-            // }
 
             for (i, mut samples) in block.iter_samples().enumerate() {
                 // Ensure downsampler_buffer is Some and then take its value out
@@ -289,12 +275,9 @@ impl Plugin for Lamb {
                         *s = downsampler_buffer[ch][i];
                     }
                 } else {
-                    // Handle the case where downsampler_buffer is None
-                    // This could involve setting a default value, logging an error, etc.
-                    // For now, we'll just panic, but you should replace this with appropriate logic
                     // panic!("downsampler_buffer was None");
                 }
-                }
+            }
         }
 
         // TODO: get the actual value from the dsp, use a hbargraph?
@@ -303,7 +286,7 @@ impl Plugin for Lamb {
 
         ProcessStatus::Normal
 
-        }
+    }
 }
 
 impl ClapPlugin for Lamb {
