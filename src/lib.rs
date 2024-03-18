@@ -1,7 +1,7 @@
+use atomic_float::AtomicF32;
 use faust_types::FaustDsp;
 use nih_plug::prelude::*;
 use nih_plug_vizia::ViziaState;
-use atomic_float::AtomicF32;
 use std::sync::Arc;
 mod buffer;
 mod dsp;
@@ -21,6 +21,8 @@ pub struct Lamb {
     params: Arc<LambParams>,
     dsp: dsp::Lamb,
     accum_buffer: TempBuffer,
+    temp_output_buffer_l: [f64; MAX_BLOCK_SIZE],
+    temp_output_buffer_r: [f64; MAX_BLOCK_SIZE],
 
     /// sample rate
     sample_rate: f32,
@@ -48,6 +50,8 @@ impl Default for Lamb {
             dsp: dsp::Lamb::new(),
 
             accum_buffer: TempBuffer::default(),
+            temp_output_buffer_l: [0.0_f64; MAX_BLOCK_SIZE],
+            temp_output_buffer_r: [0.0_f64; MAX_BLOCK_SIZE],
             sample_rate: 48000.0,
         }
     }
@@ -111,8 +115,8 @@ impl Plugin for Lamb {
         // After `PEAK_METER_DECAY_MS` milliseconds of pure silence, the peak meter's value should
         // have dropped by 12 dB
         self.peak_meter_decay_weight = 0.25f64
-                                        .powf((buffer_config.sample_rate as f64 * PEAK_METER_DECAY_MS / 1000.0).recip())
-                                        as f32;
+            .powf((buffer_config.sample_rate as f64 * PEAK_METER_DECAY_MS / 1000.0).recip())
+            as f32;
 
         self.sample_rate = buffer_config.sample_rate;
 
@@ -164,50 +168,80 @@ impl Plugin for Lamb {
 
                 self.peak_meter
                     .store(new_peak_meter, std::sync::atomic::Ordering::Relaxed);
-                self.gain_reduction_left
-                    .store(self.dsp.get_param(GAIN_REDUCTION_LEFT_PI).expect("no GR read") as f32, std::sync::atomic::Ordering::Relaxed);
-                self.gain_reduction_right
-                    .store(self.dsp.get_param(GAIN_REDUCTION_RIGHT_PI).expect("no GR read") as f32, std::sync::atomic::Ordering::Relaxed);
+                self.gain_reduction_left.store(
+                    self.dsp
+                        .get_param(GAIN_REDUCTION_LEFT_PI)
+                        .expect("no GR read") as f32,
+                    std::sync::atomic::Ordering::Relaxed,
+                );
+                self.gain_reduction_right.store(
+                    self.dsp
+                        .get_param(GAIN_REDUCTION_RIGHT_PI)
+                        .expect("no GR read") as f32,
+                    std::sync::atomic::Ordering::Relaxed,
+                );
             }
         }
-        let mut input = self.accum_buffer.data().iter()
-                                                .map(|inner_vec| {
-                                                    inner_vec.iter()
-                                                             .map(|&value| value as f64) // Cast f32 to f64
-                                                             .collect::<Vec<f64>>()
-                                                })
-                                                .collect::<Vec<Vec<f64>>>();
+        let mut input = self
+            .accum_buffer
+            .data()
+            .iter()
+            .map(|inner_vec| {
+                inner_vec
+                    .iter()
+                    .map(|&value| value as f64) // Cast f32 to f64
+                    .collect::<Vec<f64>>()
+            })
+            .collect::<Vec<Vec<f64>>>();
 
         // Convert the Vec<Vec<f64>> to a Vec<&mut [f64]>
         let input_slices: Vec<&mut [f64]> = input.iter_mut().map(Vec::as_mut_slice).collect();
 
         let output = buffer.as_slice();
 
-        self.dsp.set_param(INPUT_GAIN_PI, self.params.input_gain.value() as f64);
-        self.dsp.set_param(STRENGTH_PI, self.params.strength.value() as f64);
-        self.dsp.set_param(THRESH_PI, self.params.thresh.value() as f64);
-        self.dsp.set_param(ATTACK_PI, self.params.attack.value() as f64);
-        self.dsp.set_param(ATTACK_SHAPE_PI, self.params.attack_shape.value() as f64);
-        self.dsp.set_param(RELEASE_PI, self.params.release.value() as f64);
-        self.dsp.set_param(RELEASE_SHAPE_PI, self.params.release_shape.value() as f64);
+        self.dsp
+            .set_param(INPUT_GAIN_PI, self.params.input_gain.value() as f64);
+        self.dsp
+            .set_param(STRENGTH_PI, self.params.strength.value() as f64);
+        self.dsp
+            .set_param(THRESH_PI, self.params.thresh.value() as f64);
+        self.dsp
+            .set_param(ATTACK_PI, self.params.attack.value() as f64);
+        self.dsp
+            .set_param(ATTACK_SHAPE_PI, self.params.attack_shape.value() as f64);
+        self.dsp
+            .set_param(RELEASE_PI, self.params.release.value() as f64);
+        self.dsp
+            .set_param(RELEASE_SHAPE_PI, self.params.release_shape.value() as f64);
         self.dsp.set_param(KNEE_PI, self.params.knee.value() as f64);
         self.dsp.set_param(LINK_PI, self.params.link.value() as f64);
 
-        self.dsp
-            .compute(count, &self.accum_buffer.slice2d(), output);
+        self.dsp.compute(
+            count,
+            &self.accum_buffer.slice2d(),
+            &mut [
+                &mut self.temp_output_buffer_l,
+                &mut self.temp_output_buffer_r,
+            ],
+        );
         // .compute(count, &input_slices, output);
 
-        let mut latency_samples = self.params.attack.value()*0.001*self.sample_rate;
+        for i in 0..count as usize {
+            output[0][i] = self.temp_output_buffer_l[i] as f32;
+            output[1][i] = self.temp_output_buffer_r[i] as f32;
+        }
+
+        let mut latency_samples = self.params.attack.value() * 0.001 * self.sample_rate;
         context.set_latency_samples(latency_samples as u32);
 
         ProcessStatus::Normal
-
-}
+    }
 }
 
 impl ClapPlugin for Lamb {
     const CLAP_ID: &'static str = "magnetophon.nl lamb";
-    const CLAP_DESCRIPTION: Option<&'static str> = Some("A lookahead compressor/limiter that's soft as a lamb");
+    const CLAP_DESCRIPTION: Option<&'static str> =
+        Some("A lookahead compressor/limiter that's soft as a lamb");
     const CLAP_MANUAL_URL: Option<&'static str> = Some(Self::URL);
     const CLAP_SUPPORT_URL: Option<&'static str> = None;
 

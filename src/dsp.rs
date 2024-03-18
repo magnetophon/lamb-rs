@@ -4,8 +4,8 @@ author: "Bart Brouns"
 license: "AGPLv3"
 name: "lamb"
 version: "0.1"
-Code generated with Faust 2.72.10 (https://faust.grame.fr)
-Compilation options: -a /run/user/1001/.tmpzmRGCu -lang rust -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0
+Code generated with Faust 2.70.3 (https://faust.grame.fr)
+Compilation options: -a /tmp/.tmpI6SlfI -lang rust -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0
 ------------------------------------------------------------ */
 #![allow(clippy::all)]
 #![allow(unused_parens)]
@@ -71,20 +71,6 @@ pub fn newmydspSIG0() -> mydspSIG0 {
 static mut ftbl0mydspSIG0: [F64;589824] = [0.0;589824];
 fn mydsp_faustpower2_f(value: F64) -> F64 {
 	return value * value;
-}
-mod ffi {
-	use std::os::raw::{c_double};
-	#[link(name = "m")]
-	extern {
-		pub fn remainder(from: c_double, to: c_double) -> c_double;
-		pub fn rint(val: c_double) -> c_double;
-	}
-}
-fn remainder_f64(from: f64, to: f64) -> f64 {
-	unsafe { ffi::remainder(from, to) }
-}
-fn rint_f64(val: f64) -> f64 {
-	unsafe { ffi::rint(val) }
 }
 
 #[cfg_attr(feature = "default-boxed", derive(default_boxed::DefaultBoxed))]
@@ -236,19 +222,19 @@ impl FaustDsp for mydsp {
 		m.declare("basics.lib/tabulateNd", r"Copyright (C) 2023 Bart Brouns <bart@magnetophon.nl>");
 		m.declare("basics.lib/tabulateNd:author", r"Bart Brouns");
 		m.declare("basics.lib/tabulateNd:license", r"AGPL-3.0");
-		m.declare("basics.lib/version", r"1.15.0");
-		m.declare("compile_options", r"-a /run/user/1001/.tmpzmRGCu -lang rust -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0");
+		m.declare("basics.lib/version", r"1.12.0");
+		m.declare("compile_options", r"-a /tmp/.tmpI6SlfI -lang rust -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0");
 		m.declare("filename", r"lamb.dsp");
 		m.declare("interpolators.lib/interpolate_linear:author", r"Stéphane Letz");
 		m.declare("interpolators.lib/interpolate_linear:licence", r"MIT");
 		m.declare("interpolators.lib/name", r"Faust Interpolator Library");
-		m.declare("interpolators.lib/version", r"1.3.1");
+		m.declare("interpolators.lib/version", r"1.3.0");
 		m.declare("license", r"AGPLv3");
 		m.declare("maths.lib/author", r"GRAME");
 		m.declare("maths.lib/copyright", r"GRAME");
 		m.declare("maths.lib/license", r"LGPL with exception");
 		m.declare("maths.lib/name", r"Faust Math Library");
-		m.declare("maths.lib/version", r"2.8.0");
+		m.declare("maths.lib/version", r"2.7.0");
 		m.declare("name", r"lamb");
 		m.declare("platform.lib/name", r"Generic Platform Library");
 		m.declare("platform.lib/version", r"1.3.0");

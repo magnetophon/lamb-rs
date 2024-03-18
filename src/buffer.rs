@@ -28,7 +28,7 @@ use nih_plug::prelude::*;
 
 #[derive(Default)]
 pub struct TempBuffer {
-    data: Vec<Vec<f32>>,
+    data: Vec<Vec<f64>>,
 }
 
 #[allow(unused)]
@@ -45,11 +45,11 @@ impl TempBuffer {
             }
         }
     }
-    pub fn data(&self) -> &Vec<Vec<f32>> {
+    pub fn data(&self) -> &Vec<Vec<f64>> {
         &self.data
     }
 
-    pub fn data_mut(&mut self) -> &mut Vec<Vec<f32>> {
+    pub fn data_mut(&mut self) -> &mut Vec<Vec<f64>> {
         &mut self.data
     }
 
@@ -79,14 +79,14 @@ impl TempBuffer {
         }
     }
 
-    pub fn add_to_buffer(&self, to_buffer: &mut [&mut [f32]]) {
+    pub fn add_to_buffer(&self, to_buffer: &mut [&mut [f64]]) {
         for (self_channel, to_channel) in self.data.iter().zip(to_buffer.iter_mut()) {
             for (to, from) in to_channel.iter_mut().zip(self_channel) {
                 *to += *from;
             }
         }
     }
-    pub fn add_to_buffer_frames(&self, to_buffer: &mut [&mut [f32]], frames: usize) {
+    pub fn add_to_buffer_frames(&self, to_buffer: &mut [&mut [f64]], frames: usize) {
         for (self_channel, to_channel) in self.data.iter().zip(to_buffer.iter_mut()) {
             for (to, from) in to_channel[0..frames].iter_mut().zip(self_channel) {
                 *to += *from;
@@ -94,12 +94,12 @@ impl TempBuffer {
         }
     }
 
-    pub fn write_to_buffer(&self, to_buffer: &mut [&mut [f32]]) {
+    pub fn write_to_buffer(&self, to_buffer: &mut [&mut [f64]]) {
         for (self_channel, to_channel) in self.data.iter().zip(to_buffer.iter_mut()) {
             to_channel.copy_from_slice(&self_channel[..to_channel.len().min(self_channel.len())]);
         }
     }
-    pub fn write_to_buffer_frames(&self, to_buffer: &mut [&mut [f32]], frames: usize) {
+    pub fn write_to_buffer_frames(&self, to_buffer: &mut [&mut [f64]], frames: usize) {
         for (self_channel, to_channel) in self.data.iter().zip(to_buffer.iter_mut()) {
             to_channel.copy_from_slice(
                 &self_channel[..to_channel.len().min(self_channel.len()).min(frames)],
@@ -113,7 +113,8 @@ impl TempBuffer {
             .zip(self.data.iter_mut())
         {
             for (buffer_sample, self_sample) in buffer_channel.iter().zip(self_channel) {
-                *self_sample = *buffer_sample;
+                // TODO: Add f64 support to nih-plug
+                *self_sample = *buffer_sample as f64;
             }
         }
     }
@@ -127,26 +128,26 @@ impl TempBuffer {
         }
     }
     */
-    pub fn read_from_slice(&mut self, from_buffer: &[&[f32]]) {
+    pub fn read_from_slice(&mut self, from_buffer: &[&[f64]]) {
         for (self_channel, from_channel) in self.data.iter_mut().zip(from_buffer.iter()) {
             let self_len = self_channel.len();
             self_channel.copy_from_slice(&from_channel[..self_len.min(from_channel.len())]);
         }
     }
-    pub fn read_from_slice_frames(&mut self, from_buffer: &[&[f32]], frames: usize) {
+    pub fn read_from_slice_frames(&mut self, from_buffer: &[&[f64]], frames: usize) {
         for (self_channel, from_channel) in self.data.iter_mut().zip(from_buffer.iter()) {
             let self_len = self_channel.len();
             self_channel
                 .copy_from_slice(&from_channel[..self_len.min(from_channel.len()).min(frames)]);
         }
     }
-    pub fn read_from_mut_slice(&mut self, from_buffer: &mut [&mut [f32]]) {
+    pub fn read_from_mut_slice(&mut self, from_buffer: &mut [&mut [f64]]) {
         for (self_channel, from_channel) in self.data.iter_mut().zip(from_buffer.iter()) {
             let self_len = self_channel.len();
             self_channel.copy_from_slice(&from_channel[..self_len.min(from_channel.len())]);
         }
     }
-    pub fn read_from_mut_slice_frames(&mut self, from_buffer: &mut [&mut [f32]], frames: usize) {
+    pub fn read_from_mut_slice_frames(&mut self, from_buffer: &mut [&mut [f64]], frames: usize) {
         for (self_channel, from_channel) in self.data.iter_mut().zip(from_buffer.iter()) {
             let self_len = self_channel.len();
             self_channel
@@ -156,23 +157,23 @@ impl TempBuffer {
     /*
     // Allocates a Vec on the heap, so not suitable for DSP...
     // Relevant Discussion: https://internals.rust-lang.org/t/collecting-iterators-into-arrays/10330
-    pub fn slice<const N:usize>(&self) -> [&[f32]; N] {
+    pub fn slice<const N:usize>(&self) -> [&[f64]; N] {
         let slice = self.data.as_slice();
         let mut sliced = slice.iter().map(|ch| ch.as_slice());
-        sliced.collect::<Vec<&[f32]>>().try_into().unwrap()
+        sliced.collect::<Vec<&[f64]>>().try_into().unwrap()
     }
     */
-    pub fn slice1d(&self) -> [&[f32]; 1] {
+    pub fn slice1d(&self) -> [&[f64]; 1] {
         let slice = self.data.as_slice();
         let mut sliced = slice.iter().map(|ch| ch.as_slice());
         [sliced.next().unwrap()]
     }
-    pub fn slice2d(&self) -> [&[f32]; 2] {
+    pub fn slice2d(&self) -> [&[f64]; 2] {
         let slice = self.data.as_slice();
         let mut sliced = slice.iter().map(|ch| ch.as_slice());
         [sliced.next().unwrap(), sliced.next().unwrap()]
     }
-    pub fn slice3d(&self) -> [&[f32]; 3] {
+    pub fn slice3d(&self) -> [&[f64]; 3] {
         let slice = self.data.as_slice();
         let mut sliced = slice.iter().map(|ch| ch.as_slice());
         [
@@ -181,7 +182,7 @@ impl TempBuffer {
             sliced.next().unwrap(),
         ]
     }
-    pub fn slice4d(&self) -> [&[f32]; 4] {
+    pub fn slice4d(&self) -> [&[f64]; 4] {
         let slice = self.data.as_slice();
         let mut sliced = slice.iter().map(|ch| ch.as_slice());
         [
@@ -193,14 +194,14 @@ impl TempBuffer {
     }
 }
 
-pub trait BufferSlicer {
-    fn slice1d(&mut self, start_index: usize, end_index: usize) -> [&mut [f32]; 1];
-    fn slice2d(&mut self, start_index: usize, end_index: usize) -> [&mut [f32]; 2];
-    fn slice3d(&mut self, start_index: usize, end_index: usize) -> [&mut [f32]; 3];
-    fn slice4d(&mut self, start_index: usize, end_index: usize) -> [&mut [f32]; 4];
+pub trait BufferSlicer<T> {
+    fn slice1d(&mut self, start_index: usize, end_index: usize) -> [&mut [T]; 1];
+    fn slice2d(&mut self, start_index: usize, end_index: usize) -> [&mut [T]; 2];
+    fn slice3d(&mut self, start_index: usize, end_index: usize) -> [&mut [T]; 3];
+    fn slice4d(&mut self, start_index: usize, end_index: usize) -> [&mut [T]; 4];
 }
 
-impl<'buffer> BufferSlicer for Buffer<'buffer> {
+impl<'buffer> BufferSlicer<f32> for Buffer<'buffer> {
     fn slice1d(&mut self, start_index: usize, end_index: usize) -> [&mut [f32]; 1] {
         let slice = self.as_slice();
         let mut sliced = slice.iter_mut().map(|ch| &mut ch[start_index..end_index]);
