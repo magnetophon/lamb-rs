@@ -165,33 +165,44 @@ impl Plugin for Lamb {
                 self.peak_meter
                     .store(new_peak_meter, std::sync::atomic::Ordering::Relaxed);
                 self.gain_reduction_left
-                    .store(self.dsp.get_param(GAIN_REDUCTION_LEFT_PI).expect("no GR read"), std::sync::atomic::Ordering::Relaxed);
+                    .store(self.dsp.get_param(GAIN_REDUCTION_LEFT_PI).expect("no GR read") as f32, std::sync::atomic::Ordering::Relaxed);
                 self.gain_reduction_right
-                    .store(self.dsp.get_param(GAIN_REDUCTION_RIGHT_PI).expect("no GR read"), std::sync::atomic::Ordering::Relaxed);
+                    .store(self.dsp.get_param(GAIN_REDUCTION_RIGHT_PI).expect("no GR read") as f32, std::sync::atomic::Ordering::Relaxed);
             }
         }
+        let mut input = self.accum_buffer.data().iter()
+                                                .map(|inner_vec| {
+                                                    inner_vec.iter()
+                                                             .map(|&value| value as f64) // Cast f32 to f64
+                                                             .collect::<Vec<f64>>()
+                                                })
+                                                .collect::<Vec<Vec<f64>>>();
+
+        // Convert the Vec<Vec<f64>> to a Vec<&mut [f64]>
+        let input_slices: Vec<&mut [f64]> = input.iter_mut().map(Vec::as_mut_slice).collect();
 
         let output = buffer.as_slice();
 
-        self.dsp.set_param(INPUT_GAIN_PI, self.params.input_gain.value());
-        self.dsp.set_param(STRENGTH_PI, self.params.strength.value());
-        self.dsp.set_param(THRESH_PI, self.params.thresh.value());
-        self.dsp.set_param(ATTACK_PI, self.params.attack.value());
-        self.dsp.set_param(ATTACK_SHAPE_PI, self.params.attack_shape.value());
-        self.dsp.set_param(RELEASE_PI, self.params.release.value());
-        self.dsp.set_param(RELEASE_SHAPE_PI, self.params.release_shape.value());
-        self.dsp.set_param(KNEE_PI, self.params.knee.value());
-        self.dsp.set_param(LINK_PI, self.params.link.value());
+        self.dsp.set_param(INPUT_GAIN_PI, self.params.input_gain.value() as f64);
+        self.dsp.set_param(STRENGTH_PI, self.params.strength.value() as f64);
+        self.dsp.set_param(THRESH_PI, self.params.thresh.value() as f64);
+        self.dsp.set_param(ATTACK_PI, self.params.attack.value() as f64);
+        self.dsp.set_param(ATTACK_SHAPE_PI, self.params.attack_shape.value() as f64);
+        self.dsp.set_param(RELEASE_PI, self.params.release.value() as f64);
+        self.dsp.set_param(RELEASE_SHAPE_PI, self.params.release_shape.value() as f64);
+        self.dsp.set_param(KNEE_PI, self.params.knee.value() as f64);
+        self.dsp.set_param(LINK_PI, self.params.link.value() as f64);
 
         self.dsp
             .compute(count, &self.accum_buffer.slice2d(), output);
+        // .compute(count, &input_slices, output);
 
         let mut latency_samples = self.params.attack.value()*0.001*self.sample_rate;
         context.set_latency_samples(latency_samples as u32);
 
         ProcessStatus::Normal
 
-    }
+}
 }
 
 impl ClapPlugin for Lamb {

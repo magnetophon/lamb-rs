@@ -4,6 +4,7 @@ use std::{
 };
 
 use faust_types::{FaustDsp, UI};
+use faust_build::FaustBuilder;
 include!("src/dsp.rs");
 
 #[derive(Debug)]
@@ -12,10 +13,10 @@ enum Param {
     Normal {
         label: String,
         param: i32,
-        init: f32,
-        min: f32,
-        max: f32,
-        step: f32,
+        init: f64,
+        min: f64,
+        max: f64,
+        step: f64,
     },
 }
 
@@ -91,7 +92,7 @@ impl CollectParameters {
     }
 }
 
-impl UI<f32> for CollectParameters {
+impl UI<f64> for CollectParameters {
     fn open_tab_box(&mut self, _label: &str) {}
 
     fn open_horizontal_box(&mut self, _label: &str) {}
@@ -108,10 +109,10 @@ impl UI<f32> for CollectParameters {
         &mut self,
         label: &str,
         param: faust_types::ParamIndex,
-        init: f32,
-        min: f32,
-        max: f32,
-        step: f32,
+        init: f64,
+        min: f64,
+        max: f64,
+        step: f64,
     ) {
         self.collected.push(Param::Normal {
             label: label.to_string(),
@@ -127,10 +128,10 @@ impl UI<f32> for CollectParameters {
         &mut self,
         label: &str,
         param: faust_types::ParamIndex,
-        init: f32,
-        min: f32,
-        max: f32,
-        step: f32,
+        init: f64,
+        min: f64,
+        max: f64,
+        step: f64,
     ) {
         self.collected.push(Param::Normal {
             label: label.to_string(),
@@ -146,10 +147,10 @@ impl UI<f32> for CollectParameters {
         &mut self,
         label: &str,
         param: faust_types::ParamIndex,
-        init: f32,
-        min: f32,
-        max: f32,
-        step: f32,
+        init: f64,
+        min: f64,
+        max: f64,
+        step: f64,
     ) {
         self.collected.push(Param::Normal {
             label: label.to_string(),
@@ -165,8 +166,8 @@ impl UI<f32> for CollectParameters {
         &mut self,
         _label: &str,
         _param: faust_types::ParamIndex,
-        _min: f32,
-        _max: f32,
+        _min: f64,
+        _max: f64,
     ) {
     }
 
@@ -174,8 +175,8 @@ impl UI<f32> for CollectParameters {
         &mut self,
         _label: &str,
         _param: faust_types::ParamIndex,
-        _min: f32,
-        _max: f32,
+        _min: f64,
+        _max: f64,
     ) {
     }
 
@@ -183,13 +184,19 @@ impl UI<f32> for CollectParameters {
 }
 
 fn main() {
-    faust_build::build_dsp_to_destination("dsp/lamb.dsp", "src/dsp.rs");
 
     println!("cargo:rerun-if-changed=dsp");
-    let mut my_ui = CollectParameters::new();
-    dsp::mydsp::build_user_interface_static(&mut my_ui);
-    my_ui
-        .write_nih_params_struct(Path::new("src/params_auto.rs"), "LambParams")
-    // .write_nih_params_struct(Path::new("src/params.rs"), "LambParams")
-        .expect("Failed writing nih params");
+    FaustBuilder::new("dsp/lamb.dsp", "src/dsp.rs")
+        .set_use_double(true)
+        .build();
+
+
+    // faust_build::build_dsp_to_destination("dsp/lamb.dsp", "src/dsp.rs");
+
+    // println!("cargo:rerun-if-changed=dsp");
+    // let mut my_ui = CollectParameters::new();
+    // dsp::mydsp::build_user_interface_static(&mut my_ui);
+    // my_ui
+    // .write_nih_params_struct(Path::new("src/params_auto.rs"), "LambParams")
+    // .expect("Failed writing nih params");
 }
