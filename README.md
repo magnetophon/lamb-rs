@@ -25,6 +25,7 @@ With the default settings, there is practically zero distortion, even at 20Hz:
 After installing [Rust](https://rustup.rs/) and [Faust](https://faust.grame.fr), you can compile lamb as follows:
 
 ```shell
+git submodule update --init --recursive
 ./build.sh
 ./install.sh
 ```
