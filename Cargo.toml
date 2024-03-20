@@ -7,6 +7,9 @@ license = "AGPL-3.0"
 homepage = "magnetophon.nl"
 description = "A lookahead compressor/limiter that's soft as a lamb"
 
+[features]
+faust-rebuild = ["dep:faust-build"]
+
 [workspace]
 members = ["xtask"]
 
@@ -37,5 +40,5 @@ debug = true
 strip = "none"
 
 [build-dependencies]
-faust-build = { git = "https://github.com/Frando/rust-faust" }
+faust-build = { git = "https://github.com/Frando/rust-faust", optional = true }
 faust-types = { git = "https://github.com/Frando/rust-faust" }

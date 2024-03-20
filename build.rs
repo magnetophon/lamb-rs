@@ -4,7 +4,7 @@ use std::{
 };
 
 use faust_types::{FaustDsp, UI};
-use faust_build::FaustBuilder;
+// use faust_build::FaustBuilder;
 include!("src/dsp.rs");
 
 #[derive(Debug)]
@@ -186,7 +186,10 @@ impl UI<f64> for CollectParameters {
 fn main() {
 
     println!("cargo:rerun-if-changed=dsp");
-    FaustBuilder::new("dsp/lamb.dsp", "src/dsp.rs")
+
+    #[cfg(feature = "faust-rebuild")]
+
+    faust_build::FaustBuilder::new("dsp/lamb.dsp", "src/dsp.rs")
         .set_use_double(true)
         .build();
 
