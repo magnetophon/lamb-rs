@@ -16,7 +16,7 @@ const PEAK_METER_DECAY_MS: f64 = 150.0;
 
 pub struct Lamb {
     params: Arc<LambParams>,
-    dsp: dsp::Lamb,
+    dsp: dsp::LambRs,
     accum_buffer: TempBuffer,
     temp_output_buffer_l: [f64; MAX_BLOCK_SIZE],
     temp_output_buffer_r: [f64; MAX_BLOCK_SIZE],
@@ -44,7 +44,7 @@ impl Default for Lamb {
             gain_reduction_left: Arc::new(AtomicF32::new(0.0)),
             gain_reduction_right: Arc::new(AtomicF32::new(0.0)),
 
-            dsp: dsp::Lamb::new(),
+            dsp: dsp::LambRs::new(),
 
             accum_buffer: TempBuffer::default(),
             temp_output_buffer_l: [0.0_f64; MAX_BLOCK_SIZE],
@@ -223,19 +223,18 @@ impl Plugin for Lamb {
                 &mut self.temp_output_buffer_r,
             ],
         );
-        // .compute(count, &input_slices, output);
 
         for i in 0..count as usize {
             output[0][i] = self.temp_output_buffer_l[i] as f32;
             output[1][i] = self.temp_output_buffer_r[i] as f32;
         }
 
-        // TODO: use a hbargraph in faust to get the exact value
         let mut latency_samples =
-            (self.params.attack.value() * 0.001 * self.sample_rate)
-            + (self.params.release_hold.value() * 0.001 * self.sample_rate)
+            self.dsp
+                .get_param(LATENCY_PI)
+                .expect("no latency read") as u32
             ;
-        context.set_latency_samples(latency_samples as u32);
+        context.set_latency_samples(latency_samples);
 
         ProcessStatus::Normal
     }
@@ -248,14 +247,12 @@ impl ClapPlugin for Lamb {
     const CLAP_MANUAL_URL: Option<&'static str> = Some(Self::URL);
     const CLAP_SUPPORT_URL: Option<&'static str> = None;
 
-    // Don't forget to change these features
     const CLAP_FEATURES: &'static [ClapFeature] = &[ClapFeature::AudioEffect, ClapFeature::Stereo, ClapFeature::Compressor, ClapFeature::Limiter, ClapFeature::Mastering];
 }
 
 impl Vst3Plugin for Lamb {
     const VST3_CLASS_ID: [u8; 16] = *b"magnetophon lamb";
 
-    // And also don't forget to change these categories
     const VST3_SUBCATEGORIES: &'static [Vst3SubCategory] =
         &[Vst3SubCategory::Fx, Vst3SubCategory::Dynamics, Vst3SubCategory::Mastering, Vst3SubCategory::Stereo];
 }

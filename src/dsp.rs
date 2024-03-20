@@ -2,10 +2,10 @@ mod dsp {
     /* ------------------------------------------------------------
 author: "Bart Brouns"
 license: "AGPLv3"
-name: "lamb"
+name: "lamb-rs"
 version: "0.1"
 Code generated with Faust 2.72.10 (https://faust.grame.fr)
-Compilation options: -a /run/user/1001/.tmpsojc2U -lang rust -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0
+Compilation options: -a /run/user/1001/.tmpboBYqi -lang rust -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0
 ------------------------------------------------------------ */
 #![allow(clippy::all)]
 #![allow(unused_parens)]
@@ -94,6 +94,7 @@ pub struct mydsp {
 	fHslider1: F64,
 	fHslider2: F64,
 	fConst3: F64,
+	fHbargraph0: F64,
 	fHslider3: F64,
 	fHslider4: F64,
 	fVec1: [F64;32768],
@@ -180,6 +181,7 @@ impl FaustDsp for mydsp {
 			fHslider1: 0.0,
 			fHslider2: 0.0,
 			fConst3: 0.0,
+			fHbargraph0: 0.0,
 			fHslider3: 0.0,
 			fHslider4: 0.0,
 			fVec1: [0.0;32768],
@@ -264,19 +266,23 @@ impl FaustDsp for mydsp {
 		m.declare("basics.lib/tabulateNd:author", r"Bart Brouns");
 		m.declare("basics.lib/tabulateNd:license", r"AGPL-3.0");
 		m.declare("basics.lib/version", r"1.15.0");
-		m.declare("compile_options", r"-a /run/user/1001/.tmpsojc2U -lang rust -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0");
-		m.declare("filename", r"lamb.dsp");
+		m.declare("compile_options", r"-a /run/user/1001/.tmpboBYqi -lang rust -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0");
+		m.declare("filename", r"lamb-rs.dsp");
 		m.declare("interpolators.lib/interpolate_linear:author", r"Stéphane Letz");
 		m.declare("interpolators.lib/interpolate_linear:licence", r"MIT");
 		m.declare("interpolators.lib/name", r"Faust Interpolator Library");
 		m.declare("interpolators.lib/version", r"1.3.1");
+		m.declare("lamb.dsp/author", r"Bart Brouns");
+		m.declare("lamb.dsp/license", r"AGPLv3");
+		m.declare("lamb.dsp/name", r"lamb");
+		m.declare("lamb.dsp/version", r"0.1");
 		m.declare("license", r"AGPLv3");
 		m.declare("maths.lib/author", r"GRAME");
 		m.declare("maths.lib/copyright", r"GRAME");
 		m.declare("maths.lib/license", r"LGPL with exception");
 		m.declare("maths.lib/name", r"Faust Math Library");
 		m.declare("maths.lib/version", r"2.8.0");
-		m.declare("name", r"lamb");
+		m.declare("name", r"lamb-rs");
 		m.declare("platform.lib/name", r"Generic Platform Library");
 		m.declare("platform.lib/version", r"1.3.0");
 		m.declare("routes.lib/name", r"Faust Signal Routing Library");
@@ -522,8 +528,9 @@ impl FaustDsp for mydsp {
 	}
 	
 	fn build_user_interface_static(ui_interface: &mut dyn UI<Self::T>) {
+		ui_interface.open_vertical_box("lamb-rs");
 		ui_interface.declare(None, "02", "");
-		ui_interface.open_horizontal_box("lamb");
+		ui_interface.open_horizontal_box("0x00");
 		ui_interface.declare(None, "0", "");
 		ui_interface.open_vertical_box("0x00");
 		ui_interface.declare(Some(ParamIndex(0)), "01", "");
@@ -560,10 +567,15 @@ impl FaustDsp for mydsp {
 		ui_interface.add_vertical_bargraph("1", ParamIndex(11), -12.0, 0.0);
 		ui_interface.close_box();
 		ui_interface.close_box();
+		ui_interface.declare(Some(ParamIndex(12)), "99", "");
+		ui_interface.declare(Some(ParamIndex(12)), "unit", "samples");
+		ui_interface.add_horizontal_bargraph("latency", ParamIndex(12), 0.0, 4.8e+03);
+		ui_interface.close_box();
 	}
 	
 	fn get_param(&self, param: ParamIndex) -> Option<Self::T> {
 		match param.0 {
+			12 => Some(self.fHbargraph0),
 			0 => Some(self.fHslider0),
 			3 => Some(self.fHslider1),
 			7 => Some(self.fHslider2),
@@ -582,6 +594,7 @@ impl FaustDsp for mydsp {
 	
 	fn set_param(&mut self, param: ParamIndex, value: Self::T) {
 		match param.0 {
+			12 => { self.fHbargraph0 = value }
 			0 => { self.fHslider0 = value }
 			3 => { self.fHslider1 = value }
 			7 => { self.fHslider2 = value }
@@ -616,7 +629,8 @@ impl FaustDsp for mydsp {
 		let mut fSlow0: F64 = self.fConst1 * F64::powf(1e+01, 0.05 * self.fHslider0);
 		let mut fSlow1: F64 = self.fHslider1;
 		let mut fSlow2: F64 = self.fHslider2;
-		let mut iSlow3: i32 = (self.fConst3 * (fSlow2 + fSlow1)) as i32;
+		self.fHbargraph0 = self.fConst3 * (fSlow2 + fSlow1);
+		let mut iSlow3: i32 = (self.fHbargraph0) as i32;
 		let mut fSlow4: F64 = self.fConst3 * fSlow1;
 		let mut fSlow5: F64 = fSlow4 + 1.0;
 		let mut iSlow6: i32 = (F64::floor(fSlow5)) as i32 % 2;
@@ -1979,4 +1993,4 @@ impl FaustDsp for mydsp {
 
 
 }
-pub use dsp::mydsp as Lamb;
+pub use dsp::mydsp as LambRs;

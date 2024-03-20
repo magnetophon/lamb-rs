@@ -188,17 +188,7 @@ fn main() {
 
     #[cfg(feature = "faust-rebuild")]
 
-    faust_build::FaustBuilder::new("dsp/lamb.dsp", "src/dsp.rs")
+    faust_build::FaustBuilder::new("dsp/lamb-rs.dsp", "src/dsp.rs")
         .set_use_double(true)
         .build();
-
-
-    // faust_build::build_dsp_to_destination("dsp/lamb.dsp", "src/dsp.rs");
-
-    // println!("cargo:rerun-if-changed=dsp");
-    // let mut my_ui = CollectParameters::new();
-    // dsp::mydsp::build_user_interface_static(&mut my_ui);
-    // my_ui
-    // .write_nih_params_struct(Path::new("src/params_auto.rs"), "LambParams")
-    // .expect("Failed writing nih params");
 }

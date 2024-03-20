@@ -86,3 +86,4 @@ pub const KNEE_PI: ParamIndex = ParamIndex(8);
 pub const LINK_PI: ParamIndex = ParamIndex(9);
 pub const GAIN_REDUCTION_LEFT_PI: ParamIndex = ParamIndex(10);
 pub const GAIN_REDUCTION_RIGHT_PI: ParamIndex = ParamIndex(11);
+pub const LATENCY_PI: ParamIndex = ParamIndex(12);
