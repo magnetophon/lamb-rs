@@ -4,7 +4,6 @@ use std::{
 };
 
 use faust_types::{FaustDsp, UI};
-// use faust_build::FaustBuilder;
 include!("src/dsp.rs");
 
 #[derive(Debug)]

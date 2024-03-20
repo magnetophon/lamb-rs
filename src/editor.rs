@@ -23,7 +23,7 @@ impl Model for Data {}
 
 // Makes sense to also define this here, makes it a bit easier to keep track of
 pub(crate) fn default_state() -> Arc<ViziaState> {
-    ViziaState::new(|| (200, 685))
+    ViziaState::new(|| (220, 740))
 }
 
 pub(crate) fn create(
@@ -50,9 +50,9 @@ pub(crate) fn create(
                 .font_family(vec![FamilyOwned::Name(String::from(assets::NOTO_SANS))])
                 .font_weight(FontWeightKeyword::Thin)
                 .font_size(30.0)
-                .height(Pixels(50.0))
+                .height(Pixels(60.0))
                 .child_top(Stretch(1.0))
-                .child_bottom(Pixels(0.0));
+                .child_bottom(Pixels(10.0));
 
             Label::new(cx, "input gain");
             ParamSlider::new(cx, Data::params, |params| &params.input_gain);
@@ -68,6 +68,8 @@ pub(crate) fn create(
             ParamSlider::new(cx, Data::params, |params| &params.release);
             Label::new(cx, "release shape");
             ParamSlider::new(cx, Data::params, |params| &params.release_shape);
+            Label::new(cx, "release hold");
+            ParamSlider::new(cx, Data::params, |params| &params.release_hold);
             Label::new(cx, "knee");
             ParamSlider::new(cx, Data::params, |params| &params.knee);
             Label::new(cx, "link");

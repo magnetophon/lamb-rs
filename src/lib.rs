@@ -8,9 +8,6 @@ mod dsp;
 use buffer::*;
 
 const MAX_BLOCK_SIZE: usize = 1024;
-// This is a shortened version of the gain example with most comments removed, check out
-// https://github.com/robbert-vdh/nih-plug/blob/master/plugins/examples/gain/src/lib.rs to get
-// started
 
 mod editor;
 
@@ -213,6 +210,8 @@ impl Plugin for Lamb {
             .set_param(RELEASE_PI, self.params.release.value() as f64);
         self.dsp
             .set_param(RELEASE_SHAPE_PI, self.params.release_shape.value() as f64);
+        self.dsp
+            .set_param(RELEASE_HOLD_PI, self.params.release_hold.value() as f64);
         self.dsp.set_param(KNEE_PI, self.params.knee.value() as f64);
         self.dsp.set_param(LINK_PI, self.params.link.value() as f64);
 
@@ -231,7 +230,11 @@ impl Plugin for Lamb {
             output[1][i] = self.temp_output_buffer_r[i] as f32;
         }
 
-        let mut latency_samples = self.params.attack.value() * 0.001 * self.sample_rate;
+        // TODO: use a hbargraph in faust to get the exact value
+        let mut latency_samples =
+            (self.params.attack.value() * 0.001 * self.sample_rate)
+            + (self.params.release_hold.value() * 0.001 * self.sample_rate)
+            ;
         context.set_latency_samples(latency_samples as u32);
 
         ProcessStatus::Normal
