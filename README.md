@@ -20,6 +20,13 @@ The ``release hold`` parameter prevents the gain reduction from coming back up i
 You control how soon is soon with ``release hold``.  
 This adds latency though.
 
+## Usage
+
+Apart from regular dragging and using the mousewheel, you can interact with the slider in the following ways:
+- Shift + drag or mousewheel: fine adjustments
+- Alt + click on a slider: type a value
+- Double-click on a slider: back to the default value.
+
 
 ## Building and installing
 
