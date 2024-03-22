@@ -22,8 +22,8 @@ This adds latency though.
 
 ## Usage
 
-Apart from regular dragging and using the mousewheel, you can interact with the slider in the following ways:
-- Shift + drag or mousewheel: fine adjustments
+Apart from regular dragging and using the mouse-wheel, you can interact with the sliders in the following ways:
+- Shift + drag or mouse-wheel: fine adjustments
 - Alt + click on a slider: type a value
 - Double-click on a slider: back to the default value.
 
