@@ -58,9 +58,8 @@ impl Default for LambParams {
                 .with_step_size(0.01),
             release_shape: FloatParam::new("release_shape", 0.5, FloatRange::Linear { min: 0.0, max: 1.0})
                 .with_step_size(0.1),
-            release_hold: FloatParam::new("release_hold", 50.0, FloatRange::Skewed {
+            release_hold: FloatParam::new("release_hold", 50.0, FloatRange::Linear {
                 min: 0.0, max: 50.0,
-                factor: FloatRange::skew_factor(1.0),
             })
                 .with_unit(" ms")
                 .with_step_size(0.01),
