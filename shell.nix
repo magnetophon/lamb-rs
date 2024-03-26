@@ -30,8 +30,6 @@ in with nixpkgs;
       xorg.libX11 # libX11-xcb.so
       xorg.xcbutilwm # libxcb-icccm.so
 
-      # python3
-
       faust
     ];
   }
