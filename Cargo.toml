@@ -40,5 +40,7 @@ debug = true
 strip = "none"
 
 [build-dependencies]
+# see: https://github.com/Frando/rust-faust/issues/23
+# faust-build = { path = "../rust-faust/faust-build", optional = true }
 faust-build = { git = "https://github.com/Frando/rust-faust", optional = true }
 faust-types = { git = "https://github.com/Frando/rust-faust" }

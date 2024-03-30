@@ -195,7 +195,13 @@ impl Plugin for Lamb {
         let input_slices: Vec<&mut [f64]> = input.iter_mut().map(Vec::as_mut_slice).collect();
 
         let output = buffer.as_slice();
+        let bypass: f64 = match self.params.bypass.value() {
+            true => 1.0,
+            false => 0.0,
+        };
 
+        self.dsp
+            .set_param(BYPASS_PI, bypass);
         self.dsp
             .set_param(INPUT_GAIN_PI, self.params.input_gain.value() as f64);
         self.dsp
@@ -214,6 +220,8 @@ impl Plugin for Lamb {
             .set_param(RELEASE_HOLD_PI, self.params.release_hold.value() as f64);
         self.dsp.set_param(KNEE_PI, self.params.knee.value() as f64);
         self.dsp.set_param(LINK_PI, self.params.link.value() as f64);
+        self.dsp
+            .set_param(OUTPUT_GAIN_PI, self.params.output_gain.value() as f64);
 
         self.dsp.compute(
             count,
@@ -229,7 +237,7 @@ impl Plugin for Lamb {
             output[1][i] = self.temp_output_buffer_r[i] as f32;
         }
 
-        let mut latency_samples =
+        let latency_samples =
             self.dsp
                 .get_param(LATENCY_PI)
                 .expect("no latency read") as u32

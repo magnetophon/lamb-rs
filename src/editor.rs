@@ -23,7 +23,7 @@ impl Model for Data {}
 
 // Makes sense to also define this here, makes it a bit easier to keep track of
 pub(crate) fn default_state() -> Arc<ViziaState> {
-    ViziaState::new(|| (220, 740))
+    ViziaState::new(|| (220, 820))
 }
 
 pub(crate) fn create(
@@ -54,6 +54,8 @@ pub(crate) fn create(
                 .child_top(Stretch(1.0))
                 .child_bottom(Pixels(10.0));
 
+            ParamButton::new(cx, Data::params, |params| &params.bypass)
+                .for_bypass();
             Label::new(cx, "input gain");
             ParamSlider::new(cx, Data::params, |params| &params.input_gain);
             Label::new(cx, "strength");
@@ -74,6 +76,8 @@ pub(crate) fn create(
             ParamSlider::new(cx, Data::params, |params| &params.knee);
             Label::new(cx, "link");
             ParamSlider::new(cx, Data::params, |params| &params.link);
+            Label::new(cx, "output gain");
+            ParamSlider::new(cx, Data::params, |params| &params.output_gain);
 
 
             Label::new(cx, "input level")

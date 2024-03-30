@@ -1,7 +1,9 @@
 use faust_types::ParamIndex;
 #[derive(Params)]
 struct LambParams {
-    // nr of params: 9
+    // nr of params: 12
+    #[id = "bypass"]
+    bypass: BoolParam,
     #[id = "input_gain"]
     input_gain: FloatParam,
     #[id = "strength"]
@@ -22,6 +24,8 @@ struct LambParams {
     knee: FloatParam,
     #[id = "link"]
     link: FloatParam,
+    #[id = "output_gain"]
+    output_gain: FloatParam,
     /// The editor state, saved together with the parameter state so the custom scaling can be
     /// restored.
     #[persist = "editor-state"]
@@ -33,6 +37,10 @@ impl Default for LambParams {
         Self {
             editor_state: editor::default_state(),
 
+            bypass: BoolParam::new("bypass",false)
+                .with_value_to_string(formatters::v2s_bool_bypass())
+                .with_string_to_value(formatters::s2v_bool_bypass())
+                .make_bypass(),
             input_gain: FloatParam::new("input_gain", 0.0, FloatRange::Linear { min: -24.0, max: 24.0})
                 .with_unit(" dB")
                 .with_step_size(0.1),
@@ -68,21 +76,26 @@ impl Default for LambParams {
                 .with_step_size(0.1),
             link: FloatParam::new("link", 0.0, FloatRange::Linear { min: 0.0, max: 100.0})
                 .with_unit(" %")
-                .with_step_size(1.0)
+                .with_step_size(1.0),
+            output_gain: FloatParam::new("output_gain", 0.0, FloatRange::Linear { min: -24.0, max: 24.0})
+                .with_unit(" dB")
+                .with_step_size(0.1),
         }
     }
 }
 
-pub const INPUT_GAIN_PI: ParamIndex = ParamIndex(0);
-pub const STRENGTH_PI: ParamIndex = ParamIndex(1);
-pub const THRESH_PI: ParamIndex = ParamIndex(2);
-pub const ATTACK_PI: ParamIndex = ParamIndex(3);
-pub const ATTACK_SHAPE_PI: ParamIndex = ParamIndex(4);
-pub const RELEASE_PI: ParamIndex = ParamIndex(5);
-pub const RELEASE_SHAPE_PI: ParamIndex = ParamIndex(6);
-pub const RELEASE_HOLD_PI: ParamIndex = ParamIndex(7);
-pub const KNEE_PI: ParamIndex = ParamIndex(8);
-pub const LINK_PI: ParamIndex = ParamIndex(9);
-pub const GAIN_REDUCTION_LEFT_PI: ParamIndex = ParamIndex(10);
-pub const GAIN_REDUCTION_RIGHT_PI: ParamIndex = ParamIndex(11);
-pub const LATENCY_PI: ParamIndex = ParamIndex(12);
+pub const BYPASS_PI: ParamIndex = ParamIndex(0);
+pub const INPUT_GAIN_PI: ParamIndex = ParamIndex(1);
+pub const STRENGTH_PI: ParamIndex = ParamIndex(2);
+pub const THRESH_PI: ParamIndex = ParamIndex(3);
+pub const ATTACK_PI: ParamIndex = ParamIndex(4);
+pub const ATTACK_SHAPE_PI: ParamIndex = ParamIndex(5);
+pub const RELEASE_PI: ParamIndex = ParamIndex(6);
+pub const RELEASE_SHAPE_PI: ParamIndex = ParamIndex(7);
+pub const RELEASE_HOLD_PI: ParamIndex = ParamIndex(8);
+pub const KNEE_PI: ParamIndex = ParamIndex(9);
+pub const LINK_PI: ParamIndex = ParamIndex(10);
+pub const OUTPUT_GAIN_PI: ParamIndex = ParamIndex(11);
+pub const GAIN_REDUCTION_LEFT_PI: ParamIndex = ParamIndex(12);
+pub const GAIN_REDUCTION_RIGHT_PI: ParamIndex = ParamIndex(13);
+pub const LATENCY_PI: ParamIndex = ParamIndex(14);
