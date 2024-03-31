@@ -97,7 +97,8 @@ pub(crate) fn create(
                             Label::new(cx, "release");
                             ParamSlider::new(cx, Data::params, |params| &params.release);
                             Label::new(cx, "release shape");
-                            ParamSlider::new(cx, Data::params, |params| &params.release_shape);
+                            ParamSlider::new(cx, Data::params, |params| &params.release_shape)
+                                .set_style(ParamSliderStyle::FromLeft);
                             Label::new(cx, "release hold");
                             ParamSlider::new(cx, Data::params, |params| &params.release_hold);
                         })
