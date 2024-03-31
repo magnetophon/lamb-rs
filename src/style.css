@@ -1,4 +1,17 @@
 
+attack-release-graph {
+    /* height: 100%; */
+    /* width: 100%; */
+    outline-color: #0a0a0a;
+    border-color: #696969;
+    /* outline-color: #696969; */
+    /* border-color: #0a0a0a; */
+    border-width: 1px;
+    background-color: transparent;
+    /* top: 20px; */
+    bottom: 5px;
+    left: 5%;
+}
 label {
     top: 7px;
     bottom: 1px;

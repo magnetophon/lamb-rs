@@ -26,10 +26,28 @@ struct LambParams {
     link: FloatParam,
     #[id = "output_gain"]
     output_gain: FloatParam,
+    #[id = "time_choice"]
+    time_choice: EnumParam<TimeChoice>,
     /// The editor state, saved together with the parameter state so the custom scaling can be
     /// restored.
     #[persist = "editor-state"]
     editor_state: Arc<ViziaState>,
+}
+
+#[derive(Enum, Debug, PartialEq)]
+enum TimeChoice {
+    /// Don't show the length of the envelope, just the shape
+    #[id = "shape"]
+    #[name = "shape"]
+    Shape,
+    /// Show the length of the attack and the release relative to each other.
+    #[id = "relative"]
+    #[name = "relative"]
+    Relative,
+    /// Show the absolute length of the attack and the release
+    #[id = "absolute"]
+    #[name = "absolute"]
+    Absolute,
 }
 
 impl Default for LambParams {
@@ -80,6 +98,7 @@ impl Default for LambParams {
             output_gain: FloatParam::new("output_gain", 0.0, FloatRange::Linear { min: -24.0, max: 24.0})
                 .with_unit(" dB")
                 .with_step_size(0.1),
+            time_choice: EnumParam::new("time_choice", TimeChoice::Relative),
         }
     }
 }
@@ -99,3 +118,4 @@ pub const OUTPUT_GAIN_PI: ParamIndex = ParamIndex(11);
 pub const GAIN_REDUCTION_LEFT_PI: ParamIndex = ParamIndex(12);
 pub const GAIN_REDUCTION_RIGHT_PI: ParamIndex = ParamIndex(13);
 pub const LATENCY_PI: ParamIndex = ParamIndex(14);
+pub const TIME_CHOICE_PI: ParamIndex = ParamIndex(15);
