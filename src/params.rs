@@ -52,7 +52,7 @@ impl Default for LambParams {
                 .with_step_size(0.1),
             attack: FloatParam::new("attack", 9.0, FloatRange::Skewed {
                 min: 0.0, max: 50.0,
-                factor: FloatRange::skew_factor(-1.5),
+                factor: FloatRange::skew_factor(-0.75),
             })
                 .with_unit(" ms")
                 .with_step_size(0.01),
@@ -60,7 +60,7 @@ impl Default for LambParams {
                 .with_step_size(0.1),
             release: FloatParam::new("release", 60.0, FloatRange::Skewed {
                 min: 1.0, max: 500.0,
-                factor: FloatRange::skew_factor(-2.0),
+                factor: FloatRange::skew_factor(-1.0),
             })
                 .with_unit(" ms")
                 .with_step_size(0.01),
