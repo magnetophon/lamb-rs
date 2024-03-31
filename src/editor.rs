@@ -23,7 +23,7 @@ impl Model for Data {}
 
 // Makes sense to also define this here, makes it a bit easier to keep track of
 pub(crate) fn default_state() -> Arc<ViziaState> {
-    ViziaState::new(|| (340, 680))
+    ViziaState::new(|| (345, 690))
 }
 
 pub(crate) fn create(
@@ -69,8 +69,10 @@ pub(crate) fn create(
                     HStack::new(cx, |cx| {
                         // level
                         VStack::new(cx, |cx| {
-                            Label::new(cx, "");
+                            Label::new(cx, "bypass");
                             ParamButton::new(cx, Data::params, |params| &params.bypass)
+                                .width(Percentage(100.0))
+                                .with_label("")
                                 .for_bypass();
                             Label::new(cx, "strength");
                             ParamSlider::new(cx, Data::params, |params| &params.strength) ;
@@ -84,7 +86,6 @@ pub(crate) fn create(
                             .child_left(Stretch(1.0))
                             .child_right(Stretch(1.0))
                             .width(Percentage(47.5))
-                            .left(Percentage(0.0))
                             .right(Percentage(2.5))
                             ; // level
                         // time
@@ -104,11 +105,9 @@ pub(crate) fn create(
                             .child_right(Stretch(1.0))
                             .width(Percentage(47.5))
                             .left(Percentage(2.5))
-                            .right(Percentage(0.0))
                             ; // time
                     })
                         .width(Percentage(100.0))
-                    // .height(Stretch(1.0))
                         ; // level + time
 
                     Label::new(cx, "output gain");
@@ -149,26 +148,16 @@ pub(crate) fn create(
                     Some(Duration::from_millis(600)),
                 )
                     .width(Percentage(100.0));
-                // This is how adding padding works in vizia
-                // .top(Pixels(10.0));
             })
                 .height(Auto)
                 .child_left(Stretch(1.0))
                 .child_right(Stretch(1.0))
                 ; // meters
         }) // everything
-        // .row_between(Pixels(0.0))
-        // .child_left(Stretch(1.0))
-        // .child_right(Stretch(1.0))
             .width(Percentage(90.0))
             .height(Percentage(95.0))
-        // .height(Pixels(600.0))
             .left(Percentage(5.0))
             .right(Percentage(5.0))
-        // .top(Percentage(5.0))
-        // .bottom(Percentage(5.0))
-        // .child_top(Stretch(1.0))
-        // .child_bottom(Stretch(1.0))
             ;
         ResizeHandle::new(cx);
     })
