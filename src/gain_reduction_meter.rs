@@ -17,7 +17,8 @@ const MAX_TICK: f32 = 0.0;
 /// The ticks that will be shown beneath the peak meter's bar. The first value is shown as
 /// -infinity, and at the last position we'll draw the `dBFS` string.
 // const TEXT_TICKS: [i32; 6] = [-80, -60, -40, -20, 0, 12];
-const TEXT_TICKS: [i32; 5] = [-24, -18, -12, -6, 0];
+// const TEXT_TICKS: [i32; 5] = [-24, -18, -12, -6, 0];
+const TEXT_TICKS: [i32; 9] = [-24, -21, -18, -15, -12, -9, -6, -3, 0];
 
 /// A simple horizontal peak meter.
 ///

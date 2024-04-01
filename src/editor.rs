@@ -8,7 +8,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use crate::LambParams;
-use crate::TimeChoice;
+use crate::ZoomMode;
 
 include!("gain_reduction_meter.rs");
 
@@ -65,7 +65,8 @@ pub(crate) fn create(
                 VStack::new(cx, |cx| {
                     Label::new(cx, "input gain");
                     ParamSlider::new(cx, LambData::params, |params| &params.input_gain)
-                        .bottom(Pixels(6.0));
+                        .bottom(Pixels(6.0))
+                        ;
                     // level + time
                     HStack::new(cx, |cx| {
                         // level
@@ -84,11 +85,11 @@ pub(crate) fn create(
                             Label::new(cx, "link");
                             ParamSlider::new(cx, LambData::params, |params| &params.link);
                         })
-                            .child_left(Stretch(1.0))
-                            .child_right(Stretch(1.0))
-                            .width(Percentage(47.5))
-                            .right(Percentage(2.5)); // level
-                        // time
+                        .child_left(Stretch(1.0))
+                        .child_right(Stretch(1.0))
+                        .width(Percentage(47.5))
+                        .right(Percentage(2.5)); // level
+                                                 // time
                         VStack::new(cx, |cx| {
                             Label::new(cx, "attack");
                             ParamSlider::new(cx, LambData::params, |params| &params.attack);
@@ -102,32 +103,38 @@ pub(crate) fn create(
                             Label::new(cx, "release hold");
                             ParamSlider::new(cx, LambData::params, |params| &params.release_hold);
                         })
-                            .child_left(Stretch(1.0))
-                            .child_right(Stretch(1.0))
-                            .width(Percentage(47.5))
-                            .left(Percentage(2.5)); // time
+                        .child_left(Stretch(1.0))
+                        .child_right(Stretch(1.0))
+                        .width(Percentage(47.5))
+                        .left(Percentage(2.5)); // time
                     })
-                        .width(Percentage(100.0)); // level + time
+                    .width(Percentage(100.0)); // level + time
 
                     Label::new(cx, "output gain");
                     ParamSlider::new(cx, LambData::params, |params| &params.output_gain)
                         .bottom(Pixels(6.0));
                 })
-                    .width(Percentage(100.0/3.0))
+                    .width(Percentage(200.0 / 5.0))
                     .child_left(Stretch(1.0))
                     .child_right(Stretch(1.0)); // parameters
                 // graph + zoom
                 VStack::new(cx, |cx| {
-                    // Label::new(cx, "attack release");
-                    Label::new(cx, ""); // spacer
+                    VStack::new(cx, |cx| {
+                        Label::new(cx, "zoom mode");
+                        ParamSlider::new(cx, LambData::params, |params| &params.zoom_mode)
+                            .set_style(ParamSliderStyle::CurrentStepLabeled { even: true })
+                            .bottom(Pixels(6.0));
+                        Label::new(cx, ""); // spacer
                         AttackReleaseGraph::new(cx, LambData::params);
+                    })
+                        .child_left(Stretch(1.0))
+                        .child_right(Stretch(1.0))
+                        .left(Percentage(5.0));
                 })
-                    .width(Percentage(200.0/3.0))
-                    .height(Percentage(100.0))
-                    ; // graph + zoom
+                    .width(Percentage(300.0 / 5.0))
+                    .height(Percentage(100.0)); // graph + zoom
             })
-                .width(Percentage(100.0))
-                ; // parameters + graph
+            .width(Percentage(100.0)); // parameters + graph
 
             // meters
             VStack::new(cx, |cx| {
@@ -204,7 +211,7 @@ impl<AttackReleaseDataL: Lens<Target = Arc<LambParams>>> View
         let attack_shape = self.attack_release_data.get(cx).attack_shape.value();
         let release = self.attack_release_data.get(cx).release.value();
         let release_shape = self.attack_release_data.get(cx).release_shape.value();
-        let time_choice = self.attack_release_data.get(cx).time_choice.value();
+        let zoom_mode = self.attack_release_data.get(cx).zoom_mode.value();
 
         // let background_color = cx.background_color();
         let border_color = cx.border_color();
@@ -217,7 +224,7 @@ impl<AttackReleaseDataL: Lens<Target = Arc<LambParams>>> View
         // let border_width = cx.scale_factor() * cx.border_width();
         let border_width = cx.border_width();
 
-        let rounding = 0.0 * border_width;
+        let rounding = 3.0 * border_width;
 
         // Create a new `Path` from the `vg` module.
         let mut path = vg::Path::new();
@@ -263,20 +270,19 @@ impl<AttackReleaseDataL: Lens<Target = Arc<LambParams>>> View
         // add the attack / release curve
         canvas.stroke_path(
             &{
-
                 let x = bounds.x + border_width * 1.0;
                 let y = bounds.y + border_width * 1.5;
                 let w = bounds.w - border_width * 2.0;
                 let h = bounds.h - border_width * 3.0;
-                let center = match time_choice {
-                    TimeChoice::Shape => w * 0.5,
-                    TimeChoice::Relative => w * attack / (attack + release),
-                    TimeChoice::Absolute => w * max_attack / (max_attack + max_release),
+                let center = match zoom_mode {
+                    ZoomMode::Shape => w * 0.5,
+                    ZoomMode::Relative => w * attack / (attack + release),
+                    ZoomMode::Absolute => w * max_attack / (max_attack + max_release),
                 };
 
                 let mut start = 0.0;
                 let mut end = w;
-                if time_choice == TimeChoice::Absolute {
+                if zoom_mode == ZoomMode::Absolute {
                     start = ((max_attack - attack) / max_attack) * center;
                     end = center + ((release / max_release) * (w - center));
                 }
@@ -311,13 +317,7 @@ impl<AttackReleaseDataL: Lens<Target = Arc<LambParams>>> View
         canvas.stroke_path(
             &{
                 let mut path = vg::Path::new();
-                path.rounded_rect(
-                    x,
-                    y,
-                    w,
-                    h,
-                    rounding,
-                );
+                path.rounded_rect(x, y, w, h, rounding);
                 path
             },
             // &vg::Paint::color(cx.font_color().into())
