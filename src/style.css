@@ -1,3 +1,12 @@
+.plugin-name {
+    font-weight: light;
+    font-size: 30;
+    height: 60px;
+    child-top: 1s;
+    child-bottom: 5px;
+    color: #696969;
+}
+
 attack-release-graph {
     width: 100%;
     outline-color: #0a0a0a;
@@ -6,9 +15,14 @@ attack-release-graph {
     border-width: 1px;
     bottom: 5px;
 }
-label {
+.fader-label {
     top: 7px;
     bottom: 1px;
+}
+
+.center {
+    child-left: 1s;
+    child-right: 1s;
 }
 /* Default styling for the widgets included in nih_plug_vizia */
 /* See ./theme.css for overrides for the default widgets */

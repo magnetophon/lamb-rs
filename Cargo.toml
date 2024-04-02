@@ -28,8 +28,6 @@ faust-types = { git = "https://github.com/Frando/rust-faust" }
 nih_plug_vizia = { git = "https://github.com/robbert-vdh/nih-plug.git" }
 atomic_float = "0.1"
 
-
-
 [profile.release]
 lto = "thin"
 strip = "symbols"

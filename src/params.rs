@@ -4,6 +4,8 @@ struct LambParams {
     // nr of params: 12
     #[id = "bypass"]
     bypass: BoolParam,
+    #[id = "latency_mode"]
+    latency_mode: EnumParam<LatencyMode>,
     #[id = "input_gain"]
     input_gain: FloatParam,
     #[id = "strength"]
@@ -50,6 +52,18 @@ enum ZoomMode {
     Absolute,
 }
 
+#[derive(Enum, Debug, PartialEq)]
+enum LatencyMode {
+    /// Minimal, but variable latency
+    #[id = "minimal"]
+    #[name = "minimal"]
+    Minimal,
+    /// Fixate the latency at the maximum
+    #[id = "fixed"]
+    #[name = "fixed"]
+    Fixed,
+}
+
 impl Default for LambParams {
     fn default() -> Self {
         Self {
@@ -59,6 +73,7 @@ impl Default for LambParams {
                 .with_value_to_string(formatters::v2s_bool_bypass())
                 .with_string_to_value(formatters::s2v_bool_bypass())
                 .make_bypass(),
+            latency_mode: EnumParam::new("latency_mode", LatencyMode::Fixed),
             input_gain: FloatParam::new("input_gain", 0.0, FloatRange::Linear { min: -24.0, max: 24.0})
                 .with_unit(" dB")
                 .with_step_size(0.1),
@@ -75,7 +90,7 @@ impl Default for LambParams {
                 .with_unit(" ms")
                 .with_step_size(0.01),
             attack_shape: FloatParam::new("attack_shape", 0.0, FloatRange::Linear { min: 0.0, max: 1.0})
-                .with_step_size(0.1),
+                .with_step_size(0.01),
             release: FloatParam::new("release", 60.0, FloatRange::Skewed {
                 min: 1.0, max: 500.0,
                 factor: FloatRange::skew_factor(-1.0),
@@ -83,7 +98,7 @@ impl Default for LambParams {
                 .with_unit(" ms")
                 .with_step_size(0.01),
             release_shape: FloatParam::new("release_shape", 0.5, FloatRange::Linear { min: 0.0, max: 1.0})
-                .with_step_size(0.1),
+                .with_step_size(0.01),
             release_hold: FloatParam::new("release_hold", 50.0, FloatRange::Linear {
                 min: 0.0, max: 50.0,
             })
@@ -104,18 +119,19 @@ impl Default for LambParams {
 }
 
 pub const BYPASS_PI: ParamIndex = ParamIndex(0);
-pub const INPUT_GAIN_PI: ParamIndex = ParamIndex(1);
-pub const STRENGTH_PI: ParamIndex = ParamIndex(2);
-pub const THRESH_PI: ParamIndex = ParamIndex(3);
-pub const ATTACK_PI: ParamIndex = ParamIndex(4);
-pub const ATTACK_SHAPE_PI: ParamIndex = ParamIndex(5);
-pub const RELEASE_PI: ParamIndex = ParamIndex(6);
-pub const RELEASE_SHAPE_PI: ParamIndex = ParamIndex(7);
-pub const RELEASE_HOLD_PI: ParamIndex = ParamIndex(8);
-pub const KNEE_PI: ParamIndex = ParamIndex(9);
-pub const LINK_PI: ParamIndex = ParamIndex(10);
-pub const OUTPUT_GAIN_PI: ParamIndex = ParamIndex(11);
-pub const GAIN_REDUCTION_LEFT_PI: ParamIndex = ParamIndex(12);
-pub const GAIN_REDUCTION_RIGHT_PI: ParamIndex = ParamIndex(13);
-pub const LATENCY_PI: ParamIndex = ParamIndex(14);
-pub const ZOOM_MODE_PI: ParamIndex = ParamIndex(15);
+pub const LATENCY_MODE_PI: ParamIndex = ParamIndex(1);
+pub const INPUT_GAIN_PI: ParamIndex = ParamIndex(2);
+pub const STRENGTH_PI: ParamIndex = ParamIndex(3);
+pub const THRESH_PI: ParamIndex = ParamIndex(4);
+pub const ATTACK_PI: ParamIndex = ParamIndex(5);
+pub const ATTACK_SHAPE_PI: ParamIndex = ParamIndex(6);
+pub const RELEASE_PI: ParamIndex = ParamIndex(7);
+pub const RELEASE_SHAPE_PI: ParamIndex = ParamIndex(8);
+pub const RELEASE_HOLD_PI: ParamIndex = ParamIndex(9);
+pub const KNEE_PI: ParamIndex = ParamIndex(10);
+pub const LINK_PI: ParamIndex = ParamIndex(11);
+pub const OUTPUT_GAIN_PI: ParamIndex = ParamIndex(12);
+pub const GAIN_REDUCTION_LEFT_PI: ParamIndex = ParamIndex(13);
+pub const GAIN_REDUCTION_RIGHT_PI: ParamIndex = ParamIndex(14);
+pub const LATENCY_PI: ParamIndex = ParamIndex(15);
+pub const ZOOM_MODE_PI: ParamIndex = ParamIndex(16);

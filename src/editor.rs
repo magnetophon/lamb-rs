@@ -8,6 +8,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use crate::LambParams;
+use crate::LatencyMode;
 use crate::ZoomMode;
 
 include!("gain_reduction_meter.rs");
@@ -24,7 +25,9 @@ impl Model for LambData {}
 
 // Makes sense to also define this here, makes it a bit easier to keep track of
 pub(crate) fn default_state() -> Arc<ViziaState> {
-    ViziaState::new(|| (1035, 690))
+    // ViziaState::new(|| (1035, 690))
+    // ViziaState::new(|| (1227, 690))
+    ViziaState::new(|| (((16.0 / 9.0) * 690.0) as u32, 690))
 }
 
 pub(crate) fn create(
@@ -52,127 +55,147 @@ pub(crate) fn create(
 
         // everything
         VStack::new(cx, |cx| {
-            Label::new(cx, "lamb")
-                .font_family(vec![FamilyOwned::Name(String::from(assets::NOTO_SANS))])
-                .font_weight(FontWeightKeyword::Thin)
-                .font_size(30.0)
-                .height(Pixels(60.0))
-                .child_top(Stretch(1.0))
-                .child_bottom(Pixels(10.0));
             // parameters + graph
             HStack::new(cx, |cx| {
                 // parameters
                 VStack::new(cx, |cx| {
-                    Label::new(cx, "input gain");
+                    Label::new(cx, "") // spacer
+                        // Label::new(cx, "lamb") // title
+                        // Label::new(cx, "🐑") // doesn't render
+                        .class("plugin-name");
+                    Label::new(cx, "input gain").class("fader-label");
                     ParamSlider::new(cx, LambData::params, |params| &params.input_gain)
-                        .bottom(Pixels(6.0))
-                        ;
+                        .bottom(Pixels(6.0));
                     // level + time
                     HStack::new(cx, |cx| {
                         // level
                         VStack::new(cx, |cx| {
-                            Label::new(cx, "bypass");
-                            ParamButton::new(cx, LambData::params, |params| &params.bypass)
-                                .width(Percentage(100.0))
-                                .with_label("")
-                                .for_bypass();
-                            Label::new(cx, "strength");
+                            HStack::new(cx, |cx| {
+                                // bypass and latency_mode
+                                VStack::new(cx, |cx| {
+                                    // label & slider
+                                    Label::new(cx, "bypass").class("fader-label");
+                                    ParamButton::new(cx, LambData::params, |params| &params.bypass)
+                                        .with_label("")
+                                        .for_bypass()
+                                        .width(Percentage(95.0))
+                                        .right(Percentage(5.0));
+                                }) // label & slider
+                                .height(Auto)
+                                .class("center");
+                                // label & slider
+                                VStack::new(cx, |cx| {
+                                    Label::new(cx, "latency mode").class("fader-label");
+                                    ParamSlider::new(cx, LambData::params, |params| {
+                                        &params.latency_mode
+                                    })
+                                    .set_style(ParamSliderStyle::CurrentStepLabeled { even: true })
+                                    .width(Percentage(95.0))
+                                    .left(Percentage(5.0));
+                                }) // label & slider
+                                .height(Auto)
+                                .class("center");
+                            }) // bypass and latency_mode
+                            .height(Auto)
+                            .width(Percentage(100.0)); // level + time
+                            Label::new(cx, "strength").class("fader-label");
                             ParamSlider::new(cx, LambData::params, |params| &params.strength);
-                            Label::new(cx, "threshold");
+                            Label::new(cx, "threshold").class("fader-label");
                             ParamSlider::new(cx, LambData::params, |params| &params.thresh);
-                            Label::new(cx, "knee");
+                            Label::new(cx, "knee").class("fader-label");
                             ParamSlider::new(cx, LambData::params, |params| &params.knee);
-                            Label::new(cx, "link");
+                            Label::new(cx, "link").class("fader-label");
                             ParamSlider::new(cx, LambData::params, |params| &params.link);
-                        })
-                        .child_left(Stretch(1.0))
-                        .child_right(Stretch(1.0))
-                        .width(Percentage(47.5))
-                        .right(Percentage(2.5)); // level
-                                                 // time
+                        }) // level
+                        .height(Percentage(100.0))
+                        .class("center")
+                        .right(Percentage(2.5));
+                        // time
                         VStack::new(cx, |cx| {
-                            Label::new(cx, "attack");
+                            Label::new(cx, "attack").class("fader-label");
                             ParamSlider::new(cx, LambData::params, |params| &params.attack);
-                            Label::new(cx, "attack shape");
+                            Label::new(cx, "attack shape").class("fader-label");
                             ParamSlider::new(cx, LambData::params, |params| &params.attack_shape);
-                            Label::new(cx, "release");
+                            Label::new(cx, "release").class("fader-label");
                             ParamSlider::new(cx, LambData::params, |params| &params.release);
-                            Label::new(cx, "release shape");
+                            Label::new(cx, "release shape").class("fader-label");
                             ParamSlider::new(cx, LambData::params, |params| &params.release_shape)
                                 .set_style(ParamSliderStyle::FromLeft);
-                            Label::new(cx, "release hold");
+                            Label::new(cx, "release hold").class("fader-label");
                             ParamSlider::new(cx, LambData::params, |params| &params.release_hold);
-                        })
-                        .child_left(Stretch(1.0))
-                        .child_right(Stretch(1.0))
-                        .width(Percentage(47.5))
-                        .left(Percentage(2.5)); // time
+                        }) // time
+                            .class("center")
+                            .left(Percentage(2.5));
                     })
                     .width(Percentage(100.0)); // level + time
 
-                    Label::new(cx, "output gain");
+                    Label::new(cx, "output gain").class("fader-label");
                     ParamSlider::new(cx, LambData::params, |params| &params.output_gain)
                         .bottom(Pixels(6.0));
-                })
-                    .width(Percentage(200.0 / 5.0))
-                    .child_left(Stretch(1.0))
-                    .child_right(Stretch(1.0)); // parameters
+                }) // parameters
+                    .right(Percentage(2.5))
+                    .class("center");
                 // graph + zoom
                 VStack::new(cx, |cx| {
+                    // Label::new(cx, "") // spacer
+                    Label::new(cx, "lamb") // title
+                        .class("plugin-name")
+                        .left(Stretch(1.0))
+                        .right(Pixels(0.0));
                     VStack::new(cx, |cx| {
-                        Label::new(cx, "zoom mode");
+                        // label & slider
+                        Label::new(cx, "zoom mode").class("fader-label");
                         ParamSlider::new(cx, LambData::params, |params| &params.zoom_mode)
                             .set_style(ParamSliderStyle::CurrentStepLabeled { even: true })
                             .bottom(Pixels(6.0));
-                        Label::new(cx, ""); // spacer
+                        Label::new(cx, "").class("fader-label"); // spacer
                         AttackReleaseGraph::new(cx, LambData::params);
-                    })
-                        .child_left(Stretch(1.0))
-                        .child_right(Stretch(1.0))
-                        .left(Percentage(5.0));
-                })
-                    .width(Percentage(300.0 / 5.0))
-                    .height(Percentage(100.0)); // graph + zoom
+                    }) // label & slider
+                        .width(Percentage(100.0))
+                        .class("center");
+                }) // graph + zoom
+                // .right(Percentage(2.5))
+                    .class("center")
+                // .width(Percentage(50.0))
+                .height(Percentage(100.0)); // graph + zoom
             })
             .width(Percentage(100.0)); // parameters + graph
 
             // meters
             VStack::new(cx, |cx| {
-                Label::new(cx, "input level");
+                Label::new(cx, "input level").class("fader-label");
                 PeakMeter::new(
                     cx,
                     LambData::peak_meter
                         .map(|peak_meter| util::gain_to_db(peak_meter.load(Ordering::Relaxed))),
                     Some(Duration::from_millis(600)),
                 );
-                Label::new(cx, "gain reduction left");
+                Label::new(cx, "gain reduction left").class("fader-label");
                 GainReductionMeter::new(
                     cx,
                     LambData::gain_reduction_left
                         .map(|gain_reduction_left| gain_reduction_left.load(Ordering::Relaxed)),
                     Some(Duration::from_millis(600)),
                 )
-                    .width(Percentage(100.0));
-                Label::new(cx, "gain reduction right");
+                .width(Percentage(100.0));
+                Label::new(cx, "gain reduction right").class("fader-label");
                 GainReductionMeter::new(
                     cx,
                     LambData::gain_reduction_right
                         .map(|gain_reduction_right| gain_reduction_right.load(Ordering::Relaxed)),
                     Some(Duration::from_millis(600)),
                 )
-                    .width(Percentage(100.0));
-            })
+                .width(Percentage(100.0));
+            }) // meters
                 .width(Percentage(100.0))
                 .height(Auto)
-                .child_left(Stretch(1.0))
-                .child_right(Stretch(1.0)); // meters
+                .class("center"); // meters
         }) // everything
             .width(Percentage(95.0))
             .height(Percentage(95.0))
             .left(Percentage(2.5))
             .right(Percentage(2.5))
-            .child_left(Stretch(1.0))
-            .child_right(Stretch(1.0));
+            .class("center");
         ResizeHandle::new(cx);
     })
 }
@@ -320,8 +343,6 @@ impl<AttackReleaseDataL: Lens<Target = Arc<LambParams>>> View
                 path.rounded_rect(x, y, w, h, rounding);
                 path
             },
-            // &vg::Paint::color(cx.font_color().into())
-            // .with_line_width(cx.scale_factor() * cx.outline_width()),
             &vg::Paint::color(border_color).with_line_width(border_width),
         );
     }

@@ -199,9 +199,13 @@ impl Plugin for Lamb {
             true => 1.0,
             false => 0.0,
         };
+        self.dsp.set_param(BYPASS_PI, bypass);
 
-        self.dsp
-            .set_param(BYPASS_PI, bypass);
+        let latency_mode: f64 = match self.params.latency_mode.value() {
+            LatencyMode::Minimal => 0.0,
+            LatencyMode::Fixed => 1.0,
+        };
+        self.dsp.set_param(LATENCY_MODE_PI, latency_mode);
         self.dsp
             .set_param(INPUT_GAIN_PI, self.params.input_gain.value() as f64);
         self.dsp
@@ -237,11 +241,7 @@ impl Plugin for Lamb {
             output[1][i] = self.temp_output_buffer_r[i] as f32;
         }
 
-        let latency_samples =
-            self.dsp
-                .get_param(LATENCY_PI)
-                .expect("no latency read") as u32
-            ;
+        let latency_samples = self.dsp.get_param(LATENCY_PI).expect("no latency read") as u32;
         context.set_latency_samples(latency_samples);
 
         ProcessStatus::Normal
@@ -255,14 +255,24 @@ impl ClapPlugin for Lamb {
     const CLAP_MANUAL_URL: Option<&'static str> = Some(Self::URL);
     const CLAP_SUPPORT_URL: Option<&'static str> = None;
 
-    const CLAP_FEATURES: &'static [ClapFeature] = &[ClapFeature::AudioEffect, ClapFeature::Stereo, ClapFeature::Compressor, ClapFeature::Limiter, ClapFeature::Mastering];
+    const CLAP_FEATURES: &'static [ClapFeature] = &[
+        ClapFeature::AudioEffect,
+        ClapFeature::Stereo,
+        ClapFeature::Compressor,
+        ClapFeature::Limiter,
+        ClapFeature::Mastering,
+    ];
 }
 
 impl Vst3Plugin for Lamb {
     const VST3_CLASS_ID: [u8; 16] = *b"magnetophon lamb";
 
-    const VST3_SUBCATEGORIES: &'static [Vst3SubCategory] =
-        &[Vst3SubCategory::Fx, Vst3SubCategory::Dynamics, Vst3SubCategory::Mastering, Vst3SubCategory::Stereo];
+    const VST3_SUBCATEGORIES: &'static [Vst3SubCategory] = &[
+        Vst3SubCategory::Fx,
+        Vst3SubCategory::Dynamics,
+        Vst3SubCategory::Mastering,
+        Vst3SubCategory::Stereo,
+    ];
 }
 
 // nih_export_clap!(Lamb);
