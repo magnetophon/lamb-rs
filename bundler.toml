@@ -4,5 +4,5 @@
 # [package_name]
 # name = "Human Readable Plugin Name"  # defaults to <package_name>
 
-[gain-faust-nih-plug]
-name = "gain-faust-nih-plug"
+[lamb]
+name = "lamb"
