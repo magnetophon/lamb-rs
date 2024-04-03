@@ -150,9 +150,7 @@ pub(crate) fn create(
                         .width(Percentage(100.0))
                         .class("center");
                 }) // graph + zoom
-                // .right(Percentage(2.5))
                     .class("center")
-                // .width(Percentage(50.0))
                 .height(Percentage(100.0)); // graph + zoom
             })
             .width(Percentage(100.0)); // parameters + graph
