@@ -3,12 +3,12 @@ let
     "https://github.com/mozilla/nixpkgs-mozilla/archive/master.tar.gz");
   nixpkgs = import <nixpkgs> { overlays = [ moz_overlay ]; };
   faust = nixpkgs.faust.overrideAttrs (old: {
-    version = "2.72.10";
+    version = "2.72.14-unstable";
     src = nixpkgs.fetchFromGitHub {
       owner = "grame-cncm";
       repo = "faust";
-      rev = "3f2d4f81446f450ee1f5fb8bc4b86e6474feb997";
-      sha256 = "sha256-aUvsIKbIGDGemUqdLtaGmbaqaBn99brQicGYLukX6JE=";
+      rev = "bde0c9e3168a6da9e953367856099100e9537490";
+      sha256 = "sha256-/fcxdOPm6KxVSoMpTAR2cfQgxW8bVOOp8xnN1MIRf44=";
       fetchSubmodules = true;
     };
     patches = [];

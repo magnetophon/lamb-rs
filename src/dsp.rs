@@ -4,8 +4,8 @@ author: "Bart Brouns"
 license: "AGPLv3"
 name: "lamb-rs"
 version: "0.1"
-Code generated with Faust 2.72.10 (https://faust.grame.fr)
-Compilation options: -a /run/user/1001/.tmpi1bVnp -lang rust -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0
+Code generated with Faust 2.72.14 (https://faust.grame.fr)
+Compilation options: -a /run/user/1001/.tmpMNww7d -lang rust -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0
 ------------------------------------------------------------ */
 #![allow(clippy::all)]
 #![allow(unused_parens)]
@@ -67,7 +67,8 @@ fn mydsp_faustpower2_f(value: F64) -> F64 {
 static mut ftbl0mydspSIG0: [F64;196608] = [0.0;196608];
 mod ffi {
 	use std::os::raw::{c_double};
-	#[link(name = "m")]
+	// Conditionally compile the link attribute only on non-Windows platforms
+	#[cfg_attr(not(target_os="windows"), link(name="m"))]
 	extern {
 		pub fn remainder(from: c_double, to: c_double) -> c_double;
 		pub fn rint(val: c_double) -> c_double;
@@ -86,6 +87,7 @@ fn rint_f64(val: f64) -> f64 {
 pub struct mydsp {
 	fCheckbox0: F64,
 	fSampleRate: i32,
+	fConst0: F64,
 	fConst1: F64,
 	fRec0: [F64;2],
 	IOTA0: i32,
@@ -181,6 +183,7 @@ impl FaustDsp for mydsp {
 		mydsp {
 			fCheckbox0: 0.0,
 			fSampleRate: 0,
+			fConst0: 0.0,
 			fConst1: 0.0,
 			fRec0: [0.0;2],
 			IOTA0: 0,
@@ -282,7 +285,7 @@ impl FaustDsp for mydsp {
 		m.declare("basics.lib/tabulateNd:author", r"Bart Brouns");
 		m.declare("basics.lib/tabulateNd:license", r"AGPL-3.0");
 		m.declare("basics.lib/version", r"1.15.0");
-		m.declare("compile_options", r"-a /run/user/1001/.tmpi1bVnp -lang rust -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0");
+		m.declare("compile_options", r"-a /run/user/1001/.tmpMNww7d -lang rust -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0");
 		m.declare("filename", r"lamb-rs.dsp");
 		m.declare("interpolators.lib/interpolate_linear:author", r"Stéphane Letz");
 		m.declare("interpolators.lib/interpolate_linear:licence", r"MIT");
@@ -538,12 +541,12 @@ impl FaustDsp for mydsp {
 	}
 	fn instance_constants(&mut self, sample_rate: i32) {
 		self.fSampleRate = sample_rate;
-		let mut fConst0: F64 = F64::min(1.92e+05, F64::max(1.0, (self.fSampleRate) as F64));
-		self.fConst1 = 1e+02 / fConst0;
-		self.fConst2 = 0.001 * fConst0;
-		self.fConst3 = 44.1 / fConst0;
+		self.fConst0 = F64::min(1.92e+05, F64::max(1.0, (self.fSampleRate) as F64));
+		self.fConst1 = 1e+02 / self.fConst0;
+		self.fConst2 = 0.001 * self.fConst0;
+		self.fConst3 = 44.1 / self.fConst0;
 		self.fConst4 = 1.0 - self.fConst3;
-		self.fConst5 = 1e+03 / fConst0;
+		self.fConst5 = 1e+03 / self.fConst0;
 	}
 	fn instance_init(&mut self, sample_rate: i32) {
 		self.instance_constants(sample_rate);
