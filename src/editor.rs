@@ -25,6 +25,7 @@ impl Model for LambData {}
 
 // Makes sense to also define this here, makes it a bit easier to keep track of
 pub(crate) fn default_state() -> Arc<ViziaState> {
+    // width , height
     ViziaState::new(|| (((16.0 / 9.0) * 677.0) as u32, 677))
 }
 
@@ -96,7 +97,7 @@ pub(crate) fn create(
                             }) // bypass and latency_mode
                             .height(Auto)
                             .width(Percentage(100.0)); // level + time
-                            Label::new(cx, "strength").class("fader-label");
+                            Label::new(cx, "ratio").class("fader-label");
                             ParamSlider::new(cx, LambData::params, |params| &params.strength);
                             Label::new(cx, "threshold").class("fader-label");
                             ParamSlider::new(cx, LambData::params, |params| &params.thresh);
