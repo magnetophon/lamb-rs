@@ -1,4 +1,3 @@
-use atomic_float::AtomicF32;
 use faust_types::FaustDsp;
 use nih_plug::prelude::*;
 use nih_plug_vizia::ViziaState;
@@ -179,20 +178,6 @@ impl Plugin for Lamb {
                 );
             }
         }
-        let mut input = self
-            .accum_buffer
-            .data()
-            .iter()
-            .map(|inner_vec| {
-                inner_vec
-                    .iter()
-                    .map(|&value| value as f64) // Cast f32 to f64
-                    .collect::<Vec<f64>>()
-            })
-            .collect::<Vec<Vec<f64>>>();
-
-        // Convert the Vec<Vec<f64>> to a Vec<&mut [f64]>
-        let input_slices: Vec<&mut [f64]> = input.iter_mut().map(Vec::as_mut_slice).collect();
 
         let output = buffer.as_slice();
         let bypass: f64 = match self.params.bypass.value() {

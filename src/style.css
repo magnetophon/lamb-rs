@@ -11,7 +11,7 @@ attack-release-graph {
     width: 100%;
     outline-color: #0a0a0a;
     border-color: #696969;
-    background-color: transparent;
+    background-color: #f0f0f0;
     border-width: 1px;
     bottom: 5px;
 }

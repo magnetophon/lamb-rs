@@ -1,9 +1,6 @@
-// use nih_plug::prelude::util;
-use std::cell::Cell;
-// use std::time::Duration;
-use std::time::Instant;
-// use nih_plug_vizia::vizia::prelude::*;
 use nih_plug_vizia::vizia::vg;
+use std::cell::Cell;
+use std::time::Instant;
 
 /// The thickness of a tick inside of the peak meter's bar.
 const TICK_WIDTH: f32 = 1.0;
@@ -94,18 +91,13 @@ impl GainReductionMeter {
                             Element::new(cx).class("ticks__tick");
                         }
 
-                        let font_size = {
-                            let event_cx = EventContext::new(cx);
-                            event_cx.font_size() * event_cx.scale_factor()
-                        };
-                        let label = if first_tick {
-                            // Label::new(cx, "-inf")
+                        if first_tick {
                             Label::new(cx, &MIN_TICK.to_string())
                                 .class("ticks__label")
                                 .class("ticks__label--inf")
                         } else if last_tick {
                             // This is only inclued in the array to make positioning this easier
-                            Label::new(cx, "dBFS")
+                            Label::new(cx, "0 dBFS")
                                 .class("ticks__label")
                                 .class("ticks__label--dbfs")
                         } else {

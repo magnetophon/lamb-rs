@@ -1,3 +1,5 @@
+use crate::LambParams;
+use crate::ZoomMode;
 use atomic_float::AtomicF32;
 use nih_plug::prelude::{util, Editor};
 use nih_plug_vizia::vizia::prelude::*;
@@ -5,11 +7,6 @@ use nih_plug_vizia::widgets::*;
 use nih_plug_vizia::{assets, create_vizia_editor, ViziaState, ViziaTheming};
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
-use std::time::Duration;
-
-use crate::LambParams;
-use crate::LatencyMode;
-use crate::ZoomMode;
 
 include!("gain_reduction_meter.rs");
 
@@ -235,12 +232,11 @@ impl<AttackReleaseDataL: Lens<Target = Arc<LambParams>>> View
         let release_shape = self.attack_release_data.get(cx).release_shape.value();
         let zoom_mode = self.attack_release_data.get(cx).zoom_mode.value();
 
-        // let background_color = cx.background_color();
         let border_color = cx.border_color();
         let outline_color = cx.outline_color();
         let opacity = cx.opacity();
-        // let mut background_color: vg::Color = background_color.into();
-        // background_color.set_alphaf(background_color.a * opacity);
+        let mut background_color: vg::Color = cx.background_color().into();
+        background_color.set_alphaf(background_color.a * opacity);
         let mut border_color: vg::Color = border_color.into();
         border_color.set_alphaf(border_color.a * opacity);
         // let border_width = cx.scale_factor() * cx.border_width();
@@ -249,7 +245,6 @@ impl<AttackReleaseDataL: Lens<Target = Arc<LambParams>>> View
         let rounding = 3.0 * border_width;
 
         // Create a new `Path` from the `vg` module.
-        let mut path = vg::Path::new();
         let x = bounds.x + border_width / 2.0;
         let y = bounds.y + border_width / 2.0;
         let w = bounds.w - border_width;
@@ -286,8 +281,21 @@ impl<AttackReleaseDataL: Lens<Target = Arc<LambParams>>> View
         }
 
         // Fill with background color
-        // let paint = vg::Paint::color(background_color);
-        // canvas.fill_path(&path, &paint);
+        let mut path = vg::Path::new();
+        {
+            let x = bounds.x + border_width / 2.0;
+            let y = bounds.y + border_width / 2.0;
+            let w = bounds.w - border_width;
+            let h = bounds.h - border_width;
+            path.move_to(x, y);
+            path.line_to(x, y + h);
+            path.line_to(x + w, y + h);
+            path.line_to(x + w, y);
+            path.line_to(x, y);
+            path.close();
+        }
+        let paint = vg::Paint::color(background_color);
+        canvas.fill_path(&path, &paint);
 
         // add the attack / release curve
         canvas.stroke_path(

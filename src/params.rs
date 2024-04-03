@@ -77,7 +77,7 @@ pub fn v2s_compression_ratio(digits: usize) -> Arc<dyn Fn(f32) -> String + Send 
 }
 
 /// take an f32 compression strength value and turn it into a ratio string
-pub fn strength_to_ratio(digits: usize) -> Arc<dyn Fn(f32) -> String + Send + Sync> {
+pub fn strength_to_ratio() -> Arc<dyn Fn(f32) -> String + Send + Sync> {
     Arc::new(move |value| {
         if value < 100.0 {
             // value is in %, to make it look ok in the faust version
@@ -98,7 +98,6 @@ pub fn strength_to_ratio(digits: usize) -> Arc<dyn Fn(f32) -> String + Send + Sy
     })
 }
 
-
 /// take a ratio string and turn it into an f32 compression strength value
 pub fn ratio_to_strength() -> Arc<dyn Fn(&str) -> Option<f32> + Send + Sync> {
     Arc::new(|string| {
@@ -110,17 +109,21 @@ pub fn ratio_to_strength() -> Arc<dyn Fn(&str) -> Option<f32> + Send + Sync> {
                 let numerator: f32 = numerator.trim().parse().ok()?;
                 let denominator: f32 = denominator.trim().parse().ok()?;
                 let ratio = (numerator / denominator).max(1.0);
-                let strength = 1.0-(1.0/ratio);
-                let percentage = strength*100.0;
+                let strength = 1.0 - (1.0 / ratio);
+                let percentage = strength * 100.0;
                 Some(percentage)
             })
-        // Just parse the value directly if it doesn't contain a colon
+            // Just parse the value directly if it doesn't contain a colon
             .or_else(|| {
-                string.parse::<f32>().ok().map(|value| {
-                    let strength = 1.0 - (1.0 / value.max(1.0));
-                    strength * 100.0
-                    // if parsing fails, we assume inf:1 was meant
-                }).or_else(|| Some(100.0))
+                string
+                    .parse::<f32>()
+                    .ok()
+                    .map(|value| {
+                        let strength = 1.0 - (1.0 / value.max(1.0));
+                        strength * 100.0
+                        // if parsing fails, we assume inf:1 was meant
+                    })
+                    .or_else(|| Some(100.0))
             })
     })
 }
@@ -143,8 +146,8 @@ impl Default for LambParams {
                     max: 24.0,
                 },
             )
-                .with_unit(" dB")
-                .with_step_size(0.1),
+            .with_unit(" dB")
+            .with_step_size(0.1),
             strength: FloatParam::new(
                 "ratio",
                 100.0,
@@ -153,8 +156,8 @@ impl Default for LambParams {
                     max: 100.0,
                 },
             )
-                .with_value_to_string(strength_to_ratio(2))
-                .with_string_to_value(ratio_to_strength()), // .with_unit(" %")
+            .with_value_to_string(strength_to_ratio())
+            .with_string_to_value(ratio_to_strength()), // .with_unit(" %")
             // .with_step_size(1.0)
             thresh: FloatParam::new(
                 "thresh",
@@ -164,8 +167,8 @@ impl Default for LambParams {
                     max: 0.0,
                 },
             )
-                .with_unit(" dB")
-                .with_step_size(0.1),
+            .with_unit(" dB")
+            .with_step_size(0.1),
             attack: FloatParam::new(
                 "attack",
                 9.0,
@@ -175,15 +178,15 @@ impl Default for LambParams {
                     factor: FloatRange::skew_factor(-0.75),
                 },
             )
-                .with_unit(" ms")
-                .with_step_size(0.01)
-                .non_automatable(),
+            .with_unit(" ms")
+            .with_step_size(0.01)
+            .non_automatable(),
             attack_shape: FloatParam::new(
                 "attack_shape",
                 0.0,
                 FloatRange::Linear { min: 0.0, max: 1.0 },
             )
-                .with_step_size(0.01),
+            .with_step_size(0.01),
             release: FloatParam::new(
                 "release",
                 60.0,
