@@ -88,7 +88,8 @@ impl Default for LambParams {
                 factor: FloatRange::skew_factor(-0.75),
             })
                 .with_unit(" ms")
-                .with_step_size(0.01),
+                .with_step_size(0.01)
+                .non_automatable(),
             attack_shape: FloatParam::new("attack_shape", 0.0, FloatRange::Linear { min: 0.0, max: 1.0})
                 .with_step_size(0.01),
             release: FloatParam::new("release", 60.0, FloatRange::Skewed {
@@ -103,7 +104,8 @@ impl Default for LambParams {
                 min: 0.0, max: 50.0,
             })
                 .with_unit(" ms")
-                .with_step_size(0.01),
+                .with_step_size(0.01)
+                .non_automatable(),
             knee: FloatParam::new("knee", 1.0, FloatRange::Linear { min: 0.0, max: 30.0})
                 .with_unit(" dB")
                 .with_step_size(0.1),
@@ -113,7 +115,9 @@ impl Default for LambParams {
             output_gain: FloatParam::new("output_gain", 0.0, FloatRange::Linear { min: -24.0, max: 24.0})
                 .with_unit(" dB")
                 .with_step_size(0.1),
-            zoom_mode: EnumParam::new("zoom_mode", ZoomMode::Relative),
+            zoom_mode: EnumParam::new("zoom_mode", ZoomMode::Relative)
+                .hide()
+                .hide_in_generic_ui(),
         }
     }
 }
