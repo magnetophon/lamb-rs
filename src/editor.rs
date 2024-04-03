@@ -25,9 +25,7 @@ impl Model for LambData {}
 
 // Makes sense to also define this here, makes it a bit easier to keep track of
 pub(crate) fn default_state() -> Arc<ViziaState> {
-    // ViziaState::new(|| (1035, 690))
-    // ViziaState::new(|| (1227, 690))
-    ViziaState::new(|| (((16.0 / 9.0) * 690.0) as u32, 690))
+    ViziaState::new(|| (((16.0 / 9.0) * 677.0) as u32, 677))
 }
 
 pub(crate) fn create(
