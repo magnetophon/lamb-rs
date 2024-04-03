@@ -260,5 +260,5 @@ impl Vst3Plugin for Lamb {
     ];
 }
 
-// nih_export_clap!(Lamb);
+nih_export_clap!(Lamb);
 nih_export_vst3!(Lamb);
