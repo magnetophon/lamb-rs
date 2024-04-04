@@ -6,7 +6,8 @@ mod buffer;
 mod dsp;
 use buffer::*;
 
-const MAX_BLOCK_SIZE: usize = 1024;
+// this seems to be the number JUCE is using
+const MAX_SOUNDCARD_BUFFER_SIZE: usize = 32768;
 
 mod editor;
 
@@ -17,8 +18,8 @@ pub struct Lamb {
     params: Arc<LambParams>,
     dsp: dsp::LambRs,
     accum_buffer: TempBuffer,
-    temp_output_buffer_l: [f64; MAX_BLOCK_SIZE],
-    temp_output_buffer_r: [f64; MAX_BLOCK_SIZE],
+    temp_output_buffer_l: [f64; MAX_SOUNDCARD_BUFFER_SIZE],
+    temp_output_buffer_r: [f64; MAX_SOUNDCARD_BUFFER_SIZE],
 
     /// sample rate
     sample_rate: f32,
@@ -46,8 +47,8 @@ impl Default for Lamb {
             dsp: dsp::LambRs::new(),
 
             accum_buffer: TempBuffer::default(),
-            temp_output_buffer_l: [0.0_f64; MAX_BLOCK_SIZE],
-            temp_output_buffer_r: [0.0_f64; MAX_BLOCK_SIZE],
+            temp_output_buffer_l: [0.0_f64; MAX_SOUNDCARD_BUFFER_SIZE],
+            temp_output_buffer_r: [0.0_f64; MAX_SOUNDCARD_BUFFER_SIZE],
             sample_rate: 48000.0,
         }
     }
@@ -106,7 +107,7 @@ impl Plugin for Lamb {
         // The `reset()` function is always called right after this function. You can remove this
         // function if you do not need it.
         self.dsp.init(buffer_config.sample_rate as i32);
-        self.accum_buffer.resize(2, MAX_BLOCK_SIZE);
+        self.accum_buffer.resize(2, MAX_SOUNDCARD_BUFFER_SIZE);
 
         // After `PEAK_METER_DECAY_MS` milliseconds of pure silence, the peak meter's value should
         // have dropped by 12 dB
