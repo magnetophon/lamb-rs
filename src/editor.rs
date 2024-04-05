@@ -1,6 +1,7 @@
 use crate::LambParams;
 use crate::ZoomMode;
 use atomic_float::AtomicF32;
+use nih_plug::params::Param;
 use nih_plug::prelude::{util, Editor};
 use nih_plug_vizia::vizia::prelude::*;
 use nih_plug_vizia::widgets::*;
@@ -8,6 +9,8 @@ use nih_plug_vizia::{assets, create_vizia_editor, ViziaState, ViziaTheming};
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
+//use crate::XYPad;
+include!("xy_pad.rs");
 include!("gain_reduction_meter.rs");
 
 #[derive(Lens)]
@@ -18,7 +21,26 @@ struct LambData {
     gain_reduction_right: Arc<AtomicF32>,
 }
 
-impl Model for LambData {}
+impl Model for LambData {
+    fn event(&mut self, cx: &mut EventContext, event: &mut Event) {
+        event.map(|event, meta| match event {
+            LambEvent::XYPadChange(value_x, value_y) => {
+                cx.emit(RawParamEvent::SetParameterNormalized(
+                    self.params.attack_shape.as_ptr(),
+                    *value_x,
+                ));
+                cx.emit(RawParamEvent::SetParameterNormalized(
+                    self.params.release_shape.as_ptr(),
+                    *value_y,
+                ));
+            },
+        });
+    }
+}
+
+pub enum LambEvent {
+    XYPadChange(f32, f32),
+}
 
 // Makes sense to also define this here, makes it a bit easier to keep track of
 pub(crate) fn default_state() -> Arc<ViziaState> {
@@ -145,7 +167,16 @@ pub(crate) fn create(
                             .set_style(ParamSliderStyle::CurrentStepLabeled { even: true })
                             .bottom(Pixels(6.0));
                         Label::new(cx, "").class("fader-label"); // spacer
-                        AttackReleaseGraph::new(cx, LambData::params);
+                        //AttackReleaseGraph::new(cx, LambData::params);
+                        XYPad::new(cx,LambData::params.map(
+                            |params| 
+                            (
+                                params.attack_shape.modulated_normalized_value(), 
+                                params.release_shape.modulated_normalized_value()
+                            )
+                        )).on_change(|ex, value_x, value_y| {
+                            ex.emit(LambEvent::XYPadChange(value_x, value_y))
+                        });
                     }) // label & slider
                         .width(Percentage(100.0))
                         .class("center");
