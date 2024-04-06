@@ -3,7 +3,7 @@ let
     "https://github.com/mozilla/nixpkgs-mozilla/archive/master.tar.gz");
   nixpkgs = import <nixpkgs> { overlays = [ moz_overlay ]; };
   faust = nixpkgs.faust.overrideAttrs (old: {
-    version = "2.72.14-unstable";
+    version = "2.72.15";
     src = nixpkgs.fetchFromGitHub {
       owner = "grame-cncm";
       repo = "faust";
