@@ -103,7 +103,7 @@ pub(crate) fn create(
                             Label::new(cx, "link").class("fader-label");
                             ParamSlider::new(cx, LambData::params, |params| &params.link);
                         }) // level
-                        .height(Percentage(100.0))
+                        .height(Auto)
                         .class("center")
                         .right(Percentage(2.5));
                         // time
@@ -120,40 +120,40 @@ pub(crate) fn create(
                             Label::new(cx, "release hold").class("fader-label");
                             ParamSlider::new(cx, LambData::params, |params| &params.release_hold);
                         }) // time
-                            .class("center")
-                            .left(Percentage(2.5));
+                        .height(Auto)
+                        .class("center")
+                        .left(Percentage(2.5));
                     })
+                    // .height(Percentage(100.0))
+                    .height(Auto)
                     .width(Percentage(100.0)); // level + time
 
                     Label::new(cx, "output gain").class("fader-label");
                     ParamSlider::new(cx, LambData::params, |params| &params.output_gain)
                         .bottom(Pixels(6.0));
                 }) // parameters
-                    .right(Percentage(2.5))
-                    .class("center");
+                .height(Auto)
+                .right(Percentage(2.5))
+                .class("center");
                 // graph + zoom
                 VStack::new(cx, |cx| {
-                    // Label::new(cx, "") // spacer
+                    // Label::new(cx, ""); // spacer
                     Label::new(cx, "lamb") // title
                         .class("plugin-name")
                         .left(Stretch(1.0))
                         .right(Pixels(0.0));
-                    VStack::new(cx, |cx| {
-                        // label & slider
-                        Label::new(cx, "zoom mode").class("fader-label");
-                        ParamSlider::new(cx, LambData::params, |params| &params.zoom_mode)
-                            .set_style(ParamSliderStyle::CurrentStepLabeled { even: true })
-                            .bottom(Pixels(6.0));
-                        Label::new(cx, "").class("fader-label"); // spacer
-                        AttackReleaseGraph::new(cx, LambData::params);
-                    }) // label & slider
-                        .width(Percentage(100.0))
-                        .class("center");
+                    Label::new(cx, "zoom mode").class("fader-label");
+                    ParamSlider::new(cx, LambData::params, |params| &params.zoom_mode)
+                        .set_style(ParamSliderStyle::CurrentStepLabeled { even: true })
+                        .bottom(Pixels(6.0));
+                    Label::new(cx, "").class("fader-label"); // spacer
+                    AttackReleaseGraph::new(cx, LambData::params).height(Pixels(317.0));
                 }) // graph + zoom
-                    .class("center")
-                .height(Percentage(100.0)); // graph + zoom
-            })
-            .width(Percentage(100.0)); // parameters + graph
+                .height(Auto)
+                .class("center");
+            }) // parameters + graph
+            .height(Auto)
+            .width(Percentage(100.0));
 
             // meters
             VStack::new(cx, |cx| {
@@ -181,15 +181,17 @@ pub(crate) fn create(
                 )
                 .width(Percentage(100.0));
             }) // meters
-                .width(Percentage(100.0))
-                .height(Auto)
-                .class("center"); // meters
+            .width(Percentage(100.0))
+            // .height(Percentage(100.0))
+            .height(Auto)
+            .class("center"); // meters
         }) // everything
-            .width(Percentage(95.0))
-            .height(Percentage(95.0))
-            .left(Percentage(2.5))
-            .right(Percentage(2.5))
-            .class("center");
+        .width(Percentage(95.0))
+        // .height(Percentage(95.0))
+        .height(Auto)
+        .left(Percentage(2.5))
+        .right(Percentage(2.5))
+        .class("center");
         ResizeHandle::new(cx);
     })
 }
