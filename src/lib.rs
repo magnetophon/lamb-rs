@@ -7,6 +7,7 @@ mod dsp;
 use buffer::*;
 
 // this seems to be the number JUCE is using
+// TODO: does this need to be set at runtime?
 const MAX_SOUNDCARD_BUFFER_SIZE: usize = 32768;
 
 mod editor;
