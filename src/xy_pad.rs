@@ -21,12 +21,11 @@ impl XYPad {
                     .size(Pixels(10.0))
                     .border_radius(Percentage(50.0))
                     .border_width(Pixels(2.0))
-                    .border_color(Color::white())
+                    .border_color(Color::black())
                     .hoverable(false);
             })
             .overflow(Overflow::Hidden)
             .size(Pixels(200.0))
-            .background_color(Color::rgb(40, 40, 40))
     }
 }
 

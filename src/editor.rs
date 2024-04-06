@@ -24,9 +24,19 @@ struct LambData {
 impl Model for LambData {
     fn event(&mut self, cx: &mut EventContext, event: &mut Event) {
         event.map(|event, meta| match event {
-            LambEvent::XYPadChange(value_x, value_y) => {
+            LambEvent::XYPadAttackChange(value_x, value_y) => {
+                cx.emit(RawParamEvent::SetParameterNormalized(
+                    self.params.attack.as_ptr(),
+                    *value_x,
+                ));
                 cx.emit(RawParamEvent::SetParameterNormalized(
                     self.params.attack_shape.as_ptr(),
+                    *value_y,
+                ));
+            },
+            LambEvent::XYPadReleaseChange(value_x, value_y) => {
+                cx.emit(RawParamEvent::SetParameterNormalized(
+                    self.params.release.as_ptr(),
                     *value_x,
                 ));
                 cx.emit(RawParamEvent::SetParameterNormalized(
@@ -39,7 +49,8 @@ impl Model for LambData {
 }
 
 pub enum LambEvent {
-    XYPadChange(f32, f32),
+    XYPadAttackChange(f32, f32),
+    XYPadReleaseChange(f32, f32),
 }
 
 // Makes sense to also define this here, makes it a bit easier to keep track of
@@ -167,16 +178,37 @@ pub(crate) fn create(
                             .set_style(ParamSliderStyle::CurrentStepLabeled { even: true })
                             .bottom(Pixels(6.0));
                         Label::new(cx, "").class("fader-label"); // spacer
-                        //AttackReleaseGraph::new(cx, LambData::params);
-                        XYPad::new(cx,LambData::params.map(
-                            |params| 
-                            (
-                                params.attack_shape.modulated_normalized_value(), 
-                                params.release_shape.modulated_normalized_value()
-                            )
-                        )).on_change(|ex, value_x, value_y| {
-                            ex.emit(LambEvent::XYPadChange(value_x, value_y))
-                        });
+                        ZStack::new(cx, |cx| {
+                            AttackReleaseGraph::new(cx, LambData::params);
+                            HStack::new(cx, |cx| {
+                                // Attack XY pad
+                                XYPad::new(cx,LambData::params.map(
+                                    |params| 
+                                    (
+                                        params.attack.modulated_normalized_value(), 
+                                        params.attack_shape.modulated_normalized_value()
+                                    )
+                                ))
+                                    .on_change(|ex, value_x, value_y| {
+                                        ex.emit(LambEvent::XYPadAttackChange(value_x, value_y))
+                                    })
+                                    .width(Percentage(params.attack.modulated_normalized_value() * 100.0))
+                                    .height(Percentage(100.0));
+                                // Release XY pad
+                                XYPad::new(cx,LambData::params.map(
+                                    |params| 
+                                    (
+                                        params.release.modulated_normalized_value(), 
+                                        params.release_shape.modulated_normalized_value()
+                                    )
+                                ))
+                                    .on_change(|ex, value_x, value_y| {
+                                        ex.emit(LambEvent::XYPadReleaseChange(value_x, value_y))
+                                    })
+                                    .width(Stretch(1.0))
+                                    .height(Percentage(100.0));
+                            }).height(Percentage(100.0));
+                        }).width(Percentage(100.0));
                     }) // label & slider
                         .width(Percentage(100.0))
                         .class("center");
