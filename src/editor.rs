@@ -51,9 +51,9 @@ pub(crate) fn create(
 
         // everything
         VStack::new(cx, |cx| {
-            // parameters + graph
+            // titel, input gain, zoom
             HStack::new(cx, |cx| {
-                // parameters
+                // blank, input gain
                 VStack::new(cx, |cx| {
                     Label::new(cx, "") // spacer
                         // Label::new(cx, "lamb") // title
@@ -62,6 +62,32 @@ pub(crate) fn create(
                     Label::new(cx, "input gain").class("fader-label");
                     ParamSlider::new(cx, LambData::params, |params| &params.input_gain)
                         .bottom(Pixels(6.0));
+                }) // blank, input gain
+                .height(Auto)
+                .right(Percentage(2.5))
+                .class("center");
+                // titel,  zoom
+                VStack::new(cx, |cx| {
+                    Label::new(cx, "lamb") // title
+                        .class("plugin-name")
+                        .left(Stretch(1.0))
+                        .right(Pixels(0.0));
+                    Label::new(cx, "zoom mode").class("fader-label");
+                    ParamSlider::new(cx, LambData::params, |params| &params.zoom_mode)
+                        .set_style(ParamSliderStyle::CurrentStepLabeled { even: true })
+                        .bottom(Pixels(6.0));
+                    Label::new(cx, "").class("fader-label"); // spacer
+                }) // lamb + zoom
+                .height(Auto)
+                .class("center");
+            }) // titel, input gain, zoom
+            .height(Auto)
+            .width(Percentage(100.0));
+
+            // parameters & graph
+            HStack::new(cx, |cx| {
+                // level , time, output gain,
+                VStack::new(cx, |cx| {
                     // level + time
                     HStack::new(cx, |cx| {
                         // level
@@ -124,36 +150,34 @@ pub(crate) fn create(
                         .class("center")
                         .left(Percentage(2.5));
                     })
-                    // .height(Percentage(100.0))
                     .height(Auto)
                     .width(Percentage(100.0)); // level + time
 
                     Label::new(cx, "output gain").class("fader-label");
                     ParamSlider::new(cx, LambData::params, |params| &params.output_gain)
                         .bottom(Pixels(6.0));
-                }) // parameters
+                }) // level , time, output gain,
+                .background_color(Color::yellow())
                 .height(Auto)
                 .right(Percentage(2.5))
                 .class("center");
-                // graph + zoom
+                // spacer + graph
                 VStack::new(cx, |cx| {
-                    // Label::new(cx, ""); // spacer
-                    Label::new(cx, "lamb") // title
-                        .class("plugin-name")
-                        .left(Stretch(1.0))
-                        .right(Pixels(0.0));
-                    Label::new(cx, "zoom mode").class("fader-label");
-                    ParamSlider::new(cx, LambData::params, |params| &params.zoom_mode)
-                        .set_style(ParamSliderStyle::CurrentStepLabeled { even: true })
-                        .bottom(Pixels(6.0));
-                    Label::new(cx, "").class("fader-label"); // spacer
-                    AttackReleaseGraph::new(cx, LambData::params).height(Pixels(317.0));
-                }) // graph + zoom
+                    Label::new(cx, "graph spacer").class("fader-label"); // spacer
+                    AttackReleaseGraph::new(cx, LambData::params)
+                        .height(Pixels(317.0))
+                    // .height(Percentage(100.0))
+                    // .height(Stretch(1.0))
+                        ;
+                }) // spacer + graph
+                .background_color(Color::green())
+                // .height(Percentage(100.0))
+                // .height(Stretch(1.0))
                 .height(Auto)
                 .class("center");
-            }) // parameters + graph
-            .height(Auto)
-            .width(Percentage(100.0));
+            }) // parameters & graph
+                .width(Percentage(100.0))
+                .height(Auto);
 
             // meters
             VStack::new(cx, |cx| {
@@ -171,7 +195,7 @@ pub(crate) fn create(
                         .map(|gain_reduction_left| gain_reduction_left.load(Ordering::Relaxed)),
                     Some(Duration::from_millis(600)),
                 )
-                .width(Percentage(100.0));
+                    .width(Percentage(100.0));
                 Label::new(cx, "gain reduction right").class("fader-label");
                 GainReductionMeter::new(
                     cx,
@@ -179,14 +203,14 @@ pub(crate) fn create(
                         .map(|gain_reduction_right| gain_reduction_right.load(Ordering::Relaxed)),
                     Some(Duration::from_millis(600)),
                 )
-                .width(Percentage(100.0));
+                    .width(Percentage(100.0));
             }) // meters
-            .width(Percentage(100.0))
+                .width(Percentage(100.0))
             // .height(Percentage(100.0))
             .height(Auto)
             .class("center"); // meters
         }) // everything
-        .width(Percentage(95.0))
+            .width(Percentage(95.0))
         // .height(Percentage(95.0))
         .height(Auto)
         .left(Percentage(2.5))
