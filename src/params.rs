@@ -26,6 +26,10 @@ struct LambParams {
     knee: FloatParam,
     #[id = "link"]
     link: FloatParam,
+    #[id = "adaptive_release"]
+    adaptive_release: FloatParam,
+    #[id = "lookahead"]
+    lookahead: FloatParam,
     #[id = "output_gain"]
     output_gain: FloatParam,
     #[id = "zoom_mode"]
@@ -196,14 +200,14 @@ impl Default for LambParams {
                     factor: FloatRange::skew_factor(-1.0),
                 },
             )
-                .with_unit(" ms")
-                .with_step_size(0.01),
+            .with_unit(" ms")
+            .with_step_size(0.01),
             release_shape: FloatParam::new(
                 "release_shape",
                 0.5,
                 FloatRange::Linear { min: 0.0, max: 1.0 },
             )
-                .with_step_size(0.01),
+            .with_step_size(0.01),
             release_hold: FloatParam::new(
                 "release_hold",
                 50.0,
@@ -228,6 +232,26 @@ impl Default for LambParams {
             link: FloatParam::new(
                 "link",
                 0.0,
+                FloatRange::Linear {
+                    min: 0.0,
+                    max: 100.0,
+                },
+            )
+                .with_unit(" %")
+                .with_step_size(1.0),
+            adaptive_release: FloatParam::new(
+                "adaptive_release",
+                50.0,
+                FloatRange::Linear {
+                    min: 0.0,
+                    max: 100.0,
+                },
+            )
+                .with_unit(" %")
+                .with_step_size(1.0),
+            lookahead: FloatParam::new(
+                "lookahead",
+                100.0,
                 FloatRange::Linear {
                     min: 0.0,
                     max: 100.0,
@@ -264,8 +288,10 @@ pub const RELEASE_SHAPE_PI: ParamIndex = ParamIndex(8);
 pub const RELEASE_HOLD_PI: ParamIndex = ParamIndex(9);
 pub const KNEE_PI: ParamIndex = ParamIndex(10);
 pub const LINK_PI: ParamIndex = ParamIndex(11);
-pub const OUTPUT_GAIN_PI: ParamIndex = ParamIndex(12);
-pub const GAIN_REDUCTION_LEFT_PI: ParamIndex = ParamIndex(13);
-pub const GAIN_REDUCTION_RIGHT_PI: ParamIndex = ParamIndex(14);
-pub const LATENCY_PI: ParamIndex = ParamIndex(15);
-pub const ZOOM_MODE_PI: ParamIndex = ParamIndex(16);
+pub const ADAPTIVE_RELEASE_PI: ParamIndex = ParamIndex(12);
+pub const LOOKAHEAD_PI: ParamIndex = ParamIndex(13);
+pub const OUTPUT_GAIN_PI: ParamIndex = ParamIndex(14);
+pub const GAIN_REDUCTION_LEFT_PI: ParamIndex = ParamIndex(15);
+pub const GAIN_REDUCTION_RIGHT_PI: ParamIndex = ParamIndex(16);
+pub const LATENCY_PI: ParamIndex = ParamIndex(17);
+pub const ZOOM_MODE_PI: ParamIndex = ParamIndex(18);

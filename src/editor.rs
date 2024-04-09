@@ -23,7 +23,7 @@ impl Model for LambData {}
 // Makes sense to also define this here, makes it a bit easier to keep track of
 pub(crate) fn default_state() -> Arc<ViziaState> {
     // width , height
-    ViziaState::new(|| (((16.0 / 9.0) * 677.0) as u32, 677))
+    ViziaState::new(|| (((16.0 / 9.0) * 720.0) as u32, 720))
 }
 
 pub(crate) fn create(
@@ -102,6 +102,8 @@ pub(crate) fn create(
                             ParamSlider::new(cx, LambData::params, |params| &params.knee);
                             Label::new(cx, "link").class("fader-label");
                             ParamSlider::new(cx, LambData::params, |params| &params.link);
+                            Label::new(cx, "lookahead").class("fader-label");
+                            ParamSlider::new(cx, LambData::params, |params| &params.lookahead);
                         }) // level
                         .height(Auto)
                         .class("center")
@@ -119,10 +121,15 @@ pub(crate) fn create(
                                 .set_style(ParamSliderStyle::FromLeft);
                             Label::new(cx, "release hold").class("fader-label");
                             ParamSlider::new(cx, LambData::params, |params| &params.release_hold);
+                            Label::new(cx, "adaptive release").class("fader-label");
+                            ParamSlider::new(cx, LambData::params, |params| {
+                                &params.adaptive_release
+                            })
+                                .set_style(ParamSliderStyle::FromLeft);
                         }) // time
-                        .height(Auto)
-                        .class("center")
-                        .left(Percentage(2.5));
+                            .height(Auto)
+                            .class("center")
+                            .left(Percentage(2.5));
                     })
                     // .height(Percentage(100.0))
                     .height(Auto)
@@ -147,7 +154,7 @@ pub(crate) fn create(
                         .set_style(ParamSliderStyle::CurrentStepLabeled { even: true })
                         .bottom(Pixels(6.0));
                     Label::new(cx, "").class("fader-label"); // spacer
-                    AttackReleaseGraph::new(cx, LambData::params).height(Pixels(317.0));
+                    AttackReleaseGraph::new(cx, LambData::params).height(Pixels(372.0));
                 }) // graph + zoom
                 .height(Auto)
                 .class("center");

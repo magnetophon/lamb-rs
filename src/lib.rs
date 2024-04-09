@@ -211,6 +211,12 @@ impl Plugin for Lamb {
             .set_param(RELEASE_HOLD_PI, self.params.release_hold.value() as f64);
         self.dsp.set_param(KNEE_PI, self.params.knee.value() as f64);
         self.dsp.set_param(LINK_PI, self.params.link.value() as f64);
+        self.dsp.set_param(
+            ADAPTIVE_RELEASE_PI,
+            self.params.adaptive_release.value() as f64,
+        );
+        self.dsp
+            .set_param(LOOKAHEAD_PI, self.params.lookahead.value() as f64);
         self.dsp
             .set_param(OUTPUT_GAIN_PI, self.params.output_gain.value() as f64);
 
