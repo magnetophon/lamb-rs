@@ -165,15 +165,15 @@ pub(crate) fn create(
                 VStack::new(cx, |cx| {
                     Label::new(cx, "graph spacer").class("fader-label"); // spacer
                     AttackReleaseGraph::new(cx, LambData::params)
-                        .height(Pixels(317.0))
+                    // .height(Pixels(317.0))
                     // .height(Percentage(100.0))
-                    // .height(Stretch(1.0))
+                        .height(Stretch(1.0))
                         ;
                 }) // spacer + graph
                 .background_color(Color::green())
                 // .height(Percentage(100.0))
-                // .height(Stretch(1.0))
-                .height(Auto)
+                .height(Stretch(1.0))
+                // .height(Auto)
                 .class("center");
             }) // parameters & graph
                 .width(Percentage(100.0))
