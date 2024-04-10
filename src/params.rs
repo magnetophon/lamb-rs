@@ -258,7 +258,8 @@ impl Default for LambParams {
                 },
             )
                 .with_unit(" %")
-                .with_step_size(1.0),
+                .with_step_size(1.0)
+                .non_automatable(),
             output_gain: FloatParam::new(
                 "output_gain",
                 0.0,
