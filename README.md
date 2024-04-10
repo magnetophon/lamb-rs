@@ -14,33 +14,35 @@ Lamb was made with these goals in mind:
 ## Features
 
 The following features set it apart from other compressor/limiters:
-- Use it as a brickwall limiter, a compressor, a leveler, a waveshaper/clipper or anything in between.  
+#### Use it as a brickwall limiter, a compressor, a leveler, a waveshaper/clipper or anything in between.  
   As long as the ratio is inf:1, the lookahead is 100% and the output gain is 0dB, the output will not exceed the threshold[^1].  
   When the attack, release, release hold and adaptive release are all at their minimum value, you get a waveshaper/clipper.  
   When adaptive release is at 100%, you get a leveler.
-- You can adjust the shape of the attack and release.
+#### Adjust the shape of the attack and release.  
   The inspiration for this came from [a video by Dan Worrall](https://youtu.be/7Yit769SN64?t=1115).  
   When shape is at 0, the curve is a slice of pure sine.  
   ![lamb_shape](https://github.com/magnetophon/lamb-rs/assets/7645711/e49e497a-1cb1-4ce3-b588-917ee1a10afa)
-- No discontinuities in the derivative of the gain reduction.  
+#### No discontinuities in the derivative of the gain reduction.  
   The gain never abruptly changes direction, resulting in a smoother sound, even at short attack and release times.
-- Release hold eliminates distortion while keeping most of the level.  
+#### Release hold eliminates distortion while keeping most of the level.  
   It prevents the gain reduction from coming back up if it needs to go down again soon.  
   You control how soon is soon.
-- Adaptive release optionally prevents pumping.  
-  When you turn up the adaptive release, the gain won't rush up when there is a quiet part after a big peak.  
-  The first part of the release will always have the speed you set with the release knob.  
-  If you DO want obvious pumping, just turn the adaptive release down!
-- Exact attack and release times allow you to easily match any breathing to the tempo of your track.   
-  In most compressors and limiters, the times define how long it takes for the GR to do "most" of the movement.  
+#### Adaptive release (optionally) prevents pumping.  
+  When you increase adaptive release, the gain won't rush up when there is a quiet part after a big peak.  
+  The first couple of dB of the release will have the speed you set with the release knob, and after that it will slow down.  
+  The adaptive release slider controls how many dBs it will release fast and how much it will slow down afterwards.  
+  If you DO want obvious pumping, just turn adaptive release off!
+#### Exact attack and release times allow you to easily match any breathing to the tempo of your track.   
+  In most compressors and limiters, the times define how long it takes for the GR to do "most" of the gain change.  
   In lamb, 500 ms corresponds to exactly 1/4 note at 120 BPM.
-- Adjust the amount of stereo linkage.  
-  Most limiters are fully stereo linked.  
+#### Adjust the amount of stereo linkage.  
+  Most limiters are fully stereo linked.
   This makes sense, since you don't want the stereo image to shift.  
-  If the gain reduction is fast and short enough, you won't notice any shift in stereo image.  
-  (Partially ) unlinking left and right can sometimes sound more natural, cause a loud sound on one side won't make the other side duck in level.  
-  Slower movements, caused by  adaptive release, are always fully linked, you can set the amount of linkage for transients as needed.
-- Choose between fixed or minimum latency.  
+  But if the asymmetric gain reduction is fast and short enough, you won't notice any shift in stereo image.  
+  (Partially ) unlinking left and right can sometimes sound more natural, because a loud sound on one side won't make the other side duck in level.  
+  Slower changes in gain reduction, caused by  adaptive release, are always fully linked.  
+  You can set the amount of linkage for transients as needed.
+#### Choose between fixed or minimum latency.  
   In most case, you can leave this at fixed, but if you want to use this live, or for tracking, you can set it to minimum.  
   The latency is always reported to the host.
   
@@ -50,11 +52,11 @@ There are two main downsides to this plugin:
   Because of the advanced algorithm, this plugin is quite heavy.  
   I have done everything in my power to make it lighter, from writing a highly optimized [sliding minimum algorithm](https://github.com/grame-cncm/faustlibraries/blob/d28c51f6c667e00f521a8cb2232786795c558aa4/basics.lib#L2258-L2618)  
   to writing an [N dimensional memoization function](https://github.com/grame-cncm/faustlibraries/blob/d28c51f6c667e00f521a8cb2232786795c558aa4/basics.lib#L956-L1495).  
-  If you are good at math and want to help me make it even lighter, open an issue!
+  If you are good at math or computer science and want to help me optimize it more, open an issue, or better yet a PR!
 - Long latency.  
-  The clean sound of this plugin is partially made possible by the copious amount of lookahead.  
-  When latency mode is set to fixed, this plugin has a latency of 100ms.  
-  When latency mode is set to minimum, the latency depends on the attack, release hold and lookahead parameters.
+  The clean sound of this plugin is partially made possible by copious amount of lookahead.  
+  In fixed latency mode, the latency is 100ms.  
+  In minimum latency mode, the latency depends on the attack, release hold and lookahead parameters.
   
 
 ## Usage
@@ -107,9 +109,6 @@ This plugin would not have been possible without the following projects:
 I would like to thank @sletz, @robbert-vdh, @obsoleszenz and @dariosanfilippo for their fantastic support and feedback!   
 
 🐑  
-
-
-
 
 [^1]: Lamb does not feature True Peak limiting yet.
 This is in the pipeline though: https://github.com/magnetophon/lamb-rs/milestone/1  
