@@ -21,12 +21,14 @@ The following features set it apart from other compressor/limiters:
 #### Adjust the shape of the attack and release.  
   The inspiration for this came from [a video by Dan Worrall](https://youtu.be/7Yit769SN64?t=1115).  
   When shape is at 0, the curve is a slice of pure sine.  
-  ![lamb_shape](https://github.com/magnetophon/lamb-rs/assets/7645711/e49e497a-1cb1-4ce3-b588-917ee1a10afa)
+  ![lamb_shape](https://github.com/magnetophon/lamb-rs/assets/7645711/bfb42317-0dfb-451e-84f0-a6af50eed433)
 #### No discontinuities in the derivative of the gain reduction.  
   The gain never abruptly changes direction, resulting in a smoother sound, even at short attack and release times.
 #### Release hold eliminates distortion while keeping most of the level.  
   It prevents the gain reduction from coming back up if it needs to go down again soon.  
-  You control how soon is soon.
+  You control how soon is soon.  
+  Here's a gain reduction graph with and without hold:
+  ![hold](https://github.com/magnetophon/lamb-rs/assets/7645711/6b11f866-2684-41a4-beb7-f83ea2964246)
 #### Adaptive release (optionally) prevents pumping.  
   When you increase adaptive release, the gain won't rush up when there is a quiet part after a big peak.  
   The first couple of dB of the release will have the speed you set with the release knob, and after that it will slow down.  
