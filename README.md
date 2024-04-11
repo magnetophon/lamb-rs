@@ -25,27 +25,27 @@ The following features set it apart from other compressor/limiters:
 #### No discontinuities in the derivative of the gain reduction.  
   The gain never abruptly changes direction, resulting in a smoother sound, even at short attack and release times.
 #### Release hold eliminates distortion while keeping most of the level.  
-  It prevents the gain reduction from coming back up if it needs to go down again soon.  
+  Release hold prevents the gain from coming up if it needs to go back down again soon.  
   You control how soon is soon.  
-  Here's a gain reduction graph with and without hold:
+  Here's a gain reduction graph with and without it:
   ![hold](https://github.com/magnetophon/lamb-rs/assets/7645711/6b11f866-2684-41a4-beb7-f83ea2964246)
 #### Adaptive release (optionally) prevents pumping.  
-  When you increase adaptive release, the gain won't rush up when there is a quiet part after a big peak.  
-  The first couple of dB of the release will have the speed you set with the release knob, and after that it will slow down.  
-  The adaptive release slider controls how many dBs it will release fast and how much it will slow down afterwards.  
+  With adaptive release, the gain won't rush up too much when there is a quiet part after a big peak, but it will still react quickly to transients.  
+  The first couple of dB of release have the speed you set with the release knob, after that it slows down.  
+  The adaptive release slider controls how many dBs will release fast and how much it will slow down afterwards.  
   If you DO want obvious pumping, just turn adaptive release off!
 #### Exact attack and release times allow you to easily match any breathing to the tempo of your track.   
-  In most compressors and limiters, the times define how long it takes for the GR to do "most" of the gain change.  
+  In most compressors and limiters, the times describe how long it takes to do "most" of the gain change.  
   In lamb, 500 ms corresponds to exactly 1/4 note at 120 BPM.
 #### Adjust the amount of stereo linkage.  
   Most limiters are fully stereo linked.
   This makes sense, since you don't want the stereo image to shift.  
-  But if the asymmetric gain reduction is fast and short enough, you won't notice any shift in stereo image.  
-  (Partially ) unlinking left and right can sometimes sound more natural, because a loud sound on one side won't make the other side duck in level.  
+  However, if the asymmetry in gain reduction is small and short enough, you won't notice any shift in stereo image.  
+  (Partially) unlinking left and right can sometimes sound more natural, because a loud sound on one side won't make the other side duck in level.  
   Slower changes in gain reduction, caused by  adaptive release, are always fully linked.  
   You can set the amount of linkage for transients as needed.
 #### Choose between fixed or minimum latency.  
-  In most case, you can leave this at fixed, but if you want to use this live, or for tracking, you can set it to minimum.  
+  In most case, you can leave this at fixed, but if you want to use lamb live or for tracking, you can set it to minimum.  
   The latency is always reported to the host.
   
 ## Downsides
