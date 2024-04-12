@@ -40,6 +40,10 @@ inherits = "release"
 debug = true
 strip = "none"
 
+# Generated code - high perf needed anyway
+[profile.dev]
+opt-level = 3
+
 [build-dependencies]
 # see: https://github.com/Frando/rust-faust/issues/23
 # faust-build = { path = "../rust-faust/faust-build", optional = true }
