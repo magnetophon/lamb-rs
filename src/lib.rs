@@ -6,6 +6,8 @@ mod buffer;
 mod dsp;
 use buffer::*;
 
+use default_boxed::DefaultBoxed;
+
 // this seems to be the number JUCE is using
 // TODO: does this need to be set at runtime?
 const MAX_SOUNDCARD_BUFFER_SIZE: usize = 32768;
@@ -17,7 +19,7 @@ const PEAK_METER_DECAY_MS: f64 = 150.0;
 
 pub struct Lamb {
     params: Arc<LambParams>,
-    dsp: dsp::LambRs,
+    dsp: Box<dsp::LambRs>,
     accum_buffer: TempBuffer,
     temp_output_buffer_l: [f64; MAX_SOUNDCARD_BUFFER_SIZE],
     temp_output_buffer_r: [f64; MAX_SOUNDCARD_BUFFER_SIZE],
@@ -45,7 +47,7 @@ impl Default for Lamb {
             gain_reduction_left: Arc::new(AtomicF32::new(0.0)),
             gain_reduction_right: Arc::new(AtomicF32::new(0.0)),
 
-            dsp: dsp::LambRs::new(),
+            dsp: dsp::LambRs::default_boxed(),
 
             accum_buffer: TempBuffer::default(),
             temp_output_buffer_l: [0.0_f64; MAX_SOUNDCARD_BUFFER_SIZE],
