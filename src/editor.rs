@@ -20,7 +20,7 @@ include!("gain_reduction_meter.rs");
 #[derive(Lens, Clone)]
 struct LambData {
     params: Arc<LambParams>,
-    peak_meter: Arc<AtomicF32>,
+    // peak_meter: Arc<AtomicF32>,
     gain_reduction_left: Arc<AtomicF32>,
     gain_reduction_right: Arc<AtomicF32>,
     peak_buffer: Arc<Mutex<PeakBuffer>>,
@@ -29,14 +29,14 @@ struct LambData {
 impl LambData {
     pub(crate) fn new(
         params: Arc<LambParams>,
-        peak_meter: Arc<AtomicF32>,
+        // peak_meter: Arc<AtomicF32>,
         gain_reduction_left: Arc<AtomicF32>,
         gain_reduction_right: Arc<AtomicF32>,
         peak_buffer: Arc<Mutex<PeakBuffer>>,
     ) -> Self {
         Self {
             params,
-            peak_meter,
+            // peak_meter,
             gain_reduction_left,
             gain_reduction_right,
             peak_buffer,
@@ -49,12 +49,13 @@ impl Model for LambData {}
 // Makes sense to also define this here, makes it a bit easier to keep track of
 pub(crate) fn default_state() -> Arc<ViziaState> {
     // width , height
-    ViziaState::new(|| (((16.0 / 9.0) * 720.0) as u32, 720))
+    // ViziaState::new(|| (((16.0 / 9.0) * 720.0) as u32, 720))
+    ViziaState::new(|| (1280 as u32, 960))
 }
 
 pub(crate) fn create(
     params: Arc<LambParams>,
-    peak_meter: Arc<AtomicF32>,
+    // peak_meter: Arc<AtomicF32>,
     gain_reduction_left: Arc<AtomicF32>,
     gain_reduction_right: Arc<AtomicF32>,
     peak_buffer: Arc<Mutex<PeakBuffer>>,
@@ -70,7 +71,7 @@ pub(crate) fn create(
 
         LambData {
             params: params.clone(),
-            peak_meter: peak_meter.clone(),
+            // peak_meter: peak_meter.clone(),
             gain_reduction_left: gain_reduction_left.clone(),
             gain_reduction_right: gain_reduction_right.clone(),
             peak_buffer: peak_buffer.clone(),
@@ -182,7 +183,7 @@ pub(crate) fn create(
                         .set_style(ParamSliderStyle::CurrentStepLabeled { even: true })
                         .bottom(Pixels(6.0));
                     Label::new(cx, "").class("fader-label"); // spacer
-                    AttackReleaseGraph::new(cx, LambData::params).height(Pixels(372.0));
+                    AttackReleaseGraph::new(cx, LambData::params).height(Pixels(373.0));
                 }) // graph + zoom
                 .height(Auto)
                 .class("center");
@@ -193,13 +194,13 @@ pub(crate) fn create(
             peak_graph(cx);
             // meters
             VStack::new(cx, |cx| {
-                Label::new(cx, "input level").class("fader-label");
-                PeakMeter::new(
-                    cx,
-                    LambData::peak_meter
-                        .map(|peak_meter| util::gain_to_db(peak_meter.load(Ordering::Relaxed))),
-                    Some(Duration::from_millis(600)),
-                );
+                // Label::new(cx, "input level").class("fader-label");
+                // PeakMeter::new(
+                // cx,
+                // LambData::peak_meter
+                // .map(|peak_meter| util::gain_to_db(peak_meter.load(Ordering::Relaxed))),
+                // Some(Duration::from_millis(600)),
+                // );
                 Label::new(cx, "gain reduction left").class("fader-label");
                 GainReductionMeter::new(
                     cx,
@@ -401,13 +402,16 @@ fn peak_graph(cx: &mut Context) {
                 0.0,
                 vec![6.0, 0.0, -6.0, -12.0, -18.0, -24.0, -30.0],
             )
-            .color(Color::rgb(60, 60, 60));
+                .color(Color::rgb(60, 60, 60))
+                ;
 
             Graph::new(cx, LambData::peak_buffer, (-32.0, 6.0), ValueScaling::Decibels)
-                .color(Color::rgba(255, 255, 255, 160))
-                .background_color(Color::rgba(255, 255, 255, 60));
+                .color(Color::rgba(0, 0, 0, 160))
+                .background_color(Color::rgba(16, 16, 16, 60))
+                ;
         })
-        .background_color(Color::rgb(16, 16, 16));
+        // .background_color(Color::rgb(16, 16, 16))
+            ;
 
         UnitRuler::new(
             cx,
@@ -435,9 +439,14 @@ fn peak_graph(cx: &mut Context) {
             Orientation::Vertical,
         )
         .width(Pixels(32.0))
-        .background_color(Color::rgb(60, 60, 60));
+        .color(Color::rgb(0, 0, 0))
+        .background_color(Color::rgb(80, 80, 80))
+            ;
     })
-    .col_between(Pixels(8.))
-    .border_color(Color::rgb(80, 80, 80))
-    .border_width(Pixels(1.));
+        .top(Pixels(13.0))
+        .height(Pixels(280.0))
+        .width(Percentage(100.0))
+        .col_between(Pixels(8.))
+        .border_color(Color::rgb(80, 80, 80))
+        .border_width(Pixels(1.));
 }

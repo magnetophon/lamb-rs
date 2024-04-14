@@ -16,7 +16,7 @@ const MAX_SOUNDCARD_BUFFER_SIZE: usize = 32768;
 mod editor;
 
 /// The time it takes for the peak meter to decay by 12 dB after switching to complete silence.
-const PEAK_METER_DECAY_MS: f64 = 150.0;
+// const PEAK_METER_DECAY_MS: f64 = 150.0;
 
 pub struct Lamb {
     params: Arc<LambParams>,
@@ -34,7 +34,7 @@ pub struct Lamb {
     /// idea to put all of that in a struct behind a single `Arc`.
     ///
     /// This is stored as voltage gain.
-    peak_meter: Arc<AtomicF32>,
+    // peak_meter: Arc<AtomicF32>,
     gain_reduction_left: Arc<AtomicF32>,
     gain_reduction_right: Arc<AtomicF32>,
 
@@ -47,7 +47,7 @@ impl Default for Lamb {
             params: Arc::new(LambParams::default()),
 
             peak_meter_decay_weight: 1.0,
-            peak_meter: Arc::new(AtomicF32::new(util::MINUS_INFINITY_DB)),
+            // peak_meter: Arc::new(AtomicF32::new(util::MINUS_INFINITY_DB)),
             gain_reduction_left: Arc::new(AtomicF32::new(0.0)),
             gain_reduction_right: Arc::new(AtomicF32::new(0.0)),
 
@@ -120,9 +120,9 @@ impl Plugin for Lamb {
 
         // After `PEAK_METER_DECAY_MS` milliseconds of pure silence, the peak meter's value should
         // have dropped by 12 dB
-        self.peak_meter_decay_weight = 0.25f64
-            .powf((buffer_config.sample_rate as f64 * PEAK_METER_DECAY_MS / 1000.0).recip())
-            as f32;
+        // self.peak_meter_decay_weight = 0.25f64
+        // .powf((buffer_config.sample_rate as f64 * PEAK_METER_DECAY_MS / 1000.0).recip())
+        // as f32;
 
         self.sample_rate = buffer_config.sample_rate;
 
@@ -144,7 +144,7 @@ impl Plugin for Lamb {
     fn editor(&mut self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
         editor::create(
             self.params.clone(),
-            self.peak_meter.clone(),
+            // self.peak_meter.clone(),
             self.gain_reduction_left.clone(),
             self.gain_reduction_right.clone(),
             self.peak_buffer.clone(),
@@ -161,45 +161,51 @@ impl Plugin for Lamb {
         let count = buffer.samples() as i32;
         self.accum_buffer.read_from_buffer(buffer);
 
-        for channel_samples in buffer.iter_samples() {
-            let mut amplitude = 0.0;
-            let num_samples = channel_samples.len();
+        // for channel_samples in buffer.iter_samples() {
+        // let mut amplitude = 0.0;
+        // let num_samples = channel_samples.len();
 
-            for sample in channel_samples {
-                amplitude += *sample;
-            }
-            // To save resources, a plugin can (and probably should!) only perform expensive
-            // calculations that are only displayed on the GUI while the GUI is open
-            if self.params.editor_state.is_open() {
-                amplitude = (amplitude / num_samples as f32).abs();
-                let current_peak_meter = self.peak_meter.load(std::sync::atomic::Ordering::Relaxed);
-                let new_peak_meter = if amplitude > current_peak_meter {
-                    amplitude
-                } else {
-                    current_peak_meter * self.peak_meter_decay_weight
-                        + amplitude * (1.0 - self.peak_meter_decay_weight)
-                };
+        // for sample in channel_samples {
+        // amplitude += *sample;
+        // }
 
-                self.peak_meter
-                    .store(new_peak_meter, std::sync::atomic::Ordering::Relaxed);
-                self.gain_reduction_left.store(
-                    self.dsp
-                        .get_param(GAIN_REDUCTION_LEFT_PI)
-                        .expect("no GR read") as f32,
-                    std::sync::atomic::Ordering::Relaxed,
-                );
-                self.gain_reduction_right.store(
-                    self.dsp
-                        .get_param(GAIN_REDUCTION_RIGHT_PI)
-                        .expect("no GR read") as f32,
-                    std::sync::atomic::Ordering::Relaxed,
-                );
-                self.peak_buffer
-                    .lock()
-                    .unwrap()
-                    .enqueue_buffer(buffer, None);
-            }
+        // To save resources, a plugin can (and probably should!) only perform expensive
+        // calculations that are only displayed on the GUI while the GUI is open
+        if self.params.editor_state.is_open() {
+            // amplitude = (amplitude / num_samples as f32).abs();
+            // let current_peak_meter = self.peak_meter.load(std::sync::atomic::Ordering::Relaxed);
+            // let new_peak_meter = if amplitude > current_peak_meter {
+            // amplitude
+            // } else {
+            // current_peak_meter * self.peak_meter_decay_weight
+            // + amplitude * (1.0 - self.peak_meter_decay_weight)
+            // };
+
+            // self.peak_meter
+            // .store(new_peak_meter, std::sync::atomic::Ordering::Relaxed);
+            self.gain_reduction_left.store(
+                self.dsp
+                    .get_param(GAIN_REDUCTION_LEFT_PI)
+                    .expect("no GR read") as f32,
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            self.gain_reduction_right.store(
+                self.dsp
+                    .get_param(GAIN_REDUCTION_RIGHT_PI)
+                    .expect("no GR read") as f32,
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            self.peak_buffer
+                .lock()
+                .unwrap()
+                .enqueue_buffer(buffer, None);
         }
+        // }
+
+        // To save resources, a plugin can (and probably should!) only perform expensive
+        // calculations that are only displayed on the GUI while the GUI is open
+        // if self.params.editor_state.is_open() {
+        // }
 
         let output = buffer.as_slice();
         let bypass: f64 = match self.params.bypass.value() {
@@ -214,51 +220,51 @@ impl Plugin for Lamb {
         };
         self.dsp.set_param(LATENCY_MODE_PI, latency_mode);
         self.dsp
-            .set_param(INPUT_GAIN_PI, self.params.input_gain.value() as f64);
-        self.dsp
-            .set_param(STRENGTH_PI, self.params.strength.value() as f64);
-        self.dsp
-            .set_param(THRESH_PI, self.params.thresh.value() as f64);
-        self.dsp
-            .set_param(ATTACK_PI, self.params.attack.value() as f64);
-        self.dsp
-            .set_param(ATTACK_SHAPE_PI, self.params.attack_shape.value() as f64);
-        self.dsp
-            .set_param(RELEASE_PI, self.params.release.value() as f64);
-        self.dsp
-            .set_param(RELEASE_SHAPE_PI, self.params.release_shape.value() as f64);
-        self.dsp
-            .set_param(RELEASE_HOLD_PI, self.params.release_hold.value() as f64);
-        self.dsp.set_param(KNEE_PI, self.params.knee.value() as f64);
-        self.dsp.set_param(LINK_PI, self.params.link.value() as f64);
-        self.dsp.set_param(
-            ADAPTIVE_RELEASE_PI,
-            self.params.adaptive_release.value() as f64,
-        );
-        self.dsp
-            .set_param(LOOKAHEAD_PI, self.params.lookahead.value() as f64);
-        self.dsp
-            .set_param(OUTPUT_GAIN_PI, self.params.output_gain.value() as f64);
+                .set_param(INPUT_GAIN_PI, self.params.input_gain.value() as f64);
+            self.dsp
+                .set_param(STRENGTH_PI, self.params.strength.value() as f64);
+            self.dsp
+                .set_param(THRESH_PI, self.params.thresh.value() as f64);
+            self.dsp
+                .set_param(ATTACK_PI, self.params.attack.value() as f64);
+            self.dsp
+                .set_param(ATTACK_SHAPE_PI, self.params.attack_shape.value() as f64);
+            self.dsp
+                .set_param(RELEASE_PI, self.params.release.value() as f64);
+            self.dsp
+                .set_param(RELEASE_SHAPE_PI, self.params.release_shape.value() as f64);
+            self.dsp
+                .set_param(RELEASE_HOLD_PI, self.params.release_hold.value() as f64);
+            self.dsp.set_param(KNEE_PI, self.params.knee.value() as f64);
+            self.dsp.set_param(LINK_PI, self.params.link.value() as f64);
+            self.dsp.set_param(
+                ADAPTIVE_RELEASE_PI,
+                self.params.adaptive_release.value() as f64,
+            );
+            self.dsp
+                .set_param(LOOKAHEAD_PI, self.params.lookahead.value() as f64);
+            self.dsp
+                .set_param(OUTPUT_GAIN_PI, self.params.output_gain.value() as f64);
 
-        self.dsp.compute(
-            count,
-            &self.accum_buffer.slice2d(),
-            &mut [
-                &mut self.temp_output_buffer_l,
-                &mut self.temp_output_buffer_r,
-            ],
-        );
+            self.dsp.compute(
+                count,
+                &self.accum_buffer.slice2d(),
+                &mut [
+                    &mut self.temp_output_buffer_l,
+                    &mut self.temp_output_buffer_r,
+                ],
+            );
 
-        for i in 0..count as usize {
-            output[0][i] = self.temp_output_buffer_l[i] as f32;
-            output[1][i] = self.temp_output_buffer_r[i] as f32;
+            for i in 0..count as usize {
+                output[0][i] = self.temp_output_buffer_l[i] as f32;
+                output[1][i] = self.temp_output_buffer_r[i] as f32;
+            }
+
+            let latency_samples = self.dsp.get_param(LATENCY_PI).expect("no latency read") as u32;
+            context.set_latency_samples(latency_samples);
+
+            ProcessStatus::Normal
         }
-
-        let latency_samples = self.dsp.get_param(LATENCY_PI).expect("no latency read") as u32;
-        context.set_latency_samples(latency_samples);
-
-        ProcessStatus::Normal
-    }
 }
 
 impl ClapPlugin for Lamb {
