@@ -6,16 +6,42 @@ use nih_plug_vizia::vizia::prelude::*;
 use nih_plug_vizia::widgets::*;
 use nih_plug_vizia::{assets, create_vizia_editor, ViziaState, ViziaTheming};
 use std::sync::atomic::Ordering;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
+
+use cyma::{
+    utils::{PeakBuffer, RingBuffer, ValueScaling, WaveformBuffer},
+    visualizers::{
+        Graph, Grid, Lissajous, LissajousGrid, Meter, Oscilloscope, UnitRuler, Waveform,
+    },
+};
 
 include!("gain_reduction_meter.rs");
 
-#[derive(Lens)]
+#[derive(Lens, Clone)]
 struct LambData {
     params: Arc<LambParams>,
     peak_meter: Arc<AtomicF32>,
     gain_reduction_left: Arc<AtomicF32>,
     gain_reduction_right: Arc<AtomicF32>,
+    peak_buffer: Arc<Mutex<PeakBuffer>>,
+}
+
+impl LambData {
+    pub(crate) fn new(
+        params: Arc<LambParams>,
+        peak_meter: Arc<AtomicF32>,
+        gain_reduction_left: Arc<AtomicF32>,
+        gain_reduction_right: Arc<AtomicF32>,
+        peak_buffer: Arc<Mutex<PeakBuffer>>,
+    ) -> Self {
+        Self {
+            params,
+            peak_meter,
+            gain_reduction_left,
+            gain_reduction_right,
+            peak_buffer,
+        }
+    }
 }
 
 impl Model for LambData {}
@@ -31,6 +57,7 @@ pub(crate) fn create(
     peak_meter: Arc<AtomicF32>,
     gain_reduction_left: Arc<AtomicF32>,
     gain_reduction_right: Arc<AtomicF32>,
+    peak_buffer: Arc<Mutex<PeakBuffer>>,
     editor_state: Arc<ViziaState>,
 ) -> Option<Box<dyn Editor>> {
     create_vizia_editor(editor_state, ViziaTheming::Custom, move |cx, _| {
@@ -46,6 +73,7 @@ pub(crate) fn create(
             peak_meter: peak_meter.clone(),
             gain_reduction_left: gain_reduction_left.clone(),
             gain_reduction_right: gain_reduction_right.clone(),
+            peak_buffer: peak_buffer.clone(),
         }
         .build(cx);
 
@@ -162,6 +190,7 @@ pub(crate) fn create(
             .height(Auto)
             .width(Percentage(100.0));
 
+            peak_graph(cx);
             // meters
             VStack::new(cx, |cx| {
                 Label::new(cx, "input level").class("fader-label");
@@ -360,4 +389,55 @@ impl<AttackReleaseDataL: Lens<Target = Arc<LambParams>>> View
             &vg::Paint::color(border_color).with_line_width(border_width),
         );
     }
+}
+
+/// Draws a peak graph with a grid backdrop, unit ruler, and a peak meter to side.
+fn peak_graph(cx: &mut Context) {
+    HStack::new(cx, |cx| {
+        ZStack::new(cx, |cx| {
+            Grid::new(
+                cx,
+                (-32.0, 8.0),
+                0.0,
+                vec![6.0, 0.0, -6.0, -12.0, -18.0, -24.0, -30.0],
+            )
+            .color(Color::rgb(60, 60, 60));
+
+            Graph::new(cx, LambData::peak_buffer, (-32.0, 6.0), ValueScaling::Decibels)
+                .color(Color::rgba(255, 255, 255, 160))
+                .background_color(Color::rgba(255, 255, 255, 60));
+        })
+        .background_color(Color::rgb(16, 16, 16));
+
+        UnitRuler::new(
+            cx,
+            (-32.0, 8.0),
+            vec![
+                (6.0, "6db"),
+                (0.0, "0db"),
+                (-6.0, "-6db"),
+                (-12.0, "-12db"),
+                (-18.0, "-18db"),
+                (-24.0, "-24db"),
+                (-30.0, "-30db"),
+            ],
+            Orientation::Vertical,
+        )
+        .font_size(12.)
+        .color(Color::rgb(160, 160, 160))
+        .width(Pixels(32.));
+
+        Meter::new(
+            cx,
+            LambData::peak_buffer,
+            (-32.0, 6.0),
+            ValueScaling::Decibels,
+            Orientation::Vertical,
+        )
+        .width(Pixels(32.0))
+        .background_color(Color::rgb(60, 60, 60));
+    })
+    .col_between(Pixels(8.))
+    .border_color(Color::rgb(80, 80, 80))
+    .border_width(Pixels(1.));
 }

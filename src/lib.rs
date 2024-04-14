@@ -1,10 +1,11 @@
 use faust_types::FaustDsp;
 use nih_plug::prelude::*;
 use nih_plug_vizia::ViziaState;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 mod buffer;
 mod dsp;
 use buffer::*;
+use cyma::utils::{PeakBuffer, RingBuffer, VisualizerBuffer, WaveformBuffer};
 
 use default_boxed::DefaultBoxed;
 
@@ -36,6 +37,9 @@ pub struct Lamb {
     peak_meter: Arc<AtomicF32>,
     gain_reduction_left: Arc<AtomicF32>,
     gain_reduction_right: Arc<AtomicF32>,
+
+    // These buffers will hold the sample data for the visualizers.
+    peak_buffer: Arc<Mutex<PeakBuffer>>,
 }
 impl Default for Lamb {
     fn default() -> Self {
@@ -54,6 +58,7 @@ impl Default for Lamb {
             temp_output_buffer_l : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             temp_output_buffer_r : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             sample_rate: 48000.0,
+            peak_buffer: Arc::new(Mutex::new(PeakBuffer::new(800, 48000.0, 10.0))),
         }
     }
 }
@@ -121,6 +126,13 @@ impl Plugin for Lamb {
 
         self.sample_rate = buffer_config.sample_rate;
 
+        match self.peak_buffer.lock() {
+            Ok(mut buffer) => {
+                buffer.set_sample_rate(buffer_config.sample_rate);
+            }
+            Err(_) => return false,
+        }
+
         true
     }
 
@@ -135,6 +147,7 @@ impl Plugin for Lamb {
             self.peak_meter.clone(),
             self.gain_reduction_left.clone(),
             self.gain_reduction_right.clone(),
+            self.peak_buffer.clone(),
             self.params.editor_state.clone(),
         )
     }
@@ -181,6 +194,10 @@ impl Plugin for Lamb {
                         .expect("no GR read") as f32,
                     std::sync::atomic::Ordering::Relaxed,
                 );
+                self.peak_buffer
+                    .lock()
+                    .unwrap()
+                    .enqueue_buffer(buffer, None);
             }
         }
 

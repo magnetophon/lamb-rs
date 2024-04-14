@@ -1120,6 +1120,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "cyma"
+version = "0.1.0"
+source = "git+https://github.com/223230/cyma.git#6e54760b784f3eb9437b97f10499319ccade61a9"
+dependencies = [
+ "lazy_static",
+ "nih_plug",
+ "nih_plug_vizia",
+]
+
+[[package]]
 name = "dasp_sample"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1968,6 +1978,7 @@ name = "lamb"
 version = "1.2.0"
 dependencies = [
  "atomic_float",
+ "cyma",
  "default-boxed",
  "faust-build",
  "faust-types",
