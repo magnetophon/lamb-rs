@@ -5,7 +5,7 @@ license: "AGPLv3"
 name: "lamb-rs"
 version: "0.1"
 Code generated with Faust 2.72.14 (https://faust.grame.fr)
-Compilation options: -a /run/user/1001/.tmpwfWuWW -lang rust -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0
+Compilation options: -a /run/user/1001/.tmpYD7txu -lang rust -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0
 ------------------------------------------------------------ */
 #![allow(clippy::all)]
 #![allow(unused_parens)]
@@ -315,7 +315,7 @@ impl FaustDsp for mydsp {
 		m.declare("basics.lib/tabulateNd:author", r"Bart Brouns");
 		m.declare("basics.lib/tabulateNd:license", r"AGPL-3.0");
 		m.declare("basics.lib/version", r"1.15.0");
-		m.declare("compile_options", r"-a /run/user/1001/.tmpwfWuWW -lang rust -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0");
+		m.declare("compile_options", r"-a /run/user/1001/.tmpYD7txu -lang rust -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0");
 		m.declare("filename", r"lamb-rs.dsp");
 		m.declare("interpolators.lib/interpolate_linear:author", r"Stéphane Letz");
 		m.declare("interpolators.lib/interpolate_linear:licence", r"MIT");
@@ -864,7 +864,7 @@ impl FaustDsp for mydsp {
 			self.fRec7[0] = self.fRec7[1] * fTemp29 + self.fRec8[0] * (1.0 - fTemp29);
 			self.fRec5[0] = 2e+01 * F64::log10(F64::max(2.2250738585072014e-308, self.fRec7[0]));
 			let mut fTemp30: F64 = F64::powf(1e+01, 0.05 * (self.fRec5[1] + fTemp24));
-			let mut fTemp31: F64 = if (fTemp30 > self.fRec12[1]) as i32 != 0 {F64::exp(-(self.fConst7 / F64::max(2.220446049250313e-16, 0.05 * F64::powf(4503599627370496.0, 1.0 - (F64::max(fTemp10, F64::min(fTemp11, fTemp25)) + fTemp9) / fTemp8))))} else {self.fConst8};
+			let mut fTemp31: F64 = if (fTemp30 > self.fRec12[1]) as i32 != 0 {F64::exp(-(self.fConst7 / F64::max(2.220446049250313e-16, (0.8161290322580644 * (F64::max(0.69, self.fRec4[0]) + -0.69) + 0.05) * F64::powf(4503599627370496.0, 1.0 - (F64::max(fTemp10, F64::min(fTemp11, fTemp25)) + fTemp9) / fTemp8))))} else {self.fConst8};
 			self.fRec12[0] = self.fRec12[1] * fTemp31 + fTemp30 * (1.0 - fTemp31);
 			self.fRec6[0] = 2e+01 * F64::log10(F64::max(2.2250738585072014e-308, self.fRec12[0]));
 			let mut fTemp32: F64 = self.fRec5[0] - self.fRec6[0];
