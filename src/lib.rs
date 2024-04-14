@@ -21,8 +21,8 @@ pub struct Lamb {
     params: Arc<LambParams>,
     dsp: Box<dsp::LambRs>,
     accum_buffer: TempBuffer,
-    temp_output_buffer_l: [f64; MAX_SOUNDCARD_BUFFER_SIZE],
-    temp_output_buffer_r: [f64; MAX_SOUNDCARD_BUFFER_SIZE],
+    temp_output_buffer_l: Box<[f64]>,
+    temp_output_buffer_r: Box<[f64]>,
 
     /// sample rate
     sample_rate: f32,
@@ -50,8 +50,9 @@ impl Default for Lamb {
             dsp: dsp::LambRs::default_boxed(),
 
             accum_buffer: TempBuffer::default(),
-            temp_output_buffer_l: [0.0_f64; MAX_SOUNDCARD_BUFFER_SIZE],
-            temp_output_buffer_r: [0.0_f64; MAX_SOUNDCARD_BUFFER_SIZE],
+
+            temp_output_buffer_l : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
+            temp_output_buffer_r : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             sample_rate: 48000.0,
         }
     }
