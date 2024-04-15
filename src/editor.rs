@@ -50,7 +50,8 @@ impl Model for LambData {}
 pub(crate) fn default_state() -> Arc<ViziaState> {
     // width , height
     // ViziaState::new(|| (((16.0 / 9.0) * 720.0) as u32, 720))
-    ViziaState::new(|| (1280 as u32, 960))
+    // ViziaState::new(|| (1280, 960))
+    ViziaState::new(|| (1200, 900))
 }
 
 pub(crate) fn create(
@@ -191,9 +192,9 @@ pub(crate) fn create(
             .height(Auto)
             .width(Percentage(100.0));
 
-            peak_graph(cx);
             // meters
             VStack::new(cx, |cx| {
+                peak_graph(cx);
                 // Label::new(cx, "input level").class("fader-label");
                 // PeakMeter::new(
                 // cx,
@@ -444,7 +445,8 @@ fn peak_graph(cx: &mut Context) {
             ;
     })
         .top(Pixels(13.0))
-        .height(Pixels(280.0))
+    // .height(Pixels(280.0))
+        .height(Pixels(200.0))
         .width(Percentage(100.0))
         .col_between(Pixels(8.))
         .border_color(Color::rgb(80, 80, 80))
