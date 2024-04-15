@@ -24,6 +24,8 @@ pub struct Lamb {
     accum_buffer: TempBuffer,
     temp_output_buffer_l: Box<[f64]>,
     temp_output_buffer_r: Box<[f64]>,
+    temp_output_buffer_gr_l: Box<[f64]>,
+    temp_output_buffer_gr_r: Box<[f64]>,
 
     /// sample rate
     sample_rate: f32,
@@ -57,6 +59,8 @@ impl Default for Lamb {
 
             temp_output_buffer_l : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             temp_output_buffer_r : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
+            temp_output_buffer_gr_l : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
+            temp_output_buffer_gr_r : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             sample_rate: 48000.0,
             peak_buffer: Arc::new(Mutex::new(PeakBuffer::new(800, 48000.0, 10.0))),
         }
@@ -200,12 +204,6 @@ impl Plugin for Lamb {
                 .unwrap()
                 .enqueue_buffer(buffer, None);
         }
-        // }
-
-        // To save resources, a plugin can (and probably should!) only perform expensive
-        // calculations that are only displayed on the GUI while the GUI is open
-        // if self.params.editor_state.is_open() {
-        // }
 
         let output = buffer.as_slice();
         let bypass: f64 = match self.params.bypass.value() {
@@ -252,6 +250,8 @@ impl Plugin for Lamb {
                 &mut [
                     &mut self.temp_output_buffer_l,
                     &mut self.temp_output_buffer_r,
+                    &mut self.temp_output_buffer_gr_l,
+                    &mut self.temp_output_buffer_gr_r,
                 ],
             );
 
