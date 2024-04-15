@@ -31,5 +31,6 @@ in with nixpkgs;
       xorg.xcbutilwm # libxcb-icccm.so
 
       faust
+      python3
     ];
   }

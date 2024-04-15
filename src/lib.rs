@@ -3,7 +3,9 @@ use nih_plug::prelude::*;
 use nih_plug_vizia::ViziaState;
 use std::sync::Arc;
 mod buffer;
-mod dsp;
+mod dsp_48k;
+mod dsp_96k;
+mod dsp_192k;
 use buffer::*;
 
 use default_boxed::DefaultBoxed;
@@ -17,9 +19,61 @@ mod editor;
 /// The time it takes for the peak meter to decay by 12 dB after switching to complete silence.
 const PEAK_METER_DECAY_MS: f64 = 150.0;
 
+// Define an enum to hold the DSP's for different sample rates
+enum DspVariant {
+    Dsp48k(Box<dsp_48k::LambRs48k>),
+    Dsp96k(Box<dsp_96k::LambRs96k>),
+    Dsp192k(Box<dsp_192k::LambRs192k>)
+}
+impl Default for DspVariant {
+    fn default() -> Self {
+        DspVariant::Dsp48k(dsp_48k::LambRs48k::default_boxed())
+    }
+}
+
+impl DspVariant {
+    fn init(&mut self, sample_rate: i32) {
+        match sample_rate {
+            0..=48000 => *self = DspVariant::Dsp48k(dsp_48k::LambRs48k::default_boxed()),
+            48001..=96000 => *self = DspVariant::Dsp96k(dsp_96k::LambRs96k::default_boxed()),
+            _ => *self = DspVariant::Dsp192k(dsp_192k::LambRs192k::default_boxed()),
+        }
+        match self {
+            DspVariant::Dsp48k(ref mut dsp) => dsp.init(sample_rate),
+            DspVariant::Dsp96k(ref mut dsp) => dsp.init(sample_rate),
+            DspVariant::Dsp192k(ref mut dsp) => dsp.init(sample_rate),
+        }
+    }
+    fn get_param(&mut self, param_id: ParamIndex) -> Option<f64> {
+        match self {
+            DspVariant::Dsp48k(ref dsp) => dsp.get_param(param_id),
+            DspVariant::Dsp96k(ref dsp) => dsp.get_param(param_id),
+            DspVariant::Dsp192k(ref dsp) => dsp.get_param(param_id),
+        }
+    }
+    fn set_param(&mut self, param_id: ParamIndex, val: f64)  {
+        match self {
+            DspVariant::Dsp48k(ref mut dsp) => dsp.set_param(param_id,val),
+            DspVariant::Dsp96k(ref mut dsp) => dsp.set_param(param_id,val),
+            DspVariant::Dsp192k(ref mut dsp) => dsp.set_param(param_id,val),
+        }
+    }
+    fn compute(&mut self, count: i32, inputs: &[&[f64]], outputs: &mut[&mut[f64]]) {
+        match self {
+            DspVariant::Dsp48k(ref mut dsp) => dsp.compute(count, inputs, outputs),
+            DspVariant::Dsp96k(ref mut dsp) => dsp.compute(count, inputs, outputs),
+            DspVariant::Dsp192k(ref mut dsp) => dsp.compute(count, inputs, outputs),
+        }
+    }
+}
+
+
 pub struct Lamb {
     params: Arc<LambParams>,
-    dsp: Box<dsp::LambRs>,
+    // dsp_holder: DspHolder,
+
+    dsp_variant: DspVariant,
+
     accum_buffer: TempBuffer,
     temp_output_buffer_l: Box<[f64]>,
     temp_output_buffer_r: Box<[f64]>,
@@ -46,11 +100,8 @@ impl Default for Lamb {
             peak_meter: Arc::new(AtomicF32::new(util::MINUS_INFINITY_DB)),
             gain_reduction_left: Arc::new(AtomicF32::new(0.0)),
             gain_reduction_right: Arc::new(AtomicF32::new(0.0)),
-
-            dsp: dsp::LambRs::default_boxed(),
-
+            dsp_variant: DspVariant::default(),
             accum_buffer: TempBuffer::default(),
-
             temp_output_buffer_l : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             temp_output_buffer_r : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             sample_rate: 48000.0,
@@ -107,19 +158,22 @@ impl Plugin for Lamb {
         buffer_config: &BufferConfig,
         context: &mut impl InitContext<Self>,
     ) -> bool {
-        // Resize buffers and perform other potentially expensive initialization operations here.
-        // The `reset()` function is always called right after this function. You can remove this
-        // function if you do not need it.
-        self.dsp.init(buffer_config.sample_rate as i32);
+
+
         self.accum_buffer.resize(2, MAX_SOUNDCARD_BUFFER_SIZE);
 
         // After `PEAK_METER_DECAY_MS` milliseconds of pure silence, the peak meter's value should
         // have dropped by 12 dB
         self.peak_meter_decay_weight = 0.25f64
-            .powf((buffer_config.sample_rate as f64 * PEAK_METER_DECAY_MS / 1000.0).recip())
-            as f32;
+                                        .powf((buffer_config.sample_rate as f64 * PEAK_METER_DECAY_MS / 1000.0).recip())
+                                        as f32;
 
         self.sample_rate = buffer_config.sample_rate;
+
+        // Resize buffers and perform other potentially expensive initialization operations here.
+        // The `reset()` function is always called right after this function. You can remove this
+        // function if you do not need it.
+        self.dsp_variant.init(buffer_config.sample_rate as i32);
 
         true
     }
@@ -170,13 +224,13 @@ impl Plugin for Lamb {
                 self.peak_meter
                     .store(new_peak_meter, std::sync::atomic::Ordering::Relaxed);
                 self.gain_reduction_left.store(
-                    self.dsp
+                    self.dsp_variant
                         .get_param(GAIN_REDUCTION_LEFT_PI)
                         .expect("no GR read") as f32,
                     std::sync::atomic::Ordering::Relaxed,
                 );
                 self.gain_reduction_right.store(
-                    self.dsp
+                    self.dsp_variant
                         .get_param(GAIN_REDUCTION_RIGHT_PI)
                         .expect("no GR read") as f32,
                     std::sync::atomic::Ordering::Relaxed,
@@ -189,41 +243,41 @@ impl Plugin for Lamb {
             true => 1.0,
             false => 0.0,
         };
-        self.dsp.set_param(BYPASS_PI, bypass);
+        self.dsp_variant.set_param(BYPASS_PI, bypass);
 
         let latency_mode: f64 = match self.params.latency_mode.value() {
             LatencyMode::Minimal => 0.0,
             LatencyMode::Fixed => 1.0,
         };
-        self.dsp.set_param(LATENCY_MODE_PI, latency_mode);
-        self.dsp
+        self.dsp_variant.set_param(LATENCY_MODE_PI, latency_mode);
+        self.dsp_variant
             .set_param(INPUT_GAIN_PI, self.params.input_gain.value() as f64);
-        self.dsp
+        self.dsp_variant
             .set_param(STRENGTH_PI, self.params.strength.value() as f64);
-        self.dsp
+        self.dsp_variant
             .set_param(THRESH_PI, self.params.thresh.value() as f64);
-        self.dsp
+        self.dsp_variant
             .set_param(ATTACK_PI, self.params.attack.value() as f64);
-        self.dsp
+        self.dsp_variant
             .set_param(ATTACK_SHAPE_PI, self.params.attack_shape.value() as f64);
-        self.dsp
+        self.dsp_variant
             .set_param(RELEASE_PI, self.params.release.value() as f64);
-        self.dsp
+        self.dsp_variant
             .set_param(RELEASE_SHAPE_PI, self.params.release_shape.value() as f64);
-        self.dsp
+        self.dsp_variant
             .set_param(RELEASE_HOLD_PI, self.params.release_hold.value() as f64);
-        self.dsp.set_param(KNEE_PI, self.params.knee.value() as f64);
-        self.dsp.set_param(LINK_PI, self.params.link.value() as f64);
-        self.dsp.set_param(
+        self.dsp_variant.set_param(KNEE_PI, self.params.knee.value() as f64);
+        self.dsp_variant.set_param(LINK_PI, self.params.link.value() as f64);
+        self.dsp_variant.set_param(
             ADAPTIVE_RELEASE_PI,
             self.params.adaptive_release.value() as f64,
         );
-        self.dsp
+        self.dsp_variant
             .set_param(LOOKAHEAD_PI, self.params.lookahead.value() as f64);
-        self.dsp
+        self.dsp_variant
             .set_param(OUTPUT_GAIN_PI, self.params.output_gain.value() as f64);
 
-        self.dsp.compute(
+        self.dsp_variant.compute(
             count,
             &self.accum_buffer.slice2d(),
             &mut [
@@ -237,7 +291,7 @@ impl Plugin for Lamb {
             output[1][i] = self.temp_output_buffer_r[i] as f32;
         }
 
-        let latency_samples = self.dsp.get_param(LATENCY_PI).expect("no latency read") as u32;
+        let latency_samples = self.dsp_variant.get_param(LATENCY_PI).expect("no latency read") as u32;
         context.set_latency_samples(latency_samples);
 
         ProcessStatus::Normal
