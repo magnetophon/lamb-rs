@@ -9,9 +9,9 @@ use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
 
 use cyma::{
-    utils::{PeakBuffer, RingBuffer, ValueScaling, WaveformBuffer},
+    utils::{PeakBuffer, ValueScaling},
     visualizers::{
-        Graph, Grid, Lissajous, LissajousGrid, Meter, Oscilloscope, UnitRuler, Waveform,
+        Graph, Grid, Meter, UnitRuler,
     },
 };
 

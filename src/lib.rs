@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 mod buffer;
 mod dsp;
 use buffer::*;
-use cyma::utils::{PeakBuffer, RingBuffer, VisualizerBuffer, WaveformBuffer};
+use cyma::utils::{PeakBuffer, VisualizerBuffer};
 
 use default_boxed::DefaultBoxed;
 
