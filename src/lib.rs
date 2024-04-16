@@ -22,6 +22,7 @@ pub struct Lamb {
     params: Arc<LambParams>,
     dsp: Box<dsp::LambRs>,
     accum_buffer: TempBuffer,
+    // gr_buffer: TempBuffer,
     temp_output_buffer_l: Box<[f64]>,
     temp_output_buffer_r: Box<[f64]>,
     temp_output_buffer_gr_l: Box<[f64]>,
@@ -56,6 +57,7 @@ impl Default for Lamb {
             dsp: dsp::LambRs::default_boxed(),
 
             accum_buffer: TempBuffer::default(),
+            // gr_buffer: TempBuffer::default(),
 
             temp_output_buffer_l : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             temp_output_buffer_r : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
@@ -121,6 +123,7 @@ impl Plugin for Lamb {
         // function if you do not need it.
         self.dsp.init(buffer_config.sample_rate as i32);
         self.accum_buffer.resize(2, MAX_SOUNDCARD_BUFFER_SIZE);
+        // self.gr_buffer.resize(2, MAX_SOUNDCARD_BUFFER_SIZE);
 
         // After `PEAK_METER_DECAY_MS` milliseconds of pure silence, the peak meter's value should
         // have dropped by 12 dB
@@ -199,13 +202,22 @@ impl Plugin for Lamb {
                     .expect("no GR read") as f32,
                 std::sync::atomic::Ordering::Relaxed,
             );
-            self.peak_buffer
-                .lock()
-                .unwrap()
-                .enqueue_buffer(buffer, None);
         }
-
         let output = buffer.as_slice();
+
+        let mut gr_buffer = Buffer::default();
+
+        let mut real_buffers = vec![vec![0.0; MAX_SOUNDCARD_BUFFER_SIZE]; 2];
+
+        unsafe {
+            gr_buffer.set_slices(MAX_SOUNDCARD_BUFFER_SIZE, |output_slices| {
+                let (first_channel, other_channels) = real_buffers.split_at_mut(1);
+                *output_slices = vec![&mut first_channel[0], &mut other_channels[0]];
+            })
+        };
+
+        let gr_output = gr_buffer.as_slice();
+
         let bypass: f64 = match self.params.bypass.value() {
             true => 1.0,
             false => 0.0,
@@ -218,52 +230,63 @@ impl Plugin for Lamb {
         };
         self.dsp.set_param(LATENCY_MODE_PI, latency_mode);
         self.dsp
-                .set_param(INPUT_GAIN_PI, self.params.input_gain.value() as f64);
-            self.dsp
-                .set_param(STRENGTH_PI, self.params.strength.value() as f64);
-            self.dsp
-                .set_param(THRESH_PI, self.params.thresh.value() as f64);
-            self.dsp
-                .set_param(ATTACK_PI, self.params.attack.value() as f64);
-            self.dsp
-                .set_param(ATTACK_SHAPE_PI, self.params.attack_shape.value() as f64);
-            self.dsp
-                .set_param(RELEASE_PI, self.params.release.value() as f64);
-            self.dsp
-                .set_param(RELEASE_SHAPE_PI, self.params.release_shape.value() as f64);
-            self.dsp
-                .set_param(RELEASE_HOLD_PI, self.params.release_hold.value() as f64);
-            self.dsp.set_param(KNEE_PI, self.params.knee.value() as f64);
-            self.dsp.set_param(LINK_PI, self.params.link.value() as f64);
-            self.dsp.set_param(
-                ADAPTIVE_RELEASE_PI,
-                self.params.adaptive_release.value() as f64,
-            );
-            self.dsp
-                .set_param(LOOKAHEAD_PI, self.params.lookahead.value() as f64);
-            self.dsp
-                .set_param(OUTPUT_GAIN_PI, self.params.output_gain.value() as f64);
+            .set_param(INPUT_GAIN_PI, self.params.input_gain.value() as f64);
+        self.dsp
+            .set_param(STRENGTH_PI, self.params.strength.value() as f64);
+        self.dsp
+            .set_param(THRESH_PI, self.params.thresh.value() as f64);
+        self.dsp
+            .set_param(ATTACK_PI, self.params.attack.value() as f64);
+        self.dsp
+            .set_param(ATTACK_SHAPE_PI, self.params.attack_shape.value() as f64);
+        self.dsp
+            .set_param(RELEASE_PI, self.params.release.value() as f64);
+        self.dsp
+            .set_param(RELEASE_SHAPE_PI, self.params.release_shape.value() as f64);
+        self.dsp
+            .set_param(RELEASE_HOLD_PI, self.params.release_hold.value() as f64);
+        self.dsp.set_param(KNEE_PI, self.params.knee.value() as f64);
+        self.dsp.set_param(LINK_PI, self.params.link.value() as f64);
+        self.dsp.set_param(
+            ADAPTIVE_RELEASE_PI,
+            self.params.adaptive_release.value() as f64,
+        );
+        self.dsp
+            .set_param(LOOKAHEAD_PI, self.params.lookahead.value() as f64);
+        self.dsp
+            .set_param(OUTPUT_GAIN_PI, self.params.output_gain.value() as f64);
 
-            self.dsp.compute(
-                count,
-                &self.accum_buffer.slice2d(),
-                &mut [
-                    &mut self.temp_output_buffer_l,
-                    &mut self.temp_output_buffer_r,
-                    &mut self.temp_output_buffer_gr_l,
-                    &mut self.temp_output_buffer_gr_r,
-                ],
-            );
+        self.dsp.compute(
+            count,
+            &self.accum_buffer.slice2d(),
+            &mut [
+                &mut self.temp_output_buffer_l,
+                &mut self.temp_output_buffer_r,
+                &mut self.temp_output_buffer_gr_l,
+                &mut self.temp_output_buffer_gr_r,
+            ],
+        );
 
-            for i in 0..count as usize {
-                output[0][i] = self.temp_output_buffer_l[i] as f32;
-                output[1][i] = self.temp_output_buffer_r[i] as f32;
+        for i in 0..count as usize {
+            output[0][i] = self.temp_output_buffer_l[i] as f32;
+            output[1][i] = self.temp_output_buffer_r[i] as f32;
+            gr_output[0][i] = self.temp_output_buffer_gr_l[i] as f32;
+            gr_output[1][i] = self.temp_output_buffer_gr_r[i] as f32;
+        }
+
+        // To save resources, a plugin can (and probably should!) only perform expensive
+        // calculations that are only displayed on the GUI while the GUI is open
+            if self.params.editor_state.is_open() {
+                self.peak_buffer
+                    .lock()
+                    .unwrap()
+                    .enqueue_buffer(&mut gr_buffer, None);
             }
 
-            let latency_samples = self.dsp.get_param(LATENCY_PI).expect("no latency read") as u32;
-            context.set_latency_samples(latency_samples);
+        let latency_samples = self.dsp.get_param(LATENCY_PI).expect("no latency read") as u32;
+        context.set_latency_samples(latency_samples);
 
-            ProcessStatus::Normal
+        ProcessStatus::Normal
         }
 }
 
