@@ -15,6 +15,7 @@ use cyma::{
         Graph, Grid, Meter, UnitRuler,
     },
 };
+use cyma::visualizers::GraphModifiers;
 
 include!("gain_reduction_meter.rs");
 
@@ -401,8 +402,8 @@ fn peak_graph(cx: &mut Context) {
             Grid::new(
                 cx,
                 ValueScaling::Linear,
-                (-32.0, 8.0),
-                vec![6.0, 0.0, -6.0, -12.0, -18.0, -24.0, -30.0],
+                (-32.0, 0.0),
+                vec![-6.0, -12.0, -18.0, -24.0, -30.0],
                 Orientation::Vertical
             )
                 .color(Color::rgb(60, 60, 60));
@@ -417,11 +418,9 @@ fn peak_graph(cx: &mut Context) {
 
         UnitRuler::new(
             cx,
-            (-32.0, 8.0),
+            (-32.0, 0.0),
             ValueScaling::Linear,
             vec![
-                (6.0, "6db"),
-                (0.0, "0db"),
                 (-6.0, "-6db"),
                 (-12.0, "-12db"),
                 (-18.0, "-18db"),
