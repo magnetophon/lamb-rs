@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 mod buffer;
 mod dsp;
 use buffer::*;
-use cyma::utils::{PeakBuffer, VisualizerBuffer};
+use cyma::utils::{MinimaBuffer, VisualizerBuffer};
 
 use default_boxed::DefaultBoxed;
 
@@ -42,7 +42,7 @@ pub struct Lamb {
     gain_reduction_right: Arc<AtomicF32>,
 
     // These buffers will hold the sample data for the visualizers.
-    peak_buffer: Arc<Mutex<PeakBuffer>>,
+    peak_buffer: Arc<Mutex<MinimaBuffer>>,
 }
 impl Default for Lamb {
     fn default() -> Self {
@@ -64,7 +64,7 @@ impl Default for Lamb {
             temp_output_buffer_gr_l : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             temp_output_buffer_gr_r : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             sample_rate: 48000.0,
-            peak_buffer: Arc::new(Mutex::new(PeakBuffer::new(800, 48000.0, 10.0))),
+            peak_buffer: Arc::new(Mutex::new(MinimaBuffer::new(800, 10.0, 10.0))),
         }
     }
 }
