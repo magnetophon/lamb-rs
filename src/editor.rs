@@ -24,7 +24,7 @@ struct LambData {
     // peak_meter: Arc<AtomicF32>,
     gain_reduction_left: Arc<AtomicF32>,
     gain_reduction_right: Arc<AtomicF32>,
-    peak_buffer: Arc<Mutex<MinimaBuffer>>,
+    gr_buffer: Arc<Mutex<MinimaBuffer>>,
 }
 
 impl LambData {
@@ -33,14 +33,14 @@ impl LambData {
         // peak_meter: Arc<AtomicF32>,
         gain_reduction_left: Arc<AtomicF32>,
         gain_reduction_right: Arc<AtomicF32>,
-        peak_buffer: Arc<Mutex<MinimaBuffer>>,
+        gr_buffer: Arc<Mutex<MinimaBuffer>>,
     ) -> Self {
         Self {
             params,
             // peak_meter,
             gain_reduction_left,
             gain_reduction_right,
-            peak_buffer,
+            gr_buffer,
         }
     }
 }
@@ -60,7 +60,7 @@ pub(crate) fn create(
     // peak_meter: Arc<AtomicF32>,
     gain_reduction_left: Arc<AtomicF32>,
     gain_reduction_right: Arc<AtomicF32>,
-    peak_buffer: Arc<Mutex<MinimaBuffer>>,
+    gr_buffer: Arc<Mutex<MinimaBuffer>>,
     editor_state: Arc<ViziaState>,
 ) -> Option<Box<dyn Editor>> {
     create_vizia_editor(editor_state, ViziaTheming::Custom, move |cx, _| {
@@ -76,7 +76,7 @@ pub(crate) fn create(
             // peak_meter: peak_meter.clone(),
             gain_reduction_left: gain_reduction_left.clone(),
             gain_reduction_right: gain_reduction_right.clone(),
-            peak_buffer: peak_buffer.clone(),
+            gr_buffer: gr_buffer.clone(),
         }
         .build(cx);
 
@@ -407,9 +407,10 @@ fn peak_graph(cx: &mut Context) {
             )
                 .color(Color::rgb(60, 60, 60));
 
-            Graph::new(cx, LambData::peak_buffer, (-32.0, 6.0), ValueScaling::Decibels)
-                .color(Color::rgba(0, 0, 0, 160))
-                .background_color(Color::rgba(16, 16, 16, 60));
+            Graph::new(cx, LambData::gr_buffer, (-32.0, 0.0), ValueScaling::Decibels)
+                .color(Color::rgba(160, 0, 0, 160))
+                .background_color(Color::rgba(255, 16, 16, 60))
+                .should_fill_from_top(true);
         })
         // .background_color(Color::rgb(16, 16, 16))
             ;
@@ -435,7 +436,7 @@ fn peak_graph(cx: &mut Context) {
 
         Meter::new(
             cx,
-            LambData::peak_buffer,
+            LambData::gr_buffer,
             (-32.0, 6.0),
             ValueScaling::Decibels,
             Orientation::Vertical,

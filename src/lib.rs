@@ -42,7 +42,7 @@ pub struct Lamb {
     gain_reduction_right: Arc<AtomicF32>,
 
     // These buffers will hold the sample data for the visualizers.
-    peak_buffer: Arc<Mutex<MinimaBuffer>>,
+    gr_buffer: Arc<Mutex<MinimaBuffer>>,
 }
 impl Default for Lamb {
     fn default() -> Self {
@@ -64,7 +64,7 @@ impl Default for Lamb {
             temp_output_buffer_gr_l : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             temp_output_buffer_gr_r : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             sample_rate: 48000.0,
-            peak_buffer: Arc::new(Mutex::new(MinimaBuffer::new(800, 10.0, 10.0))),
+            gr_buffer: Arc::new(Mutex::new(MinimaBuffer::new(800, 10.0, 0.0))),
         }
     }
 }
@@ -133,7 +133,7 @@ impl Plugin for Lamb {
 
         self.sample_rate = buffer_config.sample_rate;
 
-        match self.peak_buffer.lock() {
+        match self.gr_buffer.lock() {
             Ok(mut buffer) => {
                 buffer.set_sample_rate(buffer_config.sample_rate);
             }
@@ -154,7 +154,7 @@ impl Plugin for Lamb {
             // self.peak_meter.clone(),
             self.gain_reduction_left.clone(),
             self.gain_reduction_right.clone(),
-            self.peak_buffer.clone(),
+            self.gr_buffer.clone(),
             self.params.editor_state.clone(),
         )
     }
@@ -234,7 +234,7 @@ impl Plugin for Lamb {
             );
 
             for i in 0..count as usize {
-                self.peak_buffer
+                self.gr_buffer
                     .lock()
                     .unwrap()
                     .enqueue((self.temp_output_buffer_gr_l[i] + self.temp_output_buffer_gr_l[i]) as f32 / 2.0);
