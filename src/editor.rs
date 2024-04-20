@@ -402,25 +402,26 @@ fn peak_graph(cx: &mut Context) {
             Grid::new(
                 cx,
                 ValueScaling::Linear,
-                (-32.0, 0.0),
-                vec![-6.0, -12.0, -18.0, -24.0, -30.0],
+                (-32.0, 6.0),
+                vec![0.0, -6.0, -12.0, -18.0, -24.0, -30.0],
                 Orientation::Vertical
             )
                 .color(Color::rgb(60, 60, 60));
 
-            Graph::new(cx, LambData::gr_buffer, (-32.0, 0.0), ValueScaling::Decibels)
+            Graph::new(cx, LambData::gr_buffer, (-32.0, 6.0), ValueScaling::Decibels)
                 .color(Color::rgba(160, 0, 0, 160))
                 .background_color(Color::rgba(255, 16, 16, 60))
-                .should_fill_from_top(true);
+                .fill_from(0.0);
         })
         // .background_color(Color::rgb(16, 16, 16))
             ;
 
         UnitRuler::new(
             cx,
-            (-32.0, 0.0),
+            (-32.0, 6.0),
             ValueScaling::Linear,
             vec![
+                (-0.0, "0db"),
                 (-6.0, "-6db"),
                 (-12.0, "-12db"),
                 (-18.0, "-18db"),

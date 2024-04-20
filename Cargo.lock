@@ -1122,7 +1122,7 @@ dependencies = [
 [[package]]
 name = "cyma"
 version = "0.1.0"
-source = "git+https://github.com/223230/cyma.git#a58addb981374235020a7add0c904b1217f307d3"
+source = "git+https://github.com/223230/cyma.git#f62bde104887b4b43d4f81f01624077ba8444e4f"
 dependencies = [
  "lazy_static",
  "nih_plug",
