@@ -218,6 +218,12 @@ impl Plugin for Lamb {
         );
         let latency_samples = self.dsp.get_param(LATENCY_PI).expect("no latency read") as u32;
         context.set_latency_samples(latency_samples);
+        
+        let output = buffer.as_slice();
+        for i in 0..count as usize {
+            output[0][i] = self.temp_output_buffer_l[i] as f32;
+            output[1][i] = self.temp_output_buffer_r[i] as f32;
+        }
 
         if self.params.editor_state.is_open() {
             self.gain_reduction_left.store(
