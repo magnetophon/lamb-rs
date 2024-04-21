@@ -361,9 +361,9 @@ fn peak_graph(cx: &mut Context) {
                     ValueScaling::Linear,
                     (METER_MIN, METER_MAX),
                     vec![0.0, -6.0, -12.0, -18.0, -24.0],
-                    Orientation::Vertical,
+                    Orientation::Horizontal,
                 )
-                .color(Color::rgb(60, 60, 60));
+                .color(Color::rgba(160, 160, 160, 60));
 
                 // level
                 Graph::new(
@@ -426,13 +426,11 @@ fn peak_graph(cx: &mut Context) {
             Orientation::Vertical,
         )
             .font_size(12.)
-            .color(Color::rgb(160, 160, 160))
+            .color(Color::rgb(30, 30, 30))
             .width(Pixels(32.));
     })
-        .top(Pixels(13.0))
-        .height(Pixels(333.0))
+        .top(Pixels(20.0))
+        .height(Pixels(326.0))
         .width(Percentage(100.0))
-        .col_between(Pixels(8.))
-        .border_color(Color::rgba(0, 0, 0, 0))
-        .border_width(Pixels(1.));
+        .col_between(Pixels(8.));
 }
