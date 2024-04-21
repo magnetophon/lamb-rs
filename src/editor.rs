@@ -1,6 +1,6 @@
 use crate::LambParams;
 use crate::ZoomMode;
-use nih_plug::prelude::{Editor};
+use nih_plug::prelude::Editor;
 use nih_plug_vizia::vizia::prelude::*;
 use nih_plug_vizia::vizia::vg;
 use nih_plug_vizia::widgets::*;
@@ -151,7 +151,6 @@ pub(crate) fn create(
                             .class("center")
                             .left(Percentage(2.5));
                     })
-                    // .height(Percentage(100.0))
                     .height(Auto)
                     .width(Percentage(100.0)); // level + time
 
@@ -182,20 +181,13 @@ pub(crate) fn create(
             .height(Auto)
             .width(Percentage(100.0));
 
-            // meters
-            // VStack::new(cx, |cx| {
             peak_graph(cx);
-            // }) // meters
-            // .width(Percentage(100.0))
-            // .height(Auto)
-            // .class("center"); // meters
         }) // everything
-        .width(Percentage(95.0))
-    // .height(Percentage(95.0))
-        .height(Auto)
-        .left(Percentage(2.5))
-        .right(Percentage(2.5))
-        .class("center");
+            .width(Percentage(95.0))
+            .height(Auto)
+            .left(Percentage(2.5))
+            .right(Percentage(2.5))
+            .class("center");
         ResizeHandle::new(cx);
     })
 }
@@ -362,47 +354,31 @@ impl<AttackReleaseDataL: Lens<Target = Arc<LambParams>>> View
 /// Draws a peak graph with a grid backdrop, unit ruler, and a peak meter to side.
 fn peak_graph(cx: &mut Context) {
     HStack::new(cx, |cx| {
-        ZStack::new(cx, |cx| {
-            Grid::new(
-                cx,
-                ValueScaling::Linear,
-                (METER_MIN, METER_MAX),
-                vec![0.0, -6.0, -12.0, -18.0, -24.0, -30.0],
-                Orientation::Vertical
-            )
-                .color(Color::rgb(60, 60, 60));
+        HStack::new(cx, |cx| {
+            ZStack::new(cx, |cx| {
+                Grid::new(
+                    cx,
+                    ValueScaling::Linear,
+                    (METER_MIN, METER_MAX),
+                    vec![0.0, -6.0, -12.0, -18.0, -24.0, -30.0],
+                    Orientation::Vertical
+                )
+                    .color(Color::rgb(60, 60, 60));
 
-            // level
-            Graph::new(cx, LambData::level_buffer, (METER_MIN, METER_MAX), ValueScaling::Decibels)
-                .color(Color::rgba(60, 60, 60, 160))
-                .background_color(Color::rgba(60, 60, 60, 60));
+                // level
+                Graph::new(cx, LambData::level_buffer, (METER_MIN, METER_MAX), ValueScaling::Decibels)
+                    .color(Color::rgba(60, 60, 60, 160))
+                    .background_color(Color::rgba(60, 60, 60, 60));
 
-            // gain reduction
-            Graph::new(cx, LambData::gr_buffer, (METER_MIN, METER_MAX), ValueScaling::Decibels)
-                .color(Color::rgba(160, 0, 0, 160))
-                .background_color(Color::rgba(255, 16, 16, 60))
-                .fill_from(0.0);
-        })
-        // .background_color(Color::rgb(16, 16, 16))
+                // gain reduction
+                Graph::new(cx, LambData::gr_buffer, (METER_MIN, METER_MAX), ValueScaling::Decibels)
+                    .color(Color::rgba(160, 0, 0, 160))
+                    .background_color(Color::rgba(255, 16, 16, 60))
+                    .fill_from(0.0);
+            })
+            // .background_color(Color::rgb(16, 16, 16))
             ;
 
-        UnitRuler::new(
-            cx,
-            (METER_MIN, METER_MAX),
-            ValueScaling::Linear,
-            vec![
-                (-0.0, "0db"),
-                (-6.0, "-6db"),
-                (-12.0, "-12db"),
-                (-18.0, "-18db"),
-                (-24.0, "-24db"),
-                (-30.0, "-30db"),
-            ],
-            Orientation::Vertical,
-        )
-        .font_size(12.)
-        .color(Color::rgb(160, 160, 160))
-        .width(Pixels(32.));
         Meter::new(
             cx,
             LambData::level_buffer,
@@ -428,11 +404,34 @@ fn peak_graph(cx: &mut Context) {
             .width(Pixels(32.0))
             .background_color(Color::rgb(251, 195, 195));
         // .background_color(Color::rgba(160, 0, 0, 60));
+        })
+            .border_color(Color::rgb(80, 80, 80))
+            .border_width(Pixels(1.))
+            ;
+        UnitRuler::new(
+            cx,
+            (METER_MIN, METER_MAX),
+            ValueScaling::Linear,
+            vec![
+                (-0.0, "0db"),
+                (-6.0, "-6db"),
+                (-12.0, "-12db"),
+                (-18.0, "-18db"),
+                (-24.0, "-24db"),
+                (-30.0, "-30db"),
+            ],
+            Orientation::Vertical,
+        )
+            .font_size(12.)
+            .color(Color::rgb(160, 160, 160))
+            .width(Pixels(32.))
+            ;
     })
         .top(Pixels(13.0))
         .height(Pixels(330.0))
         .width(Percentage(100.0))
         .col_between(Pixels(8.))
-        .border_color(Color::rgb(80, 80, 80))
-        .border_width(Pixels(1.));
+        .border_color(Color::rgba(0, 0, 0, 0))
+        .border_width(Pixels(1.))
+        ;
 }
