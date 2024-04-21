@@ -1,12 +1,10 @@
 use crate::LambParams;
 use crate::ZoomMode;
-use atomic_float::AtomicF32;
-use nih_plug::prelude::{util, Editor};
+use nih_plug::prelude::{Editor};
 use nih_plug_vizia::vizia::prelude::*;
 use nih_plug_vizia::vizia::vg;
 use nih_plug_vizia::widgets::*;
 use nih_plug_vizia::{assets, create_vizia_editor, ViziaState, ViziaTheming};
-use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
 
 use cyma::visualizers::GraphModifiers;
