@@ -15,9 +15,6 @@ const MAX_SOUNDCARD_BUFFER_SIZE: usize = 32768;
 
 mod editor;
 
-/// The time it takes for the peak meter to decay by 12 dB after switching to complete silence.
-// const PEAK_METER_DECAY_MS: f64 = 150.0;
-
 pub struct Lamb {
     params: Arc<LambParams>,
     dsp: Box<dsp::LambRs>,
@@ -29,16 +26,6 @@ pub struct Lamb {
 
     /// sample rate
     sample_rate: f32,
-    /// Needed to normalize the peak meter's response based on the sample rate.
-    peak_meter_decay_weight: f32,
-    /// The current data for the peak meter. This is stored as an [`Arc`] so we can share it between
-    /// the GUI and the audio processing parts. If you have more state to share, then it's a good
-    /// idea to put all of that in a struct behind a single `Arc`.
-    ///
-    /// This is stored as voltage gain.
-    // peak_meter: Arc<AtomicF32>,
-    gain_reduction_left: Arc<AtomicF32>,
-    gain_reduction_right: Arc<AtomicF32>,
 
     // These buffers will hold the sample data for the visualizers.
     level_buffer: Arc<Mutex<PeakBuffer>>,
@@ -48,11 +35,6 @@ impl Default for Lamb {
     fn default() -> Self {
         Self {
             params: Arc::new(LambParams::default()),
-
-            peak_meter_decay_weight: 1.0,
-            // peak_meter: Arc::new(AtomicF32::new(util::MINUS_INFINITY_DB)),
-            gain_reduction_left: Arc::new(AtomicF32::new(0.0)),
-            gain_reduction_right: Arc::new(AtomicF32::new(0.0)),
 
             dsp: dsp::LambRs::default_boxed(),
 
@@ -150,9 +132,6 @@ impl Plugin for Lamb {
     fn editor(&mut self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
         editor::create(
             self.params.clone(),
-            // self.peak_meter.clone(),
-            self.gain_reduction_left.clone(),
-            self.gain_reduction_right.clone(),
             self.level_buffer.clone(),
             self.gr_buffer.clone(),
             self.params.editor_state.clone(),
@@ -226,19 +205,6 @@ impl Plugin for Lamb {
         }
 
         if self.params.editor_state.is_open() {
-            self.gain_reduction_left.store(
-                self.dsp
-                    .get_param(GAIN_REDUCTION_LEFT_PI)
-                    .expect("no GR read") as f32,
-                std::sync::atomic::Ordering::Relaxed,
-            );
-            self.gain_reduction_right.store(
-                self.dsp
-                    .get_param(GAIN_REDUCTION_RIGHT_PI)
-                    .expect("no GR read") as f32,
-                std::sync::atomic::Ordering::Relaxed,
-            );
-
             for i in 0..count as usize {
                 self.gr_buffer
                     .lock()

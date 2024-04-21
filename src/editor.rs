@@ -3,6 +3,7 @@ use crate::ZoomMode;
 use atomic_float::AtomicF32;
 use nih_plug::prelude::{util, Editor};
 use nih_plug_vizia::vizia::prelude::*;
+use nih_plug_vizia::vizia::vg;
 use nih_plug_vizia::widgets::*;
 use nih_plug_vizia::{assets, create_vizia_editor, ViziaState, ViziaTheming};
 use std::sync::atomic::Ordering;
@@ -15,17 +16,12 @@ use cyma::{
     visualizers::{Graph, Grid, Meter, UnitRuler},
 };
 
-include!("gain_reduction_meter.rs");
-
 const METER_MIN: f32 = -32.0;
 const METER_MAX: f32 = 0.0;
 
 #[derive(Lens, Clone)]
 struct LambData {
     params: Arc<LambParams>,
-    // peak_meter: Arc<AtomicF32>,
-    gain_reduction_left: Arc<AtomicF32>,
-    gain_reduction_right: Arc<AtomicF32>,
     level_buffer: Arc<Mutex<PeakBuffer>>,
     gr_buffer: Arc<Mutex<MinimaBuffer>>,
 }
@@ -33,17 +29,11 @@ struct LambData {
 impl LambData {
     pub(crate) fn new(
         params: Arc<LambParams>,
-        // peak_meter: Arc<AtomicF32>,
-        gain_reduction_left: Arc<AtomicF32>,
-        gain_reduction_right: Arc<AtomicF32>,
         level_buffer: Arc<Mutex<PeakBuffer>>,
         gr_buffer: Arc<Mutex<MinimaBuffer>>,
     ) -> Self {
         Self {
             params,
-            // peak_meter,
-            gain_reduction_left,
-            gain_reduction_right,
             level_buffer,
             gr_buffer,
         }
@@ -62,9 +52,6 @@ pub(crate) fn default_state() -> Arc<ViziaState> {
 
 pub(crate) fn create(
     params: Arc<LambParams>,
-    // peak_meter: Arc<AtomicF32>,
-    gain_reduction_left: Arc<AtomicF32>,
-    gain_reduction_right: Arc<AtomicF32>,
     level_buffer: Arc<Mutex<PeakBuffer>>,
     gr_buffer: Arc<Mutex<MinimaBuffer>>,
     editor_state: Arc<ViziaState>,
@@ -79,9 +66,6 @@ pub(crate) fn create(
 
         LambData {
             params: params.clone(),
-            // peak_meter: peak_meter.clone(),
-            gain_reduction_left: gain_reduction_left.clone(),
-            gain_reduction_right: gain_reduction_right.clone(),
             level_buffer: level_buffer.clone(),
             gr_buffer: gr_buffer.clone(),
         }
@@ -201,39 +185,15 @@ pub(crate) fn create(
             .width(Percentage(100.0));
 
             // meters
-            VStack::new(cx, |cx| {
-                peak_graph(cx);
-                // Label::new(cx, "input level").class("fader-label");
-                // PeakMeter::new(
-                // cx,
-                // LambData::peak_meter
-                // .map(|peak_meter| util::gain_to_db(peak_meter.load(Ordering::Relaxed))),
-                // Some(Duration::from_millis(600)),
-                // );
-                Label::new(cx, "gain reduction left").class("fader-label");
-                GainReductionMeter::new(
-                    cx,
-                    LambData::gain_reduction_left
-                        .map(|gain_reduction_left| gain_reduction_left.load(Ordering::Relaxed)),
-                    Some(Duration::from_millis(600)),
-                )
-                .width(Percentage(100.0));
-                Label::new(cx, "gain reduction right").class("fader-label");
-                GainReductionMeter::new(
-                    cx,
-                    LambData::gain_reduction_right
-                        .map(|gain_reduction_right| gain_reduction_right.load(Ordering::Relaxed)),
-                    Some(Duration::from_millis(600)),
-                )
-                .width(Percentage(100.0));
-            }) // meters
-            .width(Percentage(100.0))
-            // .height(Percentage(100.0))
-            .height(Auto)
-            .class("center"); // meters
+            // VStack::new(cx, |cx| {
+            peak_graph(cx);
+            // }) // meters
+            // .width(Percentage(100.0))
+            // .height(Auto)
+            // .class("center"); // meters
         }) // everything
         .width(Percentage(95.0))
-        // .height(Percentage(95.0))
+    // .height(Percentage(95.0))
         .height(Auto)
         .left(Percentage(2.5))
         .right(Percentage(2.5))
@@ -472,10 +432,9 @@ fn peak_graph(cx: &mut Context) {
         // .background_color(Color::rgba(160, 0, 0, 60));
     })
         .top(Pixels(13.0))
-    // .height(Pixels(280.0))
-    .height(Pixels(200.0))
-    .width(Percentage(100.0))
-    .col_between(Pixels(8.))
-    .border_color(Color::rgb(80, 80, 80))
-    .border_width(Pixels(1.));
+        .height(Pixels(330.0))
+        .width(Percentage(100.0))
+        .col_between(Pixels(8.))
+        .border_color(Color::rgb(80, 80, 80))
+        .border_width(Pixels(1.));
 }
