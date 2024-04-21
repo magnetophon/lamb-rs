@@ -9,11 +9,13 @@ use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
 
 use cyma::{
-    utils::{PeakBuffer, ValueScaling},
+    utils::{MinimaBuffer},
+    prelude::*,
     visualizers::{
         Graph, Grid, Meter, UnitRuler,
     },
 };
+use cyma::visualizers::GraphModifiers;
 
 include!("gain_reduction_meter.rs");
 
@@ -23,7 +25,7 @@ struct LambData {
     // peak_meter: Arc<AtomicF32>,
     gain_reduction_left: Arc<AtomicF32>,
     gain_reduction_right: Arc<AtomicF32>,
-    peak_buffer: Arc<Mutex<PeakBuffer>>,
+    gr_buffer: Arc<Mutex<MinimaBuffer>>,
 }
 
 impl LambData {
@@ -32,14 +34,14 @@ impl LambData {
         // peak_meter: Arc<AtomicF32>,
         gain_reduction_left: Arc<AtomicF32>,
         gain_reduction_right: Arc<AtomicF32>,
-        peak_buffer: Arc<Mutex<PeakBuffer>>,
+        gr_buffer: Arc<Mutex<MinimaBuffer>>,
     ) -> Self {
         Self {
             params,
             // peak_meter,
             gain_reduction_left,
             gain_reduction_right,
-            peak_buffer,
+            gr_buffer,
         }
     }
 }
@@ -59,7 +61,7 @@ pub(crate) fn create(
     // peak_meter: Arc<AtomicF32>,
     gain_reduction_left: Arc<AtomicF32>,
     gain_reduction_right: Arc<AtomicF32>,
-    peak_buffer: Arc<Mutex<PeakBuffer>>,
+    gr_buffer: Arc<Mutex<MinimaBuffer>>,
     editor_state: Arc<ViziaState>,
 ) -> Option<Box<dyn Editor>> {
     create_vizia_editor(editor_state, ViziaTheming::Custom, move |cx, _| {
@@ -75,7 +77,7 @@ pub(crate) fn create(
             // peak_meter: peak_meter.clone(),
             gain_reduction_left: gain_reduction_left.clone(),
             gain_reduction_right: gain_reduction_right.clone(),
-            peak_buffer: peak_buffer.clone(),
+            gr_buffer: gr_buffer.clone(),
         }
         .build(cx);
 
@@ -399,27 +401,27 @@ fn peak_graph(cx: &mut Context) {
         ZStack::new(cx, |cx| {
             Grid::new(
                 cx,
-                (-32.0, 8.0),
-                0.0,
-                vec![6.0, 0.0, -6.0, -12.0, -18.0, -24.0, -30.0],
+                ValueScaling::Linear,
+                (-32.0, 6.0),
+                vec![0.0, -6.0, -12.0, -18.0, -24.0, -30.0],
+                Orientation::Vertical
             )
-                .color(Color::rgb(60, 60, 60))
-                ;
+                .color(Color::rgb(60, 60, 60));
 
-            Graph::new(cx, LambData::peak_buffer, (-32.0, 6.0), ValueScaling::Decibels)
-                .color(Color::rgba(0, 0, 0, 160))
-                .background_color(Color::rgba(16, 16, 16, 60))
-                ;
+            Graph::new(cx, LambData::gr_buffer, (-32.0, 6.0), ValueScaling::Decibels)
+                .color(Color::rgba(160, 0, 0, 160))
+                .background_color(Color::rgba(255, 16, 16, 60))
+                .fill_from(0.0);
         })
         // .background_color(Color::rgb(16, 16, 16))
             ;
 
         UnitRuler::new(
             cx,
-            (-32.0, 8.0),
+            (-32.0, 6.0),
+            ValueScaling::Linear,
             vec![
-                (6.0, "6db"),
-                (0.0, "0db"),
+                (-0.0, "0db"),
                 (-6.0, "-6db"),
                 (-12.0, "-12db"),
                 (-18.0, "-18db"),
@@ -434,15 +436,14 @@ fn peak_graph(cx: &mut Context) {
 
         Meter::new(
             cx,
-            LambData::peak_buffer,
+            LambData::gr_buffer,
             (-32.0, 6.0),
             ValueScaling::Decibels,
             Orientation::Vertical,
         )
-        .width(Pixels(32.0))
-        .color(Color::rgb(0, 0, 0))
-        .background_color(Color::rgb(80, 80, 80))
-            ;
+            .width(Pixels(32.0))
+            .color(Color::rgb(0, 0, 0))
+            .background_color(Color::rgb(80, 80, 80));
     })
         .top(Pixels(13.0))
     // .height(Pixels(280.0))

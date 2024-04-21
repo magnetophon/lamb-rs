@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 mod buffer;
 mod dsp;
 use buffer::*;
-use cyma::utils::{PeakBuffer, VisualizerBuffer};
+use cyma::utils::{MinimaBuffer, VisualizerBuffer};
 
 use default_boxed::DefaultBoxed;
 
@@ -42,7 +42,7 @@ pub struct Lamb {
     gain_reduction_right: Arc<AtomicF32>,
 
     // These buffers will hold the sample data for the visualizers.
-    peak_buffer: Arc<Mutex<PeakBuffer>>,
+    gr_buffer: Arc<Mutex<MinimaBuffer>>,
 }
 impl Default for Lamb {
     fn default() -> Self {
@@ -64,7 +64,7 @@ impl Default for Lamb {
             temp_output_buffer_gr_l : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             temp_output_buffer_gr_r : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             sample_rate: 48000.0,
-            peak_buffer: Arc::new(Mutex::new(PeakBuffer::new(800, 48000.0, 10.0))),
+            gr_buffer: Arc::new(Mutex::new(MinimaBuffer::new(800, 10.0, 0.0))),
         }
     }
 }
@@ -133,7 +133,7 @@ impl Plugin for Lamb {
 
         self.sample_rate = buffer_config.sample_rate;
 
-        match self.peak_buffer.lock() {
+        match self.gr_buffer.lock() {
             Ok(mut buffer) => {
                 buffer.set_sample_rate(buffer_config.sample_rate);
             }
@@ -154,7 +154,7 @@ impl Plugin for Lamb {
             // self.peak_meter.clone(),
             self.gain_reduction_left.clone(),
             self.gain_reduction_right.clone(),
-            self.peak_buffer.clone(),
+            self.gr_buffer.clone(),
             self.params.editor_state.clone(),
         )
     }
@@ -167,56 +167,6 @@ impl Plugin for Lamb {
     ) -> ProcessStatus {
         let count = buffer.samples() as i32;
         self.accum_buffer.read_from_buffer(buffer);
-
-        // for channel_samples in buffer.iter_samples() {
-        // let mut amplitude = 0.0;
-        // let num_samples = channel_samples.len();
-
-        // for sample in channel_samples {
-        // amplitude += *sample;
-        // }
-
-        // To save resources, a plugin can (and probably should!) only perform expensive
-        // calculations that are only displayed on the GUI while the GUI is open
-        if self.params.editor_state.is_open() {
-            // amplitude = (amplitude / num_samples as f32).abs();
-            // let current_peak_meter = self.peak_meter.load(std::sync::atomic::Ordering::Relaxed);
-            // let new_peak_meter = if amplitude > current_peak_meter {
-            // amplitude
-            // } else {
-            // current_peak_meter * self.peak_meter_decay_weight
-            // + amplitude * (1.0 - self.peak_meter_decay_weight)
-            // };
-
-            // self.peak_meter
-            // .store(new_peak_meter, std::sync::atomic::Ordering::Relaxed);
-            self.gain_reduction_left.store(
-                self.dsp
-                    .get_param(GAIN_REDUCTION_LEFT_PI)
-                    .expect("no GR read") as f32,
-                std::sync::atomic::Ordering::Relaxed,
-            );
-            self.gain_reduction_right.store(
-                self.dsp
-                    .get_param(GAIN_REDUCTION_RIGHT_PI)
-                    .expect("no GR read") as f32,
-                std::sync::atomic::Ordering::Relaxed,
-            );
-        }
-        let output = buffer.as_slice();
-
-        let mut gr_buffer = Buffer::default();
-
-        let mut real_buffers = vec![vec![0.0; MAX_SOUNDCARD_BUFFER_SIZE]; 2];
-
-        unsafe {
-            gr_buffer.set_slices(MAX_SOUNDCARD_BUFFER_SIZE, |output_slices| {
-                let (first_channel, other_channels) = real_buffers.split_at_mut(1);
-                *output_slices = vec![&mut first_channel[0], &mut other_channels[0]];
-            })
-        };
-
-        let gr_output = gr_buffer.as_slice();
 
         let bypass: f64 = match self.params.bypass.value() {
             true => 1.0,
@@ -266,28 +216,39 @@ impl Plugin for Lamb {
                 &mut self.temp_output_buffer_gr_r,
             ],
         );
-
+        let latency_samples = self.dsp.get_param(LATENCY_PI).expect("no latency read") as u32;
+        context.set_latency_samples(latency_samples);
+        
+        let output = buffer.as_slice();
         for i in 0..count as usize {
             output[0][i] = self.temp_output_buffer_l[i] as f32;
             output[1][i] = self.temp_output_buffer_r[i] as f32;
-            gr_output[0][i] = self.temp_output_buffer_gr_l[i] as f32;
-            gr_output[1][i] = self.temp_output_buffer_gr_r[i] as f32;
         }
 
-        // To save resources, a plugin can (and probably should!) only perform expensive
-        // calculations that are only displayed on the GUI while the GUI is open
-            if self.params.editor_state.is_open() {
-                self.peak_buffer
+        if self.params.editor_state.is_open() {
+            self.gain_reduction_left.store(
+                self.dsp
+                    .get_param(GAIN_REDUCTION_LEFT_PI)
+                    .expect("no GR read") as f32,
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            self.gain_reduction_right.store(
+                self.dsp
+                    .get_param(GAIN_REDUCTION_RIGHT_PI)
+                    .expect("no GR read") as f32,
+                std::sync::atomic::Ordering::Relaxed,
+            );
+
+            for i in 0..count as usize {
+                self.gr_buffer
                     .lock()
                     .unwrap()
-                    .enqueue_buffer(&mut gr_buffer, None);
+                    .enqueue((self.temp_output_buffer_gr_l[i] + self.temp_output_buffer_gr_l[i]) as f32 / 2.0);
             }
-
-        let latency_samples = self.dsp.get_param(LATENCY_PI).expect("no latency read") as u32;
-        context.set_latency_samples(latency_samples);
+        }
 
         ProcessStatus::Normal
-        }
+    }
 }
 
 impl ClapPlugin for Lamb {
