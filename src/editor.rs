@@ -8,16 +8,17 @@ use nih_plug_vizia::{assets, create_vizia_editor, ViziaState, ViziaTheming};
 use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
 
-use cyma::{
-    utils::{MinimaBuffer},
-    prelude::*,
-    visualizers::{
-        Graph, Grid, Meter, UnitRuler,
-    },
-};
 use cyma::visualizers::GraphModifiers;
+use cyma::{
+    prelude::*,
+    utils::{MinimaBuffer, PeakBuffer},
+    visualizers::{Graph, Grid, Meter, UnitRuler},
+};
 
 include!("gain_reduction_meter.rs");
+
+const METER_MIN: f32 = -32.0;
+const METER_MAX: f32 = 0.0;
 
 #[derive(Lens, Clone)]
 struct LambData {
@@ -25,6 +26,7 @@ struct LambData {
     // peak_meter: Arc<AtomicF32>,
     gain_reduction_left: Arc<AtomicF32>,
     gain_reduction_right: Arc<AtomicF32>,
+    level_buffer: Arc<Mutex<PeakBuffer>>,
     gr_buffer: Arc<Mutex<MinimaBuffer>>,
 }
 
@@ -34,6 +36,7 @@ impl LambData {
         // peak_meter: Arc<AtomicF32>,
         gain_reduction_left: Arc<AtomicF32>,
         gain_reduction_right: Arc<AtomicF32>,
+        level_buffer: Arc<Mutex<PeakBuffer>>,
         gr_buffer: Arc<Mutex<MinimaBuffer>>,
     ) -> Self {
         Self {
@@ -41,6 +44,7 @@ impl LambData {
             // peak_meter,
             gain_reduction_left,
             gain_reduction_right,
+            level_buffer,
             gr_buffer,
         }
     }
@@ -61,6 +65,7 @@ pub(crate) fn create(
     // peak_meter: Arc<AtomicF32>,
     gain_reduction_left: Arc<AtomicF32>,
     gain_reduction_right: Arc<AtomicF32>,
+    level_buffer: Arc<Mutex<PeakBuffer>>,
     gr_buffer: Arc<Mutex<MinimaBuffer>>,
     editor_state: Arc<ViziaState>,
 ) -> Option<Box<dyn Editor>> {
@@ -77,6 +82,7 @@ pub(crate) fn create(
             // peak_meter: peak_meter.clone(),
             gain_reduction_left: gain_reduction_left.clone(),
             gain_reduction_right: gain_reduction_right.clone(),
+            level_buffer: level_buffer.clone(),
             gr_buffer: gr_buffer.clone(),
         }
         .build(cx);
@@ -402,13 +408,19 @@ fn peak_graph(cx: &mut Context) {
             Grid::new(
                 cx,
                 ValueScaling::Linear,
-                (-32.0, 6.0),
+                (METER_MIN, METER_MAX),
                 vec![0.0, -6.0, -12.0, -18.0, -24.0, -30.0],
                 Orientation::Vertical
             )
                 .color(Color::rgb(60, 60, 60));
 
-            Graph::new(cx, LambData::gr_buffer, (-32.0, 6.0), ValueScaling::Decibels)
+            // level
+            Graph::new(cx, LambData::level_buffer, (METER_MIN, METER_MAX), ValueScaling::Decibels)
+                .color(Color::rgba(60, 60, 60, 160))
+                .background_color(Color::rgba(60, 60, 60, 60));
+
+            // gain reduction
+            Graph::new(cx, LambData::gr_buffer, (METER_MIN, METER_MAX), ValueScaling::Decibels)
                 .color(Color::rgba(160, 0, 0, 160))
                 .background_color(Color::rgba(255, 16, 16, 60))
                 .fill_from(0.0);
@@ -418,7 +430,7 @@ fn peak_graph(cx: &mut Context) {
 
         UnitRuler::new(
             cx,
-            (-32.0, 6.0),
+            (METER_MIN, METER_MAX),
             ValueScaling::Linear,
             vec![
                 (-0.0, "0db"),
@@ -433,23 +445,37 @@ fn peak_graph(cx: &mut Context) {
         .font_size(12.)
         .color(Color::rgb(160, 160, 160))
         .width(Pixels(32.));
-
         Meter::new(
             cx,
-            LambData::gr_buffer,
-            (-32.0, 6.0),
+            LambData::level_buffer,
+            (METER_MIN, METER_MAX),
             ValueScaling::Decibels,
             Orientation::Vertical,
         )
             .width(Pixels(32.0))
-            .color(Color::rgb(0, 0, 0))
-            .background_color(Color::rgb(80, 80, 80));
+            .color(Color::rgba(60, 60, 60, 160))
+            .background_color(Color::rgba(60, 60, 60, 60));
+
+        HStack::new(cx, |cx| {
+            Meter::new(
+                cx,
+                LambData::gr_buffer,
+                (METER_MIN, METER_MAX),
+                ValueScaling::Decibels,
+                Orientation::Vertical,
+            )
+                .background_color(Color::rgb(250, 250, 250))
+                .color(Color::rgba(160, 0, 0, 160));
+        })
+            .width(Pixels(32.0))
+            .background_color(Color::rgb(251, 195, 195));
+        // .background_color(Color::rgba(160, 0, 0, 60));
     })
         .top(Pixels(13.0))
     // .height(Pixels(280.0))
-        .height(Pixels(200.0))
-        .width(Percentage(100.0))
-        .col_between(Pixels(8.))
-        .border_color(Color::rgb(80, 80, 80))
-        .border_width(Pixels(1.));
+    .height(Pixels(200.0))
+    .width(Percentage(100.0))
+    .col_between(Pixels(8.))
+    .border_color(Color::rgb(80, 80, 80))
+    .border_width(Pixels(1.));
 }

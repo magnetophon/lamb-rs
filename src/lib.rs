@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 mod buffer;
 mod dsp;
 use buffer::*;
-use cyma::utils::{MinimaBuffer, VisualizerBuffer};
+use cyma::utils::{PeakBuffer, MinimaBuffer, VisualizerBuffer};
 
 use default_boxed::DefaultBoxed;
 
@@ -22,7 +22,6 @@ pub struct Lamb {
     params: Arc<LambParams>,
     dsp: Box<dsp::LambRs>,
     accum_buffer: TempBuffer,
-    // gr_buffer: TempBuffer,
     temp_output_buffer_l: Box<[f64]>,
     temp_output_buffer_r: Box<[f64]>,
     temp_output_buffer_gr_l: Box<[f64]>,
@@ -42,6 +41,7 @@ pub struct Lamb {
     gain_reduction_right: Arc<AtomicF32>,
 
     // These buffers will hold the sample data for the visualizers.
+    level_buffer: Arc<Mutex<PeakBuffer>>,
     gr_buffer: Arc<Mutex<MinimaBuffer>>,
 }
 impl Default for Lamb {
@@ -57,13 +57,13 @@ impl Default for Lamb {
             dsp: dsp::LambRs::default_boxed(),
 
             accum_buffer: TempBuffer::default(),
-            // gr_buffer: TempBuffer::default(),
 
             temp_output_buffer_l : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             temp_output_buffer_r : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             temp_output_buffer_gr_l : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             temp_output_buffer_gr_r : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             sample_rate: 48000.0,
+            level_buffer: Arc::new(Mutex::new(PeakBuffer::new(800, 10.0, 0.0))),
             gr_buffer: Arc::new(Mutex::new(MinimaBuffer::new(800, 10.0, 0.0))),
         }
     }
@@ -123,17 +123,16 @@ impl Plugin for Lamb {
         // function if you do not need it.
         self.dsp.init(buffer_config.sample_rate as i32);
         self.accum_buffer.resize(2, MAX_SOUNDCARD_BUFFER_SIZE);
-        // self.gr_buffer.resize(2, MAX_SOUNDCARD_BUFFER_SIZE);
-
-        // After `PEAK_METER_DECAY_MS` milliseconds of pure silence, the peak meter's value should
-        // have dropped by 12 dB
-        // self.peak_meter_decay_weight = 0.25f64
-        // .powf((buffer_config.sample_rate as f64 * PEAK_METER_DECAY_MS / 1000.0).recip())
-        // as f32;
-
         self.sample_rate = buffer_config.sample_rate;
 
         match self.gr_buffer.lock() {
+            Ok(mut buffer) => {
+                buffer.set_sample_rate(buffer_config.sample_rate);
+            }
+            Err(_) => return false,
+        }
+
+        match self.level_buffer.lock() {
             Ok(mut buffer) => {
                 buffer.set_sample_rate(buffer_config.sample_rate);
             }
@@ -154,6 +153,7 @@ impl Plugin for Lamb {
             // self.peak_meter.clone(),
             self.gain_reduction_left.clone(),
             self.gain_reduction_right.clone(),
+            self.level_buffer.clone(),
             self.gr_buffer.clone(),
             self.params.editor_state.clone(),
         )
@@ -243,7 +243,11 @@ impl Plugin for Lamb {
                 self.gr_buffer
                     .lock()
                     .unwrap()
-                    .enqueue((self.temp_output_buffer_gr_l[i] + self.temp_output_buffer_gr_l[i]) as f32 / 2.0);
+                    .enqueue((self.temp_output_buffer_gr_l[i] + self.temp_output_buffer_gr_r[i]) as f32 / 2.0);
+                self.level_buffer
+                    .lock()
+                    .unwrap()
+                    .enqueue((self.temp_output_buffer_l[i] + self.temp_output_buffer_r[i]) as f32 / 2.0);
             }
         }
 
