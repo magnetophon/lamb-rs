@@ -20,20 +20,26 @@ const METER_MAX: f32 = 0.0;
 #[derive(Lens, Clone)]
 struct LambData {
     params: Arc<LambParams>,
-    level_buffer: Arc<Mutex<PeakBuffer>>,
-    gr_buffer: Arc<Mutex<MinimaBuffer>>,
+    level_buffer_l: Arc<Mutex<PeakBuffer>>,
+    level_buffer_r: Arc<Mutex<PeakBuffer>>,
+    gr_buffer_l: Arc<Mutex<MinimaBuffer>>,
+    gr_buffer_r: Arc<Mutex<MinimaBuffer>>,
 }
 
 impl LambData {
     pub(crate) fn new(
         params: Arc<LambParams>,
-        level_buffer: Arc<Mutex<PeakBuffer>>,
-        gr_buffer: Arc<Mutex<MinimaBuffer>>,
+        level_buffer_l: Arc<Mutex<PeakBuffer>>,
+        level_buffer_r: Arc<Mutex<PeakBuffer>>,
+        gr_buffer_l: Arc<Mutex<MinimaBuffer>>,
+        gr_buffer_r: Arc<Mutex<MinimaBuffer>>,
     ) -> Self {
         Self {
             params,
-            level_buffer,
-            gr_buffer,
+            level_buffer_l,
+            level_buffer_r,
+            gr_buffer_l,
+            gr_buffer_r,
         }
     }
 }
@@ -50,8 +56,10 @@ pub(crate) fn default_state() -> Arc<ViziaState> {
 
 pub(crate) fn create(
     params: Arc<LambParams>,
-    level_buffer: Arc<Mutex<PeakBuffer>>,
-    gr_buffer: Arc<Mutex<MinimaBuffer>>,
+    level_buffer_l: Arc<Mutex<PeakBuffer>>,
+    level_buffer_r: Arc<Mutex<PeakBuffer>>,
+    gr_buffer_l: Arc<Mutex<MinimaBuffer>>,
+    gr_buffer_r: Arc<Mutex<MinimaBuffer>>,
     editor_state: Arc<ViziaState>,
 ) -> Option<Box<dyn Editor>> {
     create_vizia_editor(editor_state, ViziaTheming::Custom, move |cx, _| {
@@ -64,8 +72,10 @@ pub(crate) fn create(
 
         LambData {
             params: params.clone(),
-            level_buffer: level_buffer.clone(),
-            gr_buffer: gr_buffer.clone(),
+            level_buffer_l: level_buffer_l.clone(),
+            level_buffer_r: level_buffer_r.clone(),
+            gr_buffer_l: gr_buffer_l.clone(),
+            gr_buffer_r: gr_buffer_r.clone(),
         }
         .build(cx);
 
@@ -368,40 +378,81 @@ fn peak_graph(cx: &mut Context) {
                 // level
                 Graph::new(
                     cx,
-                    LambData::level_buffer,
+                    LambData::level_buffer_l,
                     (METER_MIN, METER_MAX),
                     ValueScaling::Decibels,
                 )
-                .color(Color::rgba(60, 60, 60, 160))
-                .background_color(Color::rgba(60, 60, 60, 60));
+                    .color(Color::rgba(60, 60, 60, 30))
+                    .background_color(Color::rgba(60, 60, 60, 20));
+
+                Graph::new(
+                    cx,
+                    LambData::level_buffer_r,
+                    (METER_MIN, METER_MAX),
+                    ValueScaling::Decibels,
+                )
+                    .color(Color::rgba(60, 60, 60, 30))
+                    .background_color(Color::rgba(60, 60, 60, 20));
 
                 // gain reduction
                 Graph::new(
                     cx,
-                    LambData::gr_buffer,
+                    LambData::gr_buffer_l,
                     (METER_MIN, METER_MAX),
                     ValueScaling::Decibels,
                 )
-                .color(Color::rgba(160, 0, 0, 160))
-                .background_color(Color::rgba(255, 16, 16, 60))
-                .fill_from(0.0);
+                    .color(Color::rgba(0, 0, 255, 125))
+                    .background_color(Color::rgba(0, 0, 255, 20))
+                    .fill_from(0.0);
+                Graph::new(
+                    cx,
+                    LambData::gr_buffer_r,
+                    (METER_MIN, METER_MAX),
+                    ValueScaling::Decibels,
+                )
+                    .color(Color::rgba(255, 0, 0, 125))
+                    .background_color(Color::rgba(255, 0, 0, 20))
+                    .fill_from(0.0);
             });
             HStack::new(cx, |cx| {
                 Meter::new(
                     cx,
-                    LambData::gr_buffer,
+                    LambData::gr_buffer_l,
                     (METER_MIN, METER_MAX),
                     ValueScaling::Decibels,
                     Orientation::Vertical,
                 )
                     .background_color(Color::rgb(250, 250, 250))
-                    .color(Color::rgba(160, 0, 0, 160));
+                    .color(Color::rgba(0, 0, 255, 60));
             })
                 .width(Pixels(15.0))
-                .background_color(Color::rgb(251, 195, 195));
+                .background_color(Color::rgb(192, 192, 251));
+            HStack::new(cx, |cx| {
+                Meter::new(
+                    cx,
+                    LambData::gr_buffer_r,
+                    (METER_MIN, METER_MAX),
+                    ValueScaling::Decibels,
+                    Orientation::Vertical,
+                )
+                    .background_color(Color::rgb(250, 250, 250))
+                    .color(Color::rgba(255, 0, 0, 60));
+            })
+                .width(Pixels(15.0))
+                .background_color(Color::rgb(251, 192, 192));
             Meter::new(
                 cx,
-                LambData::level_buffer,
+                LambData::level_buffer_l,
+                (METER_MIN, METER_MAX),
+                ValueScaling::Decibels,
+                Orientation::Vertical,
+            )
+                .width(Pixels(15.0))
+                .color(Color::rgba(60, 60, 60, 160))
+                .background_color(Color::rgba(60, 60, 60, 60));
+            Meter::new(
+                cx,
+                LambData::level_buffer_r,
                 (METER_MIN, METER_MAX),
                 ValueScaling::Decibels,
                 Orientation::Vertical,
@@ -410,6 +461,7 @@ fn peak_graph(cx: &mut Context) {
                 .color(Color::rgba(60, 60, 60, 160))
                 .background_color(Color::rgba(60, 60, 60, 60));
         })
+        // .width(Pixels(30.0))
             .border_color(Color::rgb(80, 80, 80))
             .border_width(Pixels(1.));
         UnitRuler::new(

@@ -28,8 +28,10 @@ pub struct Lamb {
     sample_rate: f32,
 
     // These buffers will hold the sample data for the visualizers.
-    level_buffer: Arc<Mutex<PeakBuffer>>,
-    gr_buffer: Arc<Mutex<MinimaBuffer>>,
+    level_buffer_l: Arc<Mutex<PeakBuffer>>,
+    level_buffer_r: Arc<Mutex<PeakBuffer>>,
+    gr_buffer_l: Arc<Mutex<MinimaBuffer>>,
+    gr_buffer_r: Arc<Mutex<MinimaBuffer>>,
 }
 impl Default for Lamb {
     fn default() -> Self {
@@ -45,8 +47,10 @@ impl Default for Lamb {
             temp_output_buffer_gr_l : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             temp_output_buffer_gr_r : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             sample_rate: 48000.0,
-            level_buffer: Arc::new(Mutex::new(PeakBuffer::new(800, 10.0, 0.0))),
-            gr_buffer: Arc::new(Mutex::new(MinimaBuffer::new(800, 10.0, 0.0))),
+            level_buffer_l: Arc::new(Mutex::new(PeakBuffer::new(1068, 7.0, 0.0))),
+            level_buffer_r: Arc::new(Mutex::new(PeakBuffer::new(1068, 7.0, 0.0))),
+            gr_buffer_l: Arc::new(Mutex::new(MinimaBuffer::new(1068, 7.0, 0.0))),
+            gr_buffer_r: Arc::new(Mutex::new(MinimaBuffer::new(1068, 7.0, 0.0))),
         }
     }
 }
@@ -107,14 +111,28 @@ impl Plugin for Lamb {
         self.accum_buffer.resize(2, MAX_SOUNDCARD_BUFFER_SIZE);
         self.sample_rate = buffer_config.sample_rate;
 
-        match self.gr_buffer.lock() {
+        match self.level_buffer_l.lock() {
             Ok(mut buffer) => {
                 buffer.set_sample_rate(buffer_config.sample_rate);
             }
             Err(_) => return false,
         }
 
-        match self.level_buffer.lock() {
+        match self.level_buffer_r.lock() {
+            Ok(mut buffer) => {
+                buffer.set_sample_rate(buffer_config.sample_rate);
+            }
+            Err(_) => return false,
+        }
+
+        match self.gr_buffer_l.lock() {
+            Ok(mut buffer) => {
+                buffer.set_sample_rate(buffer_config.sample_rate);
+            }
+            Err(_) => return false,
+        }
+
+        match self.gr_buffer_r.lock() {
             Ok(mut buffer) => {
                 buffer.set_sample_rate(buffer_config.sample_rate);
             }
@@ -132,8 +150,10 @@ impl Plugin for Lamb {
     fn editor(&mut self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
         editor::create(
             self.params.clone(),
-            self.level_buffer.clone(),
-            self.gr_buffer.clone(),
+            self.level_buffer_l.clone(),
+            self.level_buffer_r.clone(),
+            self.gr_buffer_l.clone(),
+            self.gr_buffer_r.clone(),
             self.params.editor_state.clone(),
         )
     }
@@ -206,14 +226,22 @@ impl Plugin for Lamb {
 
         if self.params.editor_state.is_open() {
             for i in 0..count as usize {
-                self.gr_buffer
+                self.level_buffer_l
                     .lock()
                     .unwrap()
-                    .enqueue((self.temp_output_buffer_gr_l[i] + self.temp_output_buffer_gr_r[i]) as f32 / 2.0);
-                self.level_buffer
+                    .enqueue(self.temp_output_buffer_l[i] as f32 );
+                self.level_buffer_r
                     .lock()
                     .unwrap()
-                    .enqueue((self.temp_output_buffer_l[i] + self.temp_output_buffer_r[i]) as f32 / 2.0);
+                    .enqueue(self.temp_output_buffer_r[i] as f32 );
+                self.gr_buffer_l
+                    .lock()
+                    .unwrap()
+                    .enqueue(self.temp_output_buffer_gr_l[i]as f32 );
+                self.gr_buffer_r
+                    .lock()
+                    .unwrap()
+                    .enqueue(self.temp_output_buffer_gr_r[i]as f32 );
             }
         }
 
