@@ -1,5 +1,5 @@
-use std::sync::atomic::{AtomicBool, Ordering};
 use faust_types::ParamIndex;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 #[derive(Params)]
 struct LambParams {
@@ -166,9 +166,7 @@ pub fn ratio_to_strength() -> Arc<dyn Fn(&str) -> Option<f32> + Send + Sync> {
 }
 
 impl LambParams {
-    pub fn new(
-        should_update_time_scale: Arc<AtomicBool>,
-    ) -> Self {
+    pub fn new(should_update_time_scale: Arc<AtomicBool>) -> Self {
         Self {
             editor_state: editor::default_state(),
 
@@ -251,9 +249,9 @@ impl LambParams {
                     max: 50.0,
                 },
             )
-                .with_unit(" ms")
-                .with_step_size(0.01)
-                .non_automatable(),
+            .with_unit(" ms")
+            .with_step_size(0.01)
+            .non_automatable(),
             knee: FloatParam::new(
                 "knee",
                 1.0,
@@ -308,13 +306,11 @@ impl LambParams {
             zoom_mode: EnumParam::new("zoom_mode", ZoomMode::Relative)
                 .hide()
                 .hide_in_generic_ui(),
-            time_scale: EnumParam::new("time_scale", TimeScale::EightSec)
-                .with_callback(
-                    {
-                        let should_update_time_scale = should_update_time_scale.clone();
-                        Arc::new(move |_| should_update_time_scale.store(true, Ordering::Release))
-                    },
-                )
+            time_scale: EnumParam::new("time_scale", TimeScale::FourSec)
+                .with_callback({
+                    let should_update_time_scale = should_update_time_scale.clone();
+                    Arc::new(move |_| should_update_time_scale.store(true, Ordering::Release))
+                })
                 .hide()
                 .hide_in_generic_ui(),
         }

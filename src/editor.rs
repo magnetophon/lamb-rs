@@ -15,7 +15,7 @@ use cyma::{
 };
 
 const METER_MIN: f32 = -26.0;
-const METER_MAX: f32 = 0.0;
+const METER_MAX: f32 = 2.0;
 
 #[derive(Lens, Clone)]
 struct LambData {
@@ -194,7 +194,7 @@ pub(crate) fn create(
                     // .height(Pixels(260.0));
                     Label::new(cx, "GR graph time scale").class("fader-label");
                     ParamSlider::new(cx, LambData::params, |params| &params.time_scale)
-                        .set_style(ParamSliderStyle::CurrentStep{ even: true })
+                        .set_style(ParamSliderStyle::CurrentStep { even: true })
                         .bottom(Pixels(6.0));
                 }) // graph + zoom
                 .height(Auto)
@@ -261,7 +261,8 @@ impl<AttackReleaseDataL: Lens<Target = Arc<LambParams>>> View
         // let border_width = cx.scale_factor() * cx.border_width();
         let border_width = cx.border_width();
 
-        let rounding = 3.0 * border_width;
+        // let rounding = 3.0 * border_width;
+        let rounding = 0.0;
 
         // Create a new `Path` from the `vg` module.
         let x = bounds.x + border_width / 2.0;
@@ -377,107 +378,124 @@ impl<AttackReleaseDataL: Lens<Target = Arc<LambParams>>> View
 /// Draws a peak graph with a grid backdrop, unit ruler, and a peak meter to side.
 fn peak_graph(cx: &mut Context) {
     HStack::new(cx, |cx| {
-        HStack::new(cx, |cx| {
-            ZStack::new(cx, |cx| {
-                Grid::new(
-                    cx,
-                    ValueScaling::Linear,
-                    (METER_MIN, METER_MAX),
-                    vec![0.0, -6.0, -12.0, -18.0, -24.0],
-                    Orientation::Horizontal,
-                )
+        ZStack::new(cx, |cx| {
+            Grid::new(
+                cx,
+                ValueScaling::Linear,
+                (METER_MIN, METER_MAX),
+                vec![0.0, -6.0, -12.0, -18.0, -24.0],
+                Orientation::Horizontal,
+            )
                 .color(Color::rgba(160, 160, 160, 60));
 
-                // level
-                Graph::new(
-                    cx,
-                    LambData::level_buffer_l,
-                    (METER_MIN, METER_MAX),
-                    ValueScaling::Decibels,
-                )
-                .color(Color::rgba(0, 0, 255, 30))
-                .background_color(Color::rgba(0, 0, 0, 40));
-
-                Graph::new(
-                    cx,
-                    LambData::level_buffer_r,
-                    (METER_MIN, METER_MAX),
-                    ValueScaling::Decibels,
-                )
-                .color(Color::rgba(255, 0, 0, 30))
-                .background_color(Color::rgba(0, 0, 0, 40));
-
-                // gain reduction
-                Graph::new(
-                    cx,
-                    LambData::gr_buffer_l,
-                    (METER_MIN, METER_MAX),
-                    ValueScaling::Decibels,
-                )
-                .color(Color::rgba(0, 0, 255, 255))
-                .background_color(Color::rgba(250, 250, 250, 40))
-                .fill_from(0.0);
-                Graph::new(
-                    cx,
-                    LambData::gr_buffer_r,
-                    (METER_MIN, METER_MAX),
-                    ValueScaling::Decibels,
-                )
-                .color(Color::rgba(255, 0, 0, 255))
-                .background_color(Color::rgba(250, 250, 250, 40))
-                .fill_from(0.0);
-            });
-            // gain reduction
-            HStack::new(cx, |cx| {
-                Meter::new(
-                    cx,
-                    LambData::gr_buffer_l,
-                    (METER_MIN, METER_MAX),
-                    ValueScaling::Decibels,
-                    Orientation::Vertical,
-                )
-                .background_color(Color::rgb(250, 250, 250))
-                .color(Color::rgba(0, 0, 255, 255));
-            })
-            .width(Pixels(15.0))
-            .background_color(Color::rgb(220, 220, 220));
-            HStack::new(cx, |cx| {
-                Meter::new(
-                    cx,
-                    LambData::gr_buffer_r,
-                    (METER_MIN, METER_MAX),
-                    ValueScaling::Decibels,
-                    Orientation::Vertical,
-                )
-                .background_color(Color::rgb(250, 250, 250))
-                .color(Color::rgba(255, 0, 0, 255));
-            })
-                .width(Pixels(15.0))
-                .background_color(Color::rgb(220, 220, 220));
             // level
-            Meter::new(
+            Graph::new(
                 cx,
                 LambData::level_buffer_l,
                 (METER_MIN, METER_MAX),
                 ValueScaling::Decibels,
-                Orientation::Vertical,
             )
-                .width(Pixels(15.0))
-                .color(Color::rgba(0, 0, 255, 125))
-                .background_color(Color::rgba(60, 60, 60, 60));
-            Meter::new(
+                .color(Color::rgba(0, 0, 255, 30))
+                .background_color(Color::rgba(0, 0, 0, 40));
+
+            Graph::new(
                 cx,
                 LambData::level_buffer_r,
                 (METER_MIN, METER_MAX),
                 ValueScaling::Decibels,
-                Orientation::Vertical,
             )
-                .width(Pixels(15.0))
-                .color(Color::rgba(255, 0, 0, 125))
-                .background_color(Color::rgba(60, 60, 60, 60));
+                .color(Color::rgba(255, 0, 0, 30))
+                .background_color(Color::rgba(0, 0, 0, 40));
+
+            // gain reduction
+            Graph::new(
+                cx,
+                LambData::gr_buffer_l,
+                (METER_MIN, METER_MAX),
+                ValueScaling::Decibels,
+            )
+                .color(Color::rgba(0, 0, 255, 255))
+                .background_color(Color::rgba(250, 250, 250, 40))
+                .fill_from(0.0);
+            Graph::new(
+                cx,
+                LambData::gr_buffer_r,
+                (METER_MIN, METER_MAX),
+                ValueScaling::Decibels,
+            )
+                .color(Color::rgba(255, 0, 0, 255))
+                .background_color(Color::rgba(250, 250, 250, 40))
+                .fill_from(0.0);
+        });
+
+        ZStack::new(cx, |cx| {
+            HStack::new(cx, |cx| {
+                // gain reduction
+                HStack::new(cx, |cx| {
+                    Meter::new(
+                        cx,
+                        LambData::gr_buffer_l,
+                        (METER_MIN, METER_MAX),
+                        ValueScaling::Decibels,
+                        Orientation::Vertical,
+                    )
+                        .background_color(Color::rgb(250, 250, 250))
+                        .color(Color::rgba(0, 0, 255, 255));
+                })
+                    .left(Pixels(4.0))
+                    .width(Pixels(15.0))
+                    .background_color(Color::rgb(220, 220, 220));
+                HStack::new(cx, |cx| {
+                    Meter::new(
+                        cx,
+                        LambData::gr_buffer_r,
+                        (METER_MIN, METER_MAX),
+                        ValueScaling::Decibels,
+                        Orientation::Vertical,
+                    )
+                        .background_color(Color::rgb(250, 250, 250))
+                        .color(Color::rgba(255, 0, 0, 255));
+                })
+                    .width(Pixels(15.0))
+                    .background_color(Color::rgb(220, 220, 220));
+                // level
+                Meter::new(
+                    cx,
+                    LambData::level_buffer_l,
+                    (METER_MIN, METER_MAX),
+                    ValueScaling::Decibels,
+                    Orientation::Vertical,
+                )
+                    .width(Pixels(15.0))
+                    .color(Color::rgba(0, 0, 255, 255))
+                    .background_color(Color::rgba(60, 60, 60, 60));
+                Meter::new(
+                    cx,
+                    LambData::level_buffer_r,
+                    (METER_MIN, METER_MAX),
+                    ValueScaling::Decibels,
+                    Orientation::Vertical,
+                )
+                    .width(Pixels(15.0))
+                    .color(Color::rgba(255, 0, 0, 255))
+                    .background_color(Color::rgba(60, 60, 60, 60));
+            })
+                .col_between(Pixels(2.))
+                .width(Auto)
+                ;
+            Grid::new(
+                cx,
+                ValueScaling::Linear,
+                (METER_MIN, METER_MAX),
+                vec![0.0, -6.0, -12.0, -18.0, -24.0],
+                Orientation::Horizontal,
+            )
+                .color(Color::rgba(160, 160, 160, 60));
+
         })
-            .border_color(Color::rgb(80, 80, 80))
-            .border_width(Pixels(1.));
+            .width(Pixels(70.0))
+        // .width(Auto)
+            ;
         UnitRuler::new(
             cx,
             (METER_MIN, METER_MAX),
@@ -491,12 +509,16 @@ fn peak_graph(cx: &mut Context) {
             ],
             Orientation::Vertical,
         )
+            .left(Pixels(2.0))
+            .right(Pixels(2.0))
             .font_size(12.)
             .color(Color::rgb(30, 30, 30))
             .width(Pixels(32.));
     })
+        .width(Auto)
+        .border_color(Color::rgb(163, 163, 163))
+        .border_width(Pixels(1.4))
         .top(Pixels(20.0))
-        .height(Pixels(260.0))
-        .width(Percentage(100.0))
-        .col_between(Pixels(8.));
+        .height(Pixels(255.0))
+        .width(Percentage(100.0));
 }
