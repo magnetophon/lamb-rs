@@ -50,8 +50,7 @@ impl Model for LambData {}
 pub(crate) fn default_state() -> Arc<ViziaState> {
     // width , height
     // ViziaState::new(|| (((16.0 / 9.0) * 720.0) as u32, 720))
-    // ViziaState::new(|| (1280, 960))
-    ViziaState::new(|| (1200, 900))
+    ViziaState::new(|| (1280, 720))
 }
 
 pub(crate) fn create(
@@ -92,9 +91,9 @@ pub(crate) fn create(
                     Label::new(cx, "input gain").class("fader-label");
                     ParamSlider::new(cx, LambData::params, |params| &params.input_gain)
                         .bottom(Pixels(6.0));
-                    // level + time
+                    // three colomns
                     HStack::new(cx, |cx| {
-                        // level
+                        // first
                         VStack::new(cx, |cx| {
                             HStack::new(cx, |cx| {
                                 // bypass and latency_mode
@@ -130,15 +129,29 @@ pub(crate) fn create(
                             ParamSlider::new(cx, LambData::params, |params| &params.thresh);
                             Label::new(cx, "knee").class("fader-label");
                             ParamSlider::new(cx, LambData::params, |params| &params.knee);
-                            Label::new(cx, "link").class("fader-label");
-                            ParamSlider::new(cx, LambData::params, |params| &params.link);
-                            Label::new(cx, "lookahead").class("fader-label");
-                            ParamSlider::new(cx, LambData::params, |params| &params.lookahead);
-                        }) // level
+                        }) // first
                         .height(Auto)
                         .class("center")
                         .right(Percentage(2.5));
-                        // time
+                        // second
+                        VStack::new(cx, |cx| {
+                            Label::new(cx, "lookahead").class("fader-label");
+                            ParamSlider::new(cx, LambData::params, |params| &params.lookahead);
+                            Label::new(cx, "link").class("fader-label");
+                            ParamSlider::new(cx, LambData::params, |params| &params.link);
+                            Label::new(cx, "release hold").class("fader-label");
+                            ParamSlider::new(cx, LambData::params, |params| &params.release_hold);
+                            Label::new(cx, "adaptive release").class("fader-label");
+                            ParamSlider::new(cx, LambData::params, |params| {
+                                &params.adaptive_release
+                            })
+                            .set_style(ParamSliderStyle::FromLeft);
+                        }) // second
+                        .height(Auto)
+                        .class("center")
+                        .left(Percentage(1.25))
+                        .right(Percentage(1.25));
+                        // third
                         VStack::new(cx, |cx| {
                             Label::new(cx, "attack").class("fader-label");
                             ParamSlider::new(cx, LambData::params, |params| &params.attack);
@@ -149,25 +162,19 @@ pub(crate) fn create(
                             Label::new(cx, "release shape").class("fader-label");
                             ParamSlider::new(cx, LambData::params, |params| &params.release_shape)
                                 .set_style(ParamSliderStyle::FromLeft);
-                            Label::new(cx, "release hold").class("fader-label");
-                            ParamSlider::new(cx, LambData::params, |params| &params.release_hold);
-                            Label::new(cx, "adaptive release").class("fader-label");
-                            ParamSlider::new(cx, LambData::params, |params| {
-                                &params.adaptive_release
-                            })
-                            .set_style(ParamSliderStyle::FromLeft);
-                        }) // time
+                        }) // third
                         .height(Auto)
                         .class("center")
                         .left(Percentage(2.5));
                     })
                     .height(Auto)
-                    .width(Percentage(100.0)); // level + time
+                    .width(Percentage(100.0)); // three colomns
 
                     Label::new(cx, "output gain").class("fader-label");
                     ParamSlider::new(cx, LambData::params, |params| &params.output_gain)
                         .bottom(Pixels(6.0));
                 }) // parameters
+                .width(Percentage(75.0))
                 .height(Auto)
                 .right(Percentage(2.5))
                 .class("center");
@@ -183,7 +190,12 @@ pub(crate) fn create(
                         .set_style(ParamSliderStyle::CurrentStepLabeled { even: true })
                         .bottom(Pixels(6.0));
                     Label::new(cx, "").class("fader-label"); // spacer
-                    AttackReleaseGraph::new(cx, LambData::params).height(Pixels(373.0));
+                    AttackReleaseGraph::new(cx, LambData::params).height(Pixels(200.0));
+                    // .height(Pixels(260.0));
+                    Label::new(cx, "zoom mode").class("fader-label");
+                    ParamSlider::new(cx, LambData::params, |params| &params.zoom_mode)
+                        .set_style(ParamSliderStyle::CurrentStepLabeled { even: true })
+                        .bottom(Pixels(6.0));
                 }) // graph + zoom
                 .height(Auto)
                 .class("center");
@@ -463,7 +475,6 @@ fn peak_graph(cx: &mut Context) {
                 .color(Color::rgba(255, 0, 0, 125))
                 .background_color(Color::rgba(60, 60, 60, 60));
         })
-        // .width(Pixels(30.0))
             .border_color(Color::rgb(80, 80, 80))
             .border_width(Pixels(1.));
         UnitRuler::new(
@@ -484,7 +495,7 @@ fn peak_graph(cx: &mut Context) {
             .width(Pixels(32.));
     })
         .top(Pixels(20.0))
-        .height(Pixels(326.0))
+        .height(Pixels(260.0))
         .width(Percentage(100.0))
         .col_between(Pixels(8.));
 }
