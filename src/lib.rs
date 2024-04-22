@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 mod buffer;
 mod dsp;
 use buffer::*;
-use cyma::utils::{PeakBuffer, MinimaBuffer, VisualizerBuffer};
+use cyma::utils::{MinimaBuffer, PeakBuffer, VisualizerBuffer};
 
 use default_boxed::DefaultBoxed;
 
@@ -32,25 +32,30 @@ pub struct Lamb {
     level_buffer_r: Arc<Mutex<PeakBuffer>>,
     gr_buffer_l: Arc<Mutex<MinimaBuffer>>,
     gr_buffer_r: Arc<Mutex<MinimaBuffer>>,
+
+    /// If this is set at the start of the processing cycle, then the graph duration should be updated.
+    should_update_time_scale: Arc<AtomicBool>,
 }
 impl Default for Lamb {
     fn default() -> Self {
+        let should_update_time_scale = Arc::new(AtomicBool::new(false));
         Self {
-            params: Arc::new(LambParams::default()),
-
+            params: Arc::new(LambParams::new(should_update_time_scale.clone())),
+            // params: Arc::new(LambParams::default()),
             dsp: dsp::LambRs::default_boxed(),
 
             accum_buffer: TempBuffer::default(),
 
-            temp_output_buffer_l : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
-            temp_output_buffer_r : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
-            temp_output_buffer_gr_l : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
-            temp_output_buffer_gr_r : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
+            temp_output_buffer_l: f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
+            temp_output_buffer_r: f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
+            temp_output_buffer_gr_l: f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
+            temp_output_buffer_gr_r: f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             sample_rate: 48000.0,
-            level_buffer_l: Arc::new(Mutex::new(PeakBuffer::new(1068, 7.0, 0.0))),
-            level_buffer_r: Arc::new(Mutex::new(PeakBuffer::new(1068, 7.0, 0.0))),
-            gr_buffer_l: Arc::new(Mutex::new(MinimaBuffer::new(1068, 7.0, 0.0))),
-            gr_buffer_r: Arc::new(Mutex::new(MinimaBuffer::new(1068, 7.0, 0.0))),
+            level_buffer_l: Arc::new(Mutex::new(PeakBuffer::new(1114, 7.0, 0.0))),
+            level_buffer_r: Arc::new(Mutex::new(PeakBuffer::new(1114, 7.0, 0.0))),
+            gr_buffer_l: Arc::new(Mutex::new(MinimaBuffer::new(1114, 7.0, 0.0))),
+            gr_buffer_r: Arc::new(Mutex::new(MinimaBuffer::new(1114, 7.0, 0.0))),
+            should_update_time_scale,
         }
     }
 }
@@ -145,6 +150,7 @@ impl Plugin for Lamb {
     fn reset(&mut self) {
         // Reset buffers and envelopes here. This can be called from the audio thread and may not
         // allocate. You can remove this function if you do not need it.
+        self.should_update_time_scale.store(true, Ordering::Release);
     }
 
     fn editor(&mut self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
@@ -217,7 +223,7 @@ impl Plugin for Lamb {
         );
         let latency_samples = self.dsp.get_param(LATENCY_PI).expect("no latency read") as u32;
         context.set_latency_samples(latency_samples);
-        
+
         let output = buffer.as_slice();
         for i in 0..count as usize {
             output[0][i] = self.temp_output_buffer_l[i] as f32;
@@ -225,23 +231,41 @@ impl Plugin for Lamb {
         }
 
         if self.params.editor_state.is_open() {
+            if self.should_update_time_scale.load(Ordering::Relaxed) {
+                let time_scale = match self.params.time_scale.value() {
+                    TimeScale::HalfSec => 0.5,
+                    TimeScale::OneSec => 1.0,
+                    TimeScale::TwoSec => 2.0,
+                    TimeScale::FourSec => 4.0,
+                    TimeScale::EightSec => 8.0,
+                    TimeScale::SixteenSec => 16.0,
+                    TimeScale::ThirtytwoSec => 32.0,
+                    TimeScale::SixtyfourSec => 64.0,
+                };
+                self.level_buffer_l.lock().unwrap().set_duration(time_scale);
+                self.level_buffer_r.lock().unwrap().set_duration(time_scale);
+                self.gr_buffer_l.lock().unwrap().set_duration(time_scale);
+                self.gr_buffer_r.lock().unwrap().set_duration(time_scale);
+                self.should_update_time_scale
+                    .store(false, Ordering::Release);
+            };
             for i in 0..count as usize {
                 self.level_buffer_l
                     .lock()
                     .unwrap()
-                    .enqueue(self.temp_output_buffer_l[i] as f32 );
+                    .enqueue(self.temp_output_buffer_l[i] as f32);
                 self.level_buffer_r
                     .lock()
                     .unwrap()
-                    .enqueue(self.temp_output_buffer_r[i] as f32 );
+                    .enqueue(self.temp_output_buffer_r[i] as f32);
                 self.gr_buffer_l
                     .lock()
                     .unwrap()
-                    .enqueue(self.temp_output_buffer_gr_l[i]as f32 );
+                    .enqueue(self.temp_output_buffer_gr_l[i] as f32);
                 self.gr_buffer_r
                     .lock()
                     .unwrap()
-                    .enqueue(self.temp_output_buffer_gr_r[i]as f32 );
+                    .enqueue(self.temp_output_buffer_gr_r[i] as f32);
             }
         }
 

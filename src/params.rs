@@ -1,4 +1,6 @@
+use std::sync::atomic::{AtomicBool, Ordering};
 use faust_types::ParamIndex;
+
 #[derive(Params)]
 struct LambParams {
     // nr of params: 12
@@ -34,6 +36,9 @@ struct LambParams {
     output_gain: FloatParam,
     #[id = "zoom_mode"]
     zoom_mode: EnumParam<ZoomMode>,
+    #[id = "time_scale"]
+    time_scale: EnumParam<TimeScale>,
+
     /// The editor state, saved together with the parameter state so the custom scaling can be
     /// restored.
     #[persist = "editor-state"]
@@ -54,6 +59,34 @@ enum ZoomMode {
     #[id = "absolute"]
     #[name = "absolute"]
     Absolute,
+}
+
+#[derive(Enum, Debug, PartialEq)]
+enum TimeScale {
+    #[id = "0_5s"]
+    #[name = "0.5 seconds"]
+    HalfSec,
+    #[id = "1s"]
+    #[name = "1 second"]
+    OneSec,
+    #[id = "2s"]
+    #[name = "2 seconds"]
+    TwoSec,
+    #[id = "4s"]
+    #[name = "4 seconds"]
+    FourSec,
+    #[id = "8s"]
+    #[name = "8 seconds"]
+    EightSec,
+    #[id = "16s"]
+    #[name = "16 seconds"]
+    SixteenSec,
+    #[id = "32s"]
+    #[name = "32 seconds"]
+    ThirtytwoSec,
+    #[id = "64"]
+    #[name = "64 seconds"]
+    SixtyfourSec,
 }
 
 #[derive(Enum, Debug, PartialEq)]
@@ -132,8 +165,10 @@ pub fn ratio_to_strength() -> Arc<dyn Fn(&str) -> Option<f32> + Send + Sync> {
     })
 }
 
-impl Default for LambParams {
-    fn default() -> Self {
+impl LambParams {
+    pub fn new(
+        should_update_time_scale: Arc<AtomicBool>,
+    ) -> Self {
         Self {
             editor_state: editor::default_state(),
 
@@ -273,6 +308,15 @@ impl Default for LambParams {
             zoom_mode: EnumParam::new("zoom_mode", ZoomMode::Relative)
                 .hide()
                 .hide_in_generic_ui(),
+            time_scale: EnumParam::new("time_scale", TimeScale::EightSec)
+                .with_callback(
+                    {
+                        let should_update_time_scale = should_update_time_scale.clone();
+                        Arc::new(move |_| should_update_time_scale.store(true, Ordering::Release))
+                    },
+                )
+                .hide()
+                .hide_in_generic_ui(),
         }
     }
 }
@@ -295,4 +339,3 @@ pub const OUTPUT_GAIN_PI: ParamIndex = ParamIndex(14);
 pub const GAIN_REDUCTION_LEFT_PI: ParamIndex = ParamIndex(15);
 pub const GAIN_REDUCTION_RIGHT_PI: ParamIndex = ParamIndex(16);
 pub const LATENCY_PI: ParamIndex = ParamIndex(17);
-pub const ZOOM_MODE_PI: ParamIndex = ParamIndex(18);

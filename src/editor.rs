@@ -192,9 +192,9 @@ pub(crate) fn create(
                     Label::new(cx, "").class("fader-label"); // spacer
                     AttackReleaseGraph::new(cx, LambData::params).height(Pixels(200.0));
                     // .height(Pixels(260.0));
-                    Label::new(cx, "zoom mode").class("fader-label");
-                    ParamSlider::new(cx, LambData::params, |params| &params.zoom_mode)
-                        .set_style(ParamSliderStyle::CurrentStepLabeled { even: true })
+                    Label::new(cx, "GR graph time scale").class("fader-label");
+                    ParamSlider::new(cx, LambData::params, |params| &params.time_scale)
+                        .set_style(ParamSliderStyle::CurrentStep{ even: true })
                         .bottom(Pixels(6.0));
                 }) // graph + zoom
                 .height(Auto)
@@ -213,6 +213,7 @@ pub(crate) fn create(
         ResizeHandle::new(cx);
     })
 }
+
 ///////////////////////////////////////////////////////////////////////////////
 //                             AttackReleaseGraph                            //
 ///////////////////////////////////////////////////////////////////////////////
