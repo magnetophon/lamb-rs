@@ -382,8 +382,8 @@ fn peak_graph(cx: &mut Context) {
                     (METER_MIN, METER_MAX),
                     ValueScaling::Decibels,
                 )
-                    .color(Color::rgba(60, 60, 60, 30))
-                    .background_color(Color::rgba(60, 60, 60, 20));
+                .color(Color::rgba(0, 0, 255, 30))
+                .background_color(Color::rgba(0, 0, 0, 40));
 
                 Graph::new(
                     cx,
@@ -391,8 +391,8 @@ fn peak_graph(cx: &mut Context) {
                     (METER_MIN, METER_MAX),
                     ValueScaling::Decibels,
                 )
-                    .color(Color::rgba(60, 60, 60, 30))
-                    .background_color(Color::rgba(60, 60, 60, 20));
+                .color(Color::rgba(255, 0, 0, 30))
+                .background_color(Color::rgba(0, 0, 0, 40));
 
                 // gain reduction
                 Graph::new(
@@ -401,19 +401,20 @@ fn peak_graph(cx: &mut Context) {
                     (METER_MIN, METER_MAX),
                     ValueScaling::Decibels,
                 )
-                    .color(Color::rgba(0, 0, 255, 125))
-                    .background_color(Color::rgba(0, 0, 255, 20))
-                    .fill_from(0.0);
+                .color(Color::rgba(0, 0, 255, 255))
+                .background_color(Color::rgba(250, 250, 250, 40))
+                .fill_from(0.0);
                 Graph::new(
                     cx,
                     LambData::gr_buffer_r,
                     (METER_MIN, METER_MAX),
                     ValueScaling::Decibels,
                 )
-                    .color(Color::rgba(255, 0, 0, 125))
-                    .background_color(Color::rgba(255, 0, 0, 20))
-                    .fill_from(0.0);
+                .color(Color::rgba(255, 0, 0, 255))
+                .background_color(Color::rgba(250, 250, 250, 40))
+                .fill_from(0.0);
             });
+            // gain reduction
             HStack::new(cx, |cx| {
                 Meter::new(
                     cx,
@@ -422,11 +423,11 @@ fn peak_graph(cx: &mut Context) {
                     ValueScaling::Decibels,
                     Orientation::Vertical,
                 )
-                    .background_color(Color::rgb(250, 250, 250))
-                    .color(Color::rgba(0, 0, 255, 60));
+                .background_color(Color::rgb(250, 250, 250))
+                .color(Color::rgba(0, 0, 255, 255));
             })
-                .width(Pixels(15.0))
-                .background_color(Color::rgb(192, 192, 251));
+            .width(Pixels(15.0))
+            .background_color(Color::rgb(220, 220, 220));
             HStack::new(cx, |cx| {
                 Meter::new(
                     cx,
@@ -435,11 +436,12 @@ fn peak_graph(cx: &mut Context) {
                     ValueScaling::Decibels,
                     Orientation::Vertical,
                 )
-                    .background_color(Color::rgb(250, 250, 250))
-                    .color(Color::rgba(255, 0, 0, 60));
+                .background_color(Color::rgb(250, 250, 250))
+                .color(Color::rgba(255, 0, 0, 255));
             })
                 .width(Pixels(15.0))
-                .background_color(Color::rgb(251, 192, 192));
+                .background_color(Color::rgb(220, 220, 220));
+            // level
             Meter::new(
                 cx,
                 LambData::level_buffer_l,
@@ -448,7 +450,7 @@ fn peak_graph(cx: &mut Context) {
                 Orientation::Vertical,
             )
                 .width(Pixels(15.0))
-                .color(Color::rgba(60, 60, 60, 160))
+                .color(Color::rgba(0, 0, 255, 125))
                 .background_color(Color::rgba(60, 60, 60, 60));
             Meter::new(
                 cx,
@@ -458,7 +460,7 @@ fn peak_graph(cx: &mut Context) {
                 Orientation::Vertical,
             )
                 .width(Pixels(15.0))
-                .color(Color::rgba(60, 60, 60, 160))
+                .color(Color::rgba(255, 0, 0, 125))
                 .background_color(Color::rgba(60, 60, 60, 60));
         })
         // .width(Pixels(30.0))
