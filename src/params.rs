@@ -201,11 +201,7 @@ pub fn s2v_bool_in_out() -> Arc<dyn Fn(&str) -> Option<bool> + Send + Sync> {
 }
 
 impl LambParams {
-    pub fn new(
-        should_update_time_scale: Arc<AtomicBool>,
-        should_update_show_left: Arc<AtomicBool>,
-        should_update_show_right: Arc<AtomicBool>,
-    ) -> Self {
+    pub fn new(should_update_time_scale: Arc<AtomicBool>) -> Self {
         Self {
             editor_state: editor::default_state(),
 
@@ -357,17 +353,9 @@ impl LambParams {
                 .hide()
                 .hide_in_generic_ui(),
             show_left: BoolParam::new("show_left", true)
-                .with_callback({
-                    let should_update_show_left = should_update_show_left.clone();
-                    Arc::new(move |_| should_update_show_left.store(true, Ordering::Release))
-                })
                 .hide()
                 .hide_in_generic_ui(),
             show_right: BoolParam::new("show_right", true)
-                .with_callback({
-                    let should_update_show_right = should_update_show_right.clone();
-                    Arc::new(move |_| should_update_show_right.store(true, Ordering::Release))
-                })
                 .hide()
                 .hide_in_generic_ui(),
         }

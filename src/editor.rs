@@ -24,6 +24,8 @@ struct LambData {
     level_buffer_r: Arc<Mutex<PeakBuffer>>,
     gr_buffer_l: Arc<Mutex<MinimaBuffer>>,
     gr_buffer_r: Arc<Mutex<MinimaBuffer>>,
+    show_left: bool,
+    show_right: bool,
 }
 
 impl LambData {
@@ -33,6 +35,8 @@ impl LambData {
         level_buffer_r: Arc<Mutex<PeakBuffer>>,
         gr_buffer_l: Arc<Mutex<MinimaBuffer>>,
         gr_buffer_r: Arc<Mutex<MinimaBuffer>>,
+        show_left: bool,
+        show_right: bool,
     ) -> Self {
         Self {
             params,
@@ -40,11 +44,23 @@ impl LambData {
             level_buffer_r,
             gr_buffer_l,
             gr_buffer_r,
+            show_left,
+            show_right,
         }
     }
 }
-
-impl Model for LambData {}
+pub enum AppEvent {
+    ShowLeft,
+    ShowRight,
+}
+impl Model for LambData {
+    fn event(&mut self, cx: &mut EventContext, event: &mut Event) {
+        event.map(|app_event, meta| match app_event {
+            AppEvent::ShowLeft => self.show_left = self.params.show_left.value(),
+            AppEvent::ShowRight => self.show_right = self.params.show_right.value(),
+        });
+    }
+}
 
 // Makes sense to also define this here, makes it a bit easier to keep track of
 pub(crate) fn default_state() -> Arc<ViziaState> {
@@ -59,6 +75,8 @@ pub(crate) fn create(
     level_buffer_r: Arc<Mutex<PeakBuffer>>,
     gr_buffer_l: Arc<Mutex<MinimaBuffer>>,
     gr_buffer_r: Arc<Mutex<MinimaBuffer>>,
+    show_left: bool,
+    show_right: bool,
     editor_state: Arc<ViziaState>,
 ) -> Option<Box<dyn Editor>> {
     create_vizia_editor(editor_state, ViziaTheming::Custom, move |cx, _| {
@@ -75,6 +93,8 @@ pub(crate) fn create(
             level_buffer_r: level_buffer_r.clone(),
             gr_buffer_l: gr_buffer_l.clone(),
             gr_buffer_r: gr_buffer_r.clone(),
+            show_left: true,
+            show_right: true,
         }
         .build(cx);
 
@@ -203,17 +223,21 @@ pub(crate) fn create(
                             .bottom(Pixels(6.0));
                         HStack::new(cx, |cx| {
                             ParamButton::new(cx, LambData::params, |params| &params.show_left)
+                                .on_press(|ex| ex.emit(AppEvent::ShowLeft))
+                                .disable_scroll_wheel()
+                                // .on_scroll(|ex| ex.emit(AppEvent::ShowLeft))
                                 .with_label("left")
                                 .width(Stretch(1.0))
                                 .bottom(Pixels(6.0));
                             ParamButton::new(cx, LambData::params, |params| &params.show_right)
+                                .on_press(|ex| ex.emit(AppEvent::ShowRight))
+                                .disable_scroll_wheel()
+                                // .on_scroll(|ex| ex.emit(AppEvent::ShowRight))
                                 .with_label("right")
                                 .width(Stretch(1.0))
                                 .bottom(Pixels(6.0));
                         })
-                            .width(Stretch(1.0))
-                        // .width(Percentage(100.0))
-                            ;
+                        .width(Stretch(1.0));
                     })
                     .width(Percentage(100.0))
                     .col_between(Percentage(5.0));
@@ -225,13 +249,13 @@ pub(crate) fn create(
             .col_between(Percentage(2.5))
             .height(Auto)
             .width(Percentage(100.0));
-            peak_graph(cx, params.show_left.value(), params.show_right.value());
+            peak_graph(cx);
         }) // everything
-            .width(Percentage(95.0))
-            .height(Auto)
-            .left(Percentage(2.5))
-            .right(Percentage(2.5))
-            .class("center");
+        .width(Percentage(95.0))
+        .height(Auto)
+        .left(Percentage(2.5))
+        .right(Percentage(2.5))
+        .class("center");
         ResizeHandle::new(cx);
     })
 }
@@ -398,7 +422,7 @@ impl<AttackReleaseDataL: Lens<Target = Arc<LambParams>>> View
 }
 
 /// Draws a peak graph with a grid backdrop, unit ruler, and a peak meter to side.
-fn peak_graph(cx: &mut Context, show_left: bool, show_right: bool) {
+fn peak_graph(cx: &mut Context) {
     HStack::new(cx, |cx| {
         ZStack::new(cx, |cx| {
             Grid::new(
@@ -410,51 +434,50 @@ fn peak_graph(cx: &mut Context, show_left: bool, show_right: bool) {
             )
             .color(Color::rgba(160, 160, 160, 60));
 
-            if show_left {
-                println!("left");
-                // level
-                Graph::new(
-                    cx,
-                    LambData::level_buffer_l,
-                    (METER_MIN, METER_MAX),
-                    ValueScaling::Decibels,
-                )
-                    .color(Color::rgba(0, 0, 255, 30))
-                    .background_color(Color::rgba(0, 0, 0, 40));
+            // level
+            Graph::new(
+                cx,
+                LambData::level_buffer_l,
+                (METER_MIN, METER_MAX),
+                ValueScaling::Decibels,
+            )
+                .visibility(LambData::show_left)
+                .color(Color::rgba(0, 0, 255, 30))
+                .background_color(Color::rgba(0, 0, 0, 40));
 
-                // gain reduction
-                Graph::new(
-                    cx,
-                    LambData::gr_buffer_l,
-                    (METER_MIN, METER_MAX),
-                    ValueScaling::Decibels,
-                )
-                    .color(Color::rgba(0, 0, 255, 255))
-                    .background_color(Color::rgba(250, 250, 250, 40))
-                    .fill_from(0.0);
-            };
-            if show_right {
-                println!("right");
-                // level
-                Graph::new(
-                    cx,
-                    LambData::level_buffer_r,
-                    (METER_MIN, METER_MAX),
-                    ValueScaling::Decibels,
-                )
+            // level
+            Graph::new(
+                cx,
+                LambData::level_buffer_r,
+                (METER_MIN, METER_MAX),
+                ValueScaling::Decibels,
+            )
+                .visibility(LambData::show_right)
                 .color(Color::rgba(255, 0, 0, 30))
                 .background_color(Color::rgba(0, 0, 0, 40));
-                // gain reduction
-                Graph::new(
-                    cx,
-                    LambData::gr_buffer_r,
-                    (METER_MIN, METER_MAX),
-                    ValueScaling::Decibels,
-                )
-                    .color(Color::rgba(255, 0, 0, 255))
-                    .background_color(Color::rgba(250, 250, 250, 40))
-                    .fill_from(0.0);
-            };
+            // gain reduction
+            Graph::new(
+                cx,
+                LambData::gr_buffer_l,
+                (METER_MIN, METER_MAX),
+                ValueScaling::Decibels,
+            )
+                .visibility(LambData::show_left)
+                .color(Color::rgba(0, 0, 255, 255))
+                .background_color(Color::rgba(250, 250, 250, 40))
+                .fill_from(0.0);
+            // gain reduction
+            Graph::new(
+                cx,
+                LambData::gr_buffer_r,
+                (METER_MIN, METER_MAX),
+                ValueScaling::Decibels,
+            )
+                .visibility(LambData::show_right)
+                .color(Color::rgba(255, 0, 0, 255))
+                .background_color(Color::rgba(250, 250, 250, 40))
+                .fill_from(0.0);
+            // };
         });
 
         ZStack::new(cx, |cx| {

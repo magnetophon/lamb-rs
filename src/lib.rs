@@ -32,23 +32,17 @@ pub struct Lamb {
     level_buffer_r: Arc<Mutex<PeakBuffer>>,
     gr_buffer_l: Arc<Mutex<MinimaBuffer>>,
     gr_buffer_r: Arc<Mutex<MinimaBuffer>>,
+    show_left: bool,
+    show_right: bool,
 
     /// If this is set at the start of the processing cycle, then the graph duration should be updated.
     should_update_time_scale: Arc<AtomicBool>,
-    should_update_show_left: Arc<AtomicBool>,
-    should_update_show_right: Arc<AtomicBool>,
 }
 impl Default for Lamb {
     fn default() -> Self {
         let should_update_time_scale = Arc::new(AtomicBool::new(false));
-        let should_update_show_left = Arc::new(AtomicBool::new(false));
-        let should_update_show_right = Arc::new(AtomicBool::new(false));
         Self {
-            params: Arc::new(LambParams::new(
-                should_update_time_scale.clone(),
-                should_update_show_left.clone(),
-                should_update_show_right.clone(),
-            )),
+            params: Arc::new(LambParams::new(should_update_time_scale.clone())),
             // params: Arc::new(LambParams::default()),
             dsp: dsp::LambRs::default_boxed(),
 
@@ -63,9 +57,9 @@ impl Default for Lamb {
             level_buffer_r: Arc::new(Mutex::new(PeakBuffer::new(1114, 7.0, 0.0))),
             gr_buffer_l: Arc::new(Mutex::new(MinimaBuffer::new(1114, 7.0, 0.0))),
             gr_buffer_r: Arc::new(Mutex::new(MinimaBuffer::new(1114, 7.0, 0.0))),
+            show_left: true,
+            show_right: true,
             should_update_time_scale,
-            should_update_show_left,
-            should_update_show_right,
         }
     }
 }
@@ -161,8 +155,6 @@ impl Plugin for Lamb {
         // Reset buffers and envelopes here. This can be called from the audio thread and may not
         // allocate. You can remove this function if you do not need it.
         self.should_update_time_scale.store(true, Ordering::Release);
-        self.should_update_show_left.store(true, Ordering::Release);
-        self.should_update_show_right.store(true, Ordering::Release);
     }
 
     fn editor(&mut self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
@@ -172,6 +164,8 @@ impl Plugin for Lamb {
             self.level_buffer_r.clone(),
             self.gr_buffer_l.clone(),
             self.gr_buffer_r.clone(),
+            self.show_left.clone(),
+            self.show_right.clone(),
             self.params.editor_state.clone(),
         )
     }
