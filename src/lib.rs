@@ -35,12 +35,20 @@ pub struct Lamb {
 
     /// If this is set at the start of the processing cycle, then the graph duration should be updated.
     should_update_time_scale: Arc<AtomicBool>,
+    should_update_show_left: Arc<AtomicBool>,
+    should_update_show_right: Arc<AtomicBool>,
 }
 impl Default for Lamb {
     fn default() -> Self {
         let should_update_time_scale = Arc::new(AtomicBool::new(false));
+        let should_update_show_left = Arc::new(AtomicBool::new(false));
+        let should_update_show_right = Arc::new(AtomicBool::new(false));
         Self {
-            params: Arc::new(LambParams::new(should_update_time_scale.clone())),
+            params: Arc::new(LambParams::new(
+                should_update_time_scale.clone(),
+                should_update_show_left.clone(),
+                should_update_show_right.clone(),
+            )),
             // params: Arc::new(LambParams::default()),
             dsp: dsp::LambRs::default_boxed(),
 
@@ -56,6 +64,8 @@ impl Default for Lamb {
             gr_buffer_l: Arc::new(Mutex::new(MinimaBuffer::new(1114, 7.0, 0.0))),
             gr_buffer_r: Arc::new(Mutex::new(MinimaBuffer::new(1114, 7.0, 0.0))),
             should_update_time_scale,
+            should_update_show_left,
+            should_update_show_right,
         }
     }
 }
@@ -151,6 +161,8 @@ impl Plugin for Lamb {
         // Reset buffers and envelopes here. This can be called from the audio thread and may not
         // allocate. You can remove this function if you do not need it.
         self.should_update_time_scale.store(true, Ordering::Release);
+        self.should_update_show_left.store(true, Ordering::Release);
+        self.should_update_show_right.store(true, Ordering::Release);
     }
 
     fn editor(&mut self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
@@ -211,6 +223,22 @@ impl Plugin for Lamb {
         self.dsp
             .set_param(OUTPUT_GAIN_PI, self.params.output_gain.value() as f64);
 
+        // works, but is out of allignment
+        // if self.params.editor_state.is_open() {
+        // if self.params.in_out.value() {}
+        // else {
+        // println!("pre");
+        // self.level_buffer_l
+        // .lock()
+        // .unwrap()
+        // .enqueue_buffer(buffer, None);
+        // self.level_buffer_r
+        // .lock()
+        // .unwrap()
+        // .enqueue_buffer(buffer, None);
+        // };
+        // };
+
         self.dsp.compute(
             count,
             &self.accum_buffer.slice2d(),
@@ -249,15 +277,38 @@ impl Plugin for Lamb {
                 self.should_update_time_scale
                     .store(false, Ordering::Release);
             };
+
+            if self.params.in_out.value() {
+                for i in 0..count as usize {
+                    self.level_buffer_l
+                        .lock()
+                        .unwrap()
+                        .enqueue(self.temp_output_buffer_l[i] as f32);
+                    self.level_buffer_r
+                        .lock()
+                        .unwrap()
+                        .enqueue(self.temp_output_buffer_r[i] as f32);
+                }
+            } else {
+                let gain_db =
+                    0.0 - (self.params.input_gain.value() + self.params.output_gain.value());
+                let gain = if self.params.bypass.value() {
+                    1.0
+                } else {
+                    10f32.powf(gain_db / 20.0)
+                };
+                for i in 0..count as usize {
+                    self.level_buffer_l.lock().unwrap().enqueue(
+                        (self.temp_output_buffer_l[i] / self.temp_output_buffer_gr_l[i]) as f32
+                            * gain,
+                    );
+                    self.level_buffer_r.lock().unwrap().enqueue(
+                        (self.temp_output_buffer_r[i] / self.temp_output_buffer_gr_r[i]) as f32
+                            * gain,
+                    );
+                }
+            };
             for i in 0..count as usize {
-                self.level_buffer_l
-                    .lock()
-                    .unwrap()
-                    .enqueue(self.temp_output_buffer_l[i] as f32);
-                self.level_buffer_r
-                    .lock()
-                    .unwrap()
-                    .enqueue(self.temp_output_buffer_r[i] as f32);
                 self.gr_buffer_l
                     .lock()
                     .unwrap()

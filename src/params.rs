@@ -38,6 +38,12 @@ struct LambParams {
     zoom_mode: EnumParam<ZoomMode>,
     #[id = "time_scale"]
     time_scale: EnumParam<TimeScale>,
+    #[id = "in_out"]
+    in_out: BoolParam,
+    #[id = "show_left"]
+    show_left: BoolParam,
+    #[id = "show_right"]
+    show_right: BoolParam,
 
     /// The editor state, saved together with the parameter state so the custom scaling can be
     /// restored.
@@ -165,8 +171,41 @@ pub fn ratio_to_strength() -> Arc<dyn Fn(&str) -> Option<f32> + Send + Sync> {
     })
 }
 
+// .with_value_to_string(bool_to_in_out())
+// .with_string_to_value(in_out_to_bool())
+// pub fn bool_to_in_out()
+
+/// Display 'post' or 'pre' depending on whether the parameter is true or false.
+pub fn v2s_bool_in_out() -> Arc<dyn Fn(bool) -> String + Send + Sync> {
+    Arc::new(move |value| {
+        if value {
+            String::from("post")
+        } else {
+            String::from("pre")
+        }
+    })
+}
+
+/// Parse a string in the same format as [`v2s_bool_in_out()`].
+pub fn s2v_bool_in_out() -> Arc<dyn Fn(&str) -> Option<bool> + Send + Sync> {
+    Arc::new(|string| {
+        let string = string.trim();
+        if string.eq_ignore_ascii_case("post") {
+            Some(true)
+        } else if string.eq_ignore_ascii_case("pre") {
+            Some(false)
+        } else {
+            None
+        }
+    })
+}
+
 impl LambParams {
-    pub fn new(should_update_time_scale: Arc<AtomicBool>) -> Self {
+    pub fn new(
+        should_update_time_scale: Arc<AtomicBool>,
+        should_update_show_left: Arc<AtomicBool>,
+        should_update_show_right: Arc<AtomicBool>,
+    ) -> Self {
         Self {
             editor_state: editor::default_state(),
 
@@ -194,8 +233,7 @@ impl LambParams {
                 },
             )
             .with_value_to_string(strength_to_ratio())
-            .with_string_to_value(ratio_to_strength()), // .with_unit(" %")
-            // .with_step_size(1.0)
+            .with_string_to_value(ratio_to_strength()),
             thresh: FloatParam::new(
                 "thresh",
                 -1.0,
@@ -310,6 +348,25 @@ impl LambParams {
                 .with_callback({
                     let should_update_time_scale = should_update_time_scale.clone();
                     Arc::new(move |_| should_update_time_scale.store(true, Ordering::Release))
+                })
+                .hide()
+                .hide_in_generic_ui(),
+            in_out: BoolParam::new("in_out", true)
+                .with_value_to_string(v2s_bool_in_out())
+                .with_string_to_value(s2v_bool_in_out())
+                .hide()
+                .hide_in_generic_ui(),
+            show_left: BoolParam::new("show_left", true)
+                .with_callback({
+                    let should_update_show_left = should_update_show_left.clone();
+                    Arc::new(move |_| should_update_show_left.store(true, Ordering::Release))
+                })
+                .hide()
+                .hide_in_generic_ui(),
+            show_right: BoolParam::new("show_right", true)
+                .with_callback({
+                    let should_update_show_right = should_update_show_right.clone();
+                    Arc::new(move |_| should_update_show_right.store(true, Ordering::Release))
                 })
                 .hide()
                 .hide_in_generic_ui(),
