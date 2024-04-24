@@ -109,8 +109,7 @@ pub(crate) fn create(
                         // Label::new(cx, "🐑") // doesn't render
                         .class("plugin-name");
                     Label::new(cx, "input gain").class("fader-label");
-                    ParamSlider::new(cx, LambData::params, |params| &params.input_gain)
-                        .bottom(Pixels(6.0));
+                    ParamSlider::new(cx, LambData::params, |params| &params.input_gain);
                     // three colomns
                     HStack::new(cx, |cx| {
                         // first
@@ -141,9 +140,9 @@ pub(crate) fn create(
                                 .height(Auto)
                                 .class("center");
                             }) // bypass and latency_mode
-                            .col_between(Percentage(5.0))
-                            .width(Percentage(100.0))
-                            .height(Auto); // bypass & latency_mode
+                                .col_between(Pixels(13.0))
+                                .width(Percentage(100.0))
+                                .height(Auto); // bypass & latency_mode
                             Label::new(cx, "ratio").class("fader-label");
                             ParamSlider::new(cx, LambData::params, |params| &params.strength);
                             Label::new(cx, "threshold").class("fader-label");
@@ -183,19 +182,16 @@ pub(crate) fn create(
                         }) // third
                         .height(Auto)
                         .class("center");
-                    })
-                    .col_between(Percentage(2.5))
-                    .height(Auto)
-                    .width(Percentage(100.0)); // three colomns
+                    }) // three colomns
+                        .col_between(Pixels(26.0))
+                        .height(Auto)
+                        .width(Percentage(100.0)); // three colomns
 
                     Label::new(cx, "output gain").class("fader-label");
-                    ParamSlider::new(cx, LambData::params, |params| &params.output_gain)
-                        .bottom(Pixels(6.0));
+                    ParamSlider::new(cx, LambData::params, |params| &params.output_gain);
                 }) // parameters
-                // .width(Percentage(72.5))
                 .width(Stretch(3.0))
                 .height(Auto)
-                // .right(Percentage(2.5))
                 .class("center");
                 // graph + zoom
                 VStack::new(cx, |cx| {
@@ -206,56 +202,55 @@ pub(crate) fn create(
                         .right(Pixels(0.0));
                     Label::new(cx, "zoom mode").class("fader-label");
                     ParamSlider::new(cx, LambData::params, |params| &params.zoom_mode)
-                        .set_style(ParamSliderStyle::CurrentStepLabeled { even: true })
-                        .bottom(Pixels(6.0));
+                        .set_style(ParamSliderStyle::CurrentStepLabeled { even: true });
                     Label::new(cx, "").class("fader-label"); // spacer
                     AttackReleaseGraph::new(cx, LambData::params).height(Pixels(200.0));
                     // .height(Pixels(260.0));
                     Label::new(cx, "gain reduction graph").class("fader-label");
                     HStack::new(cx, |cx| {
                         ParamSlider::new(cx, LambData::params, |params| &params.time_scale)
-                            .width(Stretch(1.0))
-                            .set_style(ParamSliderStyle::CurrentStep { even: true })
-                            .bottom(Pixels(6.0));
+                            .width(Stretch(1.0));
+                        // .set_style(ParamSliderStyle::CurrentStep { even: true });
                         ParamSlider::new(cx, LambData::params, |params| &params.in_out)
                             .set_style(ParamSliderStyle::CurrentStepLabeled { even: true })
-                            .width(Stretch(1.0))
-                            .bottom(Pixels(6.0));
+                            .width(Stretch(1.0));
                         HStack::new(cx, |cx| {
                             ParamButton::new(cx, LambData::params, |params| &params.show_left)
                                 .on_press(|ex| ex.emit(AppEvent::ShowLeft))
                                 .disable_scroll_wheel()
                                 // .on_scroll(|ex| ex.emit(AppEvent::ShowLeft))
                                 .with_label("left")
-                                .width(Stretch(1.0))
-                                .bottom(Pixels(6.0));
+                                .class("center")
+                                .width(Stretch(1.0));
                             ParamButton::new(cx, LambData::params, |params| &params.show_right)
                                 .on_press(|ex| ex.emit(AppEvent::ShowRight))
                                 .disable_scroll_wheel()
                                 // .on_scroll(|ex| ex.emit(AppEvent::ShowRight))
                                 .with_label("right")
-                                .width(Stretch(1.0))
-                                .bottom(Pixels(6.0));
+                                .class("center")
+                                .width(Stretch(1.0));
                         })
                         .width(Stretch(1.0));
-                    })
-                    .width(Percentage(100.0))
-                    .col_between(Percentage(5.0));
+                    }) // graph controls
+                        .width(Percentage(100.0))
+                        .col_between(Pixels(13.0));
                 }) // graph + zoom
                 .width(Stretch(1.0))
                 .height(Auto)
                 .class("center");
             }) // parameters + graph
-            .col_between(Percentage(2.5))
-            .height(Auto)
-            .width(Percentage(100.0));
+                .col_between(Pixels(26.0))
+                .height(Auto)
+                .width(Percentage(100.0));
             peak_graph(cx);
         }) // everything
-        .width(Percentage(95.0))
-        .height(Auto)
-        .left(Percentage(2.5))
-        .right(Percentage(2.5))
-        .class("center");
+        // .width(Percentage(100.0))
+            .width(Stretch(1.0))
+            .height(Auto)
+            .left(Pixels(26.0))
+            .right(Pixels(26.0))
+        // .class("center")
+            ;
         ResizeHandle::new(cx);
     })
 }
@@ -464,7 +459,7 @@ fn peak_graph(cx: &mut Context) {
             )
                 .visibility(LambData::show_left)
                 .color(Color::rgba(0, 0, 255, 255))
-                .background_color(Color::rgba(250, 250, 250, 40))
+                .background_color(Color::rgba(250, 250, 250, 50))
                 .fill_from(0.0);
             // gain reduction
             Graph::new(
@@ -475,7 +470,7 @@ fn peak_graph(cx: &mut Context) {
             )
                 .visibility(LambData::show_right)
                 .color(Color::rgba(255, 0, 0, 255))
-                .background_color(Color::rgba(250, 250, 250, 40))
+                .background_color(Color::rgba(250, 250, 250, 50))
                 .fill_from(0.0);
             // };
         });
@@ -496,7 +491,7 @@ fn peak_graph(cx: &mut Context) {
                 })
                     .left(Pixels(4.0))
                     .width(Pixels(15.0))
-                    .background_color(Color::rgb(220, 220, 220));
+                    .background_color(Color::rgb(203, 203, 203));
                 HStack::new(cx, |cx| {
                     Meter::new(
                         cx,
@@ -509,7 +504,7 @@ fn peak_graph(cx: &mut Context) {
                         .color(Color::rgba(255, 0, 0, 255));
                 })
                     .width(Pixels(15.0))
-                    .background_color(Color::rgb(220, 220, 220));
+                    .background_color(Color::rgb(203, 203, 203));
                 // level
                 Meter::new(
                     cx,
@@ -520,7 +515,7 @@ fn peak_graph(cx: &mut Context) {
                 )
                     .width(Pixels(15.0))
                     .color(Color::rgba(0, 0, 255, 255))
-                    .background_color(Color::rgba(60, 60, 60, 60));
+                    .background_color(Color::rgba(178, 178, 178, 255));
                 Meter::new(
                     cx,
                     LambData::level_buffer_r,
@@ -530,7 +525,7 @@ fn peak_graph(cx: &mut Context) {
                 )
                     .width(Pixels(15.0))
                     .color(Color::rgba(255, 0, 0, 255))
-                    .background_color(Color::rgba(60, 60, 60, 60));
+                    .background_color(Color::rgba(178, 178, 178, 255));
             })
                 .col_between(Pixels(2.))
                 .width(Auto)
@@ -570,7 +565,7 @@ fn peak_graph(cx: &mut Context) {
         .width(Auto)
         .border_color(Color::rgb(163, 163, 163))
         .border_width(Pixels(1.4))
-        .top(Pixels(20.0))
-        .height(Pixels(255.0))
+        .top(Pixels(26.0))
+        .height(Pixels(268.0))
         .width(Percentage(100.0));
 }
