@@ -18,7 +18,7 @@ in with nixpkgs;
     name = "moz_overlay_shell";
     nativeBuildInputs = [ pkg-config clang lld ];
     buildInputs = [
-      (nixpkgs.rustChannelOf { date = "2024-03-17"; channel = "nightly"; }).rust
+      (nixpkgs.rustChannelOf { date = "2024-04-20"; channel = "nightly"; }).rust
       rustup
       pkg-config
 

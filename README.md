@@ -105,10 +105,12 @@ Therefore, Windows users currently need to build faust from source to be able to
 
 This plugin would not have been possible without the following projects:
 - [Faust](http://faust.grame.fr)
-- [nih-plug](https://github.com/robbert-vdh/nih-plug)
+- [NIH-plug](https://github.com/robbert-vdh/nih-plug)
 - [lowpass-lr4-faust-nih-plug](https://codeberg.org/obsoleszenz/lowpass-lr4-faust-nih-plug)
+- [Vizia](https://github.com/vizia/vizia)
+- [Cyma](https://github.com/223230/cyma)
 
-I would like to thank @sletz, @robbert-vdh, @obsoleszenz and @dariosanfilippo for their fantastic support and feedback!   
+I would like to thank [Stéphane Letz](https://github.com/sletz), [Robbert van der Helm](https://github.com/robbert-vdh), [obsoleszenz](https://github.com/obsoleszenz), [luna](https://github.com/223230), [Dr George Atkinson](https://github.com/geom3trik) and [Dario Sanfilippo](https://github.com/dariosanfilippo) for their fantastic support and feedback!   
 
 🐑  
 

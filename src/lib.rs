@@ -1,12 +1,13 @@
 use faust_types::FaustDsp;
 use nih_plug::prelude::*;
 use nih_plug_vizia::ViziaState;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 mod buffer;
 mod dsp_48k;
 mod dsp_96k;
 mod dsp_192k;
 use buffer::*;
+use cyma::utils::{MinimaBuffer, PeakBuffer, VisualizerBuffer};
 
 use default_boxed::DefaultBoxed;
 
@@ -77,34 +78,45 @@ pub struct Lamb {
     accum_buffer: TempBuffer,
     temp_output_buffer_l: Box<[f64]>,
     temp_output_buffer_r: Box<[f64]>,
+    temp_output_buffer_gr_l: Box<[f64]>,
+    temp_output_buffer_gr_r: Box<[f64]>,
 
     /// sample rate
     sample_rate: f32,
-    /// Needed to normalize the peak meter's response based on the sample rate.
-    peak_meter_decay_weight: f32,
-    /// The current data for the peak meter. This is stored as an [`Arc`] so we can share it between
-    /// the GUI and the audio processing parts. If you have more state to share, then it's a good
-    /// idea to put all of that in a struct behind a single `Arc`.
-    ///
-    /// This is stored as voltage gain.
-    peak_meter: Arc<AtomicF32>,
-    gain_reduction_left: Arc<AtomicF32>,
-    gain_reduction_right: Arc<AtomicF32>,
+
+    // These buffers will hold the sample data for the visualizers.
+    level_buffer_l: Arc<Mutex<PeakBuffer>>,
+    level_buffer_r: Arc<Mutex<PeakBuffer>>,
+    gr_buffer_l: Arc<Mutex<MinimaBuffer>>,
+    gr_buffer_r: Arc<Mutex<MinimaBuffer>>,
+    show_left: bool,
+    show_right: bool,
+
+    /// If this is set at the start of the processing cycle, then the graph duration should be updated.
+    should_update_time_scale: Arc<AtomicBool>,
 }
 impl Default for Lamb {
     fn default() -> Self {
+        let should_update_time_scale = Arc::new(AtomicBool::new(false));
         Self {
-            params: Arc::new(LambParams::default()),
+            // params: Arc::new(LambParams::default(should_update_time_scale.clone())),
+            params: Arc::new(LambParams::new(should_update_time_scale.clone())),
 
-            peak_meter_decay_weight: 1.0,
-            peak_meter: Arc::new(AtomicF32::new(util::MINUS_INFINITY_DB)),
-            gain_reduction_left: Arc::new(AtomicF32::new(0.0)),
-            gain_reduction_right: Arc::new(AtomicF32::new(0.0)),
             dsp_variant: DspVariant::default(),
             accum_buffer: TempBuffer::default(),
-            temp_output_buffer_l : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
-            temp_output_buffer_r : f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
+
+            temp_output_buffer_l: f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
+            temp_output_buffer_r: f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
+            temp_output_buffer_gr_l: f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
+            temp_output_buffer_gr_r: f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             sample_rate: 48000.0,
+            level_buffer_l: Arc::new(Mutex::new(PeakBuffer::new(1120, 7.0, 0.0))),
+            level_buffer_r: Arc::new(Mutex::new(PeakBuffer::new(1120, 7.0, 0.0))),
+            gr_buffer_l: Arc::new(Mutex::new(MinimaBuffer::new(1120, 7.0, 0.0))),
+            gr_buffer_r: Arc::new(Mutex::new(MinimaBuffer::new(1120, 7.0, 0.0))),
+            show_left: true,
+            show_right: true,
+            should_update_time_scale,
         }
     }
 }
@@ -161,14 +173,35 @@ impl Plugin for Lamb {
 
 
         self.accum_buffer.resize(2, MAX_SOUNDCARD_BUFFER_SIZE);
-
-        // After `PEAK_METER_DECAY_MS` milliseconds of pure silence, the peak meter's value should
-        // have dropped by 12 dB
-        self.peak_meter_decay_weight = 0.25f64
-                                        .powf((buffer_config.sample_rate as f64 * PEAK_METER_DECAY_MS / 1000.0).recip())
-                                        as f32;
-
         self.sample_rate = buffer_config.sample_rate;
+
+        match self.level_buffer_l.lock() {
+            Ok(mut buffer) => {
+                buffer.set_sample_rate(buffer_config.sample_rate);
+            }
+            Err(_) => return false,
+        }
+
+        match self.level_buffer_r.lock() {
+            Ok(mut buffer) => {
+                buffer.set_sample_rate(buffer_config.sample_rate);
+            }
+            Err(_) => return false,
+        }
+
+        match self.gr_buffer_l.lock() {
+            Ok(mut buffer) => {
+                buffer.set_sample_rate(buffer_config.sample_rate);
+            }
+            Err(_) => return false,
+        }
+
+        match self.gr_buffer_r.lock() {
+            Ok(mut buffer) => {
+                buffer.set_sample_rate(buffer_config.sample_rate);
+            }
+            Err(_) => return false,
+        }
 
         // Resize buffers and perform other potentially expensive initialization operations here.
         // The `reset()` function is always called right after this function. You can remove this
@@ -181,14 +214,18 @@ impl Plugin for Lamb {
     fn reset(&mut self) {
         // Reset buffers and envelopes here. This can be called from the audio thread and may not
         // allocate. You can remove this function if you do not need it.
+        self.should_update_time_scale.store(true, Ordering::Release);
     }
 
     fn editor(&mut self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
         editor::create(
             self.params.clone(),
-            self.peak_meter.clone(),
-            self.gain_reduction_left.clone(),
-            self.gain_reduction_right.clone(),
+            self.level_buffer_l.clone(),
+            self.level_buffer_r.clone(),
+            self.gr_buffer_l.clone(),
+            self.gr_buffer_r.clone(),
+            self.show_left.clone(),
+            self.show_right.clone(),
             self.params.editor_state.clone(),
         )
     }
@@ -202,43 +239,6 @@ impl Plugin for Lamb {
         let count = buffer.samples() as i32;
         self.accum_buffer.read_from_buffer(buffer);
 
-        for channel_samples in buffer.iter_samples() {
-            let mut amplitude = 0.0;
-            let num_samples = channel_samples.len();
-
-            for sample in channel_samples {
-                amplitude += *sample;
-            }
-            // To save resources, a plugin can (and probably should!) only perform expensive
-            // calculations that are only displayed on the GUI while the GUI is open
-            if self.params.editor_state.is_open() {
-                amplitude = (amplitude / num_samples as f32).abs();
-                let current_peak_meter = self.peak_meter.load(std::sync::atomic::Ordering::Relaxed);
-                let new_peak_meter = if amplitude > current_peak_meter {
-                    amplitude
-                } else {
-                    current_peak_meter * self.peak_meter_decay_weight
-                        + amplitude * (1.0 - self.peak_meter_decay_weight)
-                };
-
-                self.peak_meter
-                    .store(new_peak_meter, std::sync::atomic::Ordering::Relaxed);
-                self.gain_reduction_left.store(
-                    self.dsp_variant
-                        .get_param(GAIN_REDUCTION_LEFT_PI)
-                        .expect("no GR read") as f32,
-                    std::sync::atomic::Ordering::Relaxed,
-                );
-                self.gain_reduction_right.store(
-                    self.dsp_variant
-                        .get_param(GAIN_REDUCTION_RIGHT_PI)
-                        .expect("no GR read") as f32,
-                    std::sync::atomic::Ordering::Relaxed,
-                );
-            }
-        }
-
-        let output = buffer.as_slice();
         let bypass: f64 = match self.params.bypass.value() {
             true => 1.0,
             false => 0.0,
@@ -283,16 +283,80 @@ impl Plugin for Lamb {
             &mut [
                 &mut self.temp_output_buffer_l,
                 &mut self.temp_output_buffer_r,
+                &mut self.temp_output_buffer_gr_l,
+                &mut self.temp_output_buffer_gr_r,
             ],
         );
+        let latency_samples = self.dsp_variant.get_param(LATENCY_PI).expect("no latency read") as u32;
+        context.set_latency_samples(latency_samples);
 
+        let output = buffer.as_slice();
         for i in 0..count as usize {
             output[0][i] = self.temp_output_buffer_l[i] as f32;
             output[1][i] = self.temp_output_buffer_r[i] as f32;
         }
 
-        let latency_samples = self.dsp_variant.get_param(LATENCY_PI).expect("no latency read") as u32;
-        context.set_latency_samples(latency_samples);
+        if self.params.editor_state.is_open() {
+            if self.should_update_time_scale.load(Ordering::Relaxed) {
+                let time_scale = match self.params.time_scale.value() {
+                    TimeScale::HalfSec => 0.5,
+                    TimeScale::OneSec => 1.0,
+                    TimeScale::TwoSec => 2.0,
+                    TimeScale::FourSec => 4.0,
+                    TimeScale::EightSec => 8.0,
+                    TimeScale::SixteenSec => 16.0,
+                    TimeScale::ThirtytwoSec => 32.0,
+                    TimeScale::SixtyfourSec => 64.0,
+                };
+                self.level_buffer_l.lock().unwrap().set_duration(time_scale);
+                self.level_buffer_r.lock().unwrap().set_duration(time_scale);
+                self.gr_buffer_l.lock().unwrap().set_duration(time_scale);
+                self.gr_buffer_r.lock().unwrap().set_duration(time_scale);
+                self.should_update_time_scale
+                    .store(false, Ordering::Release);
+            };
+
+            if self.params.in_out.value() {
+                for i in 0..count as usize {
+                    self.level_buffer_l
+                        .lock()
+                        .unwrap()
+                        .enqueue(self.temp_output_buffer_l[i] as f32);
+                    self.level_buffer_r
+                        .lock()
+                        .unwrap()
+                        .enqueue(self.temp_output_buffer_r[i] as f32);
+                }
+            } else {
+                let gain_db =
+                    0.0 - (self.params.input_gain.value() + self.params.output_gain.value());
+                let gain = if self.params.bypass.value() {
+                    1.0
+                } else {
+                    10f32.powf(gain_db / 20.0)
+                };
+                for i in 0..count as usize {
+                    self.level_buffer_l.lock().unwrap().enqueue(
+                        (self.temp_output_buffer_l[i] / self.temp_output_buffer_gr_l[i]) as f32
+                            * gain,
+                    );
+                    self.level_buffer_r.lock().unwrap().enqueue(
+                        (self.temp_output_buffer_r[i] / self.temp_output_buffer_gr_r[i]) as f32
+                            * gain,
+                    );
+                }
+            };
+            for i in 0..count as usize {
+                self.gr_buffer_l
+                    .lock()
+                    .unwrap()
+                    .enqueue(self.temp_output_buffer_gr_l[i] as f32);
+                self.gr_buffer_r
+                    .lock()
+                    .unwrap()
+                    .enqueue(self.temp_output_buffer_gr_r[i] as f32);
+            }
+        }
 
         ProcessStatus::Normal
     }

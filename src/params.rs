@@ -1,4 +1,6 @@
 use faust_types::ParamIndex;
+use std::sync::atomic::{AtomicBool, Ordering};
+
 #[derive(Params)]
 struct LambParams {
     // nr of params: 12
@@ -34,6 +36,15 @@ struct LambParams {
     output_gain: FloatParam,
     #[id = "zoom_mode"]
     zoom_mode: EnumParam<ZoomMode>,
+    #[id = "time_scale"]
+    time_scale: EnumParam<TimeScale>,
+    #[id = "in_out"]
+    in_out: BoolParam,
+    #[id = "show_left"]
+    show_left: BoolParam,
+    #[id = "show_right"]
+    show_right: BoolParam,
+
     /// The editor state, saved together with the parameter state so the custom scaling can be
     /// restored.
     #[persist = "editor-state"]
@@ -54,6 +65,34 @@ enum ZoomMode {
     #[id = "absolute"]
     #[name = "absolute"]
     Absolute,
+}
+
+#[derive(Enum, Debug, PartialEq)]
+enum TimeScale {
+    #[id = "0_5s"]
+    #[name = "0.5 seconds"]
+    HalfSec,
+    #[id = "1s"]
+    #[name = "1 second"]
+    OneSec,
+    #[id = "2s"]
+    #[name = "2 seconds"]
+    TwoSec,
+    #[id = "4s"]
+    #[name = "4 seconds"]
+    FourSec,
+    #[id = "8s"]
+    #[name = "8 seconds"]
+    EightSec,
+    #[id = "16s"]
+    #[name = "16 seconds"]
+    SixteenSec,
+    #[id = "32s"]
+    #[name = "32 seconds"]
+    ThirtytwoSec,
+    #[id = "64"]
+    #[name = "64 seconds"]
+    SixtyfourSec,
 }
 
 #[derive(Enum, Debug, PartialEq)]
@@ -132,8 +171,42 @@ pub fn ratio_to_strength() -> Arc<dyn Fn(&str) -> Option<f32> + Send + Sync> {
     })
 }
 
-impl Default for LambParams {
-    fn default() -> Self {
+// .with_value_to_string(bool_to_in_out())
+// .with_string_to_value(in_out_to_bool())
+// pub fn bool_to_in_out()
+
+/// Display 'post' or 'pre' depending on whether the parameter is true or false.
+pub fn v2s_bool_in_out() -> Arc<dyn Fn(bool) -> String + Send + Sync> {
+    Arc::new(move |value| {
+        if value {
+            String::from("post")
+        } else {
+            String::from("pre")
+        }
+    })
+}
+
+/// Parse a string in the same format as [`v2s_bool_in_out()`].
+pub fn s2v_bool_in_out() -> Arc<dyn Fn(&str) -> Option<bool> + Send + Sync> {
+    Arc::new(|string| {
+        let string = string.trim();
+        if string.eq_ignore_ascii_case("post") {
+            Some(true)
+        } else if string.eq_ignore_ascii_case("pre") {
+            Some(false)
+        } else {
+            None
+        }
+    })
+}
+
+// impl LambParams {
+// impl Default for LambParams {
+// fn default() -> Self {
+// fn default(should_update_time_scale: Arc<AtomicBool>) -> Self {
+// pub fn new(should_update_time_scale: Arc<AtomicBool>) -> Self {
+impl LambParams {
+    pub fn new(should_update_time_scale: Arc<AtomicBool>) -> Self {
         Self {
             editor_state: editor::default_state(),
 
@@ -150,8 +223,8 @@ impl Default for LambParams {
                     max: 24.0,
                 },
             )
-            .with_unit(" dB")
-            .with_step_size(0.1),
+                .with_unit(" dB")
+                .with_step_size(0.1),
             strength: FloatParam::new(
                 "ratio",
                 100.0,
@@ -160,9 +233,8 @@ impl Default for LambParams {
                     max: 100.0,
                 },
             )
-            .with_value_to_string(strength_to_ratio())
-            .with_string_to_value(ratio_to_strength()), // .with_unit(" %")
-            // .with_step_size(1.0)
+                .with_value_to_string(strength_to_ratio())
+                .with_string_to_value(ratio_to_strength()),
             thresh: FloatParam::new(
                 "thresh",
                 -1.0,
@@ -171,8 +243,8 @@ impl Default for LambParams {
                     max: 0.0,
                 },
             )
-            .with_unit(" dB")
-            .with_step_size(0.1),
+                .with_unit(" dB")
+                .with_step_size(0.1),
             attack: FloatParam::new(
                 "attack",
                 9.0,
@@ -182,15 +254,15 @@ impl Default for LambParams {
                     factor: FloatRange::skew_factor(-1.0),
                 },
             )
-            .with_unit(" ms")
-            .with_step_size(0.01)
-            .non_automatable(),
+                .with_unit(" ms")
+                .with_step_size(0.01)
+                .non_automatable(),
             attack_shape: FloatParam::new(
                 "attack_shape",
                 0.0,
                 FloatRange::Linear { min: 0.0, max: 1.0 },
             )
-            .with_step_size(0.01),
+                .with_step_size(0.01),
             release: FloatParam::new(
                 "release",
                 60.0,
@@ -200,14 +272,14 @@ impl Default for LambParams {
                     factor: FloatRange::skew_factor(-1.0),
                 },
             )
-            .with_unit(" ms")
-            .with_step_size(0.01),
+                .with_unit(" ms")
+                .with_step_size(0.01),
             release_shape: FloatParam::new(
                 "release_shape",
                 0.5,
                 FloatRange::Linear { min: 0.0, max: 1.0 },
             )
-            .with_step_size(0.01),
+                .with_step_size(0.01),
             release_hold: FloatParam::new(
                 "release_hold",
                 50.0,
@@ -273,6 +345,24 @@ impl Default for LambParams {
             zoom_mode: EnumParam::new("zoom_mode", ZoomMode::Relative)
                 .hide()
                 .hide_in_generic_ui(),
+            time_scale: EnumParam::new("time_scale", TimeScale::FourSec)
+                .with_callback({
+                    let should_update_time_scale = should_update_time_scale.clone();
+                    Arc::new(move |_| should_update_time_scale.store(true, Ordering::Release))
+                })
+                .hide()
+                .hide_in_generic_ui(),
+            in_out: BoolParam::new("in_out", true)
+                .with_value_to_string(v2s_bool_in_out())
+                .with_string_to_value(s2v_bool_in_out())
+                .hide()
+                .hide_in_generic_ui(),
+            show_left: BoolParam::new("show_left", true)
+                .hide()
+                .hide_in_generic_ui(),
+            show_right: BoolParam::new("show_right", true)
+                .hide()
+                .hide_in_generic_ui(),
         }
     }
 }
@@ -292,7 +382,4 @@ pub const LINK_PI: ParamIndex = ParamIndex(11);
 pub const ADAPTIVE_RELEASE_PI: ParamIndex = ParamIndex(12);
 pub const LOOKAHEAD_PI: ParamIndex = ParamIndex(13);
 pub const OUTPUT_GAIN_PI: ParamIndex = ParamIndex(14);
-pub const GAIN_REDUCTION_LEFT_PI: ParamIndex = ParamIndex(15);
-pub const GAIN_REDUCTION_RIGHT_PI: ParamIndex = ParamIndex(16);
-pub const LATENCY_PI: ParamIndex = ParamIndex(17);
-pub const ZOOM_MODE_PI: ParamIndex = ParamIndex(18);
+pub const LATENCY_PI: ParamIndex = ParamIndex(15);

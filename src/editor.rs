@@ -1,36 +1,82 @@
 use crate::LambParams;
 use crate::ZoomMode;
-use atomic_float::AtomicF32;
-use nih_plug::prelude::{util, Editor};
+use nih_plug::prelude::Editor;
 use nih_plug_vizia::vizia::prelude::*;
+use nih_plug_vizia::vizia::vg;
 use nih_plug_vizia::widgets::*;
 use nih_plug_vizia::{assets, create_vizia_editor, ViziaState, ViziaTheming};
-use std::sync::atomic::Ordering;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
-include!("gain_reduction_meter.rs");
+use cyma::visualizers::GraphModifiers;
+use cyma::{
+    prelude::*,
+    utils::{MinimaBuffer, PeakBuffer},
+    visualizers::{Graph, Grid, Meter, UnitRuler},
+};
 
-#[derive(Lens)]
+const METER_MIN: f32 = -26.0;
+const METER_MAX: f32 = 2.0;
+
+#[derive(Lens, Clone)]
 struct LambData {
     params: Arc<LambParams>,
-    peak_meter: Arc<AtomicF32>,
-    gain_reduction_left: Arc<AtomicF32>,
-    gain_reduction_right: Arc<AtomicF32>,
+    level_buffer_l: Arc<Mutex<PeakBuffer>>,
+    level_buffer_r: Arc<Mutex<PeakBuffer>>,
+    gr_buffer_l: Arc<Mutex<MinimaBuffer>>,
+    gr_buffer_r: Arc<Mutex<MinimaBuffer>>,
+    show_left: bool,
+    show_right: bool,
 }
 
-impl Model for LambData {}
+impl LambData {
+    pub(crate) fn new(
+        params: Arc<LambParams>,
+        level_buffer_l: Arc<Mutex<PeakBuffer>>,
+        level_buffer_r: Arc<Mutex<PeakBuffer>>,
+        gr_buffer_l: Arc<Mutex<MinimaBuffer>>,
+        gr_buffer_r: Arc<Mutex<MinimaBuffer>>,
+        show_left: bool,
+        show_right: bool,
+    ) -> Self {
+        Self {
+            params,
+            level_buffer_l,
+            level_buffer_r,
+            gr_buffer_l,
+            gr_buffer_r,
+            show_left,
+            show_right,
+        }
+    }
+}
+pub enum AppEvent {
+    ShowLeft,
+    ShowRight,
+}
+impl Model for LambData {
+    fn event(&mut self, cx: &mut EventContext, event: &mut Event) {
+        event.map(|app_event, meta| match app_event {
+            AppEvent::ShowLeft => self.show_left = self.params.show_left.value(),
+            AppEvent::ShowRight => self.show_right = self.params.show_right.value(),
+        });
+    }
+}
 
 // Makes sense to also define this here, makes it a bit easier to keep track of
 pub(crate) fn default_state() -> Arc<ViziaState> {
     // width , height
-    ViziaState::new(|| (((16.0 / 9.0) * 720.0) as u32, 720))
+    // ViziaState::new(|| (((16.0 / 9.0) * 720.0) as u32, 720))
+    ViziaState::new(|| (1280, 720))
 }
 
 pub(crate) fn create(
     params: Arc<LambParams>,
-    peak_meter: Arc<AtomicF32>,
-    gain_reduction_left: Arc<AtomicF32>,
-    gain_reduction_right: Arc<AtomicF32>,
+    level_buffer_l: Arc<Mutex<PeakBuffer>>,
+    level_buffer_r: Arc<Mutex<PeakBuffer>>,
+    gr_buffer_l: Arc<Mutex<MinimaBuffer>>,
+    gr_buffer_r: Arc<Mutex<MinimaBuffer>>,
+    show_left: bool,
+    show_right: bool,
     editor_state: Arc<ViziaState>,
 ) -> Option<Box<dyn Editor>> {
     create_vizia_editor(editor_state, ViziaTheming::Custom, move |cx, _| {
@@ -43,9 +89,12 @@ pub(crate) fn create(
 
         LambData {
             params: params.clone(),
-            peak_meter: peak_meter.clone(),
-            gain_reduction_left: gain_reduction_left.clone(),
-            gain_reduction_right: gain_reduction_right.clone(),
+            level_buffer_l: level_buffer_l.clone(),
+            level_buffer_r: level_buffer_r.clone(),
+            gr_buffer_l: gr_buffer_l.clone(),
+            gr_buffer_r: gr_buffer_r.clone(),
+            show_left: true,
+            show_right: true,
         }
         .build(cx);
 
@@ -60,55 +109,66 @@ pub(crate) fn create(
                         // Label::new(cx, "🐑") // doesn't render
                         .class("plugin-name");
                     Label::new(cx, "input gain").class("fader-label");
-                    ParamSlider::new(cx, LambData::params, |params| &params.input_gain)
-                        .bottom(Pixels(6.0));
-                    // level + time
+                    ParamSlider::new(cx, LambData::params, |params| &params.input_gain);
+                    // three colomns
                     HStack::new(cx, |cx| {
-                        // level
+                        // first
                         VStack::new(cx, |cx| {
+                            // bypass and latency_mode
                             HStack::new(cx, |cx| {
-                                // bypass and latency_mode
+                                // label & slider
                                 VStack::new(cx, |cx| {
-                                    // label & slider
                                     Label::new(cx, "bypass").class("fader-label");
                                     ParamButton::new(cx, LambData::params, |params| &params.bypass)
                                         .with_label("")
                                         .for_bypass()
-                                        .width(Percentage(95.0))
-                                        .right(Percentage(5.0));
-                                }) // label & slider
+                                        .width(Percentage(100.0));
+                                    // label & slider
+                                })
                                 .height(Auto)
                                 .class("center");
-                                // label & slider
+                                // bypass and latency_mode
                                 VStack::new(cx, |cx| {
                                     Label::new(cx, "latency mode").class("fader-label");
                                     ParamSlider::new(cx, LambData::params, |params| {
                                         &params.latency_mode
                                     })
                                     .set_style(ParamSliderStyle::CurrentStepLabeled { even: true })
-                                    .width(Percentage(95.0))
-                                    .left(Percentage(5.0));
+                                    .width(Percentage(100.0));
                                 }) // label & slider
+                                .width(Stretch(1.0))
                                 .height(Auto)
                                 .class("center");
                             }) // bypass and latency_mode
-                            .height(Auto)
-                            .width(Percentage(100.0)); // level + time
+                                .col_between(Pixels(13.0))
+                                .width(Percentage(100.0))
+                                .height(Auto); // bypass & latency_mode
                             Label::new(cx, "ratio").class("fader-label");
                             ParamSlider::new(cx, LambData::params, |params| &params.strength);
                             Label::new(cx, "threshold").class("fader-label");
                             ParamSlider::new(cx, LambData::params, |params| &params.thresh);
                             Label::new(cx, "knee").class("fader-label");
                             ParamSlider::new(cx, LambData::params, |params| &params.knee);
-                            Label::new(cx, "link").class("fader-label");
-                            ParamSlider::new(cx, LambData::params, |params| &params.link);
+                        }) // first
+                        .height(Auto)
+                        .class("center");
+                        // second
+                        VStack::new(cx, |cx| {
                             Label::new(cx, "lookahead").class("fader-label");
                             ParamSlider::new(cx, LambData::params, |params| &params.lookahead);
-                        }) // level
+                            Label::new(cx, "link").class("fader-label");
+                            ParamSlider::new(cx, LambData::params, |params| &params.link);
+                            Label::new(cx, "release hold").class("fader-label");
+                            ParamSlider::new(cx, LambData::params, |params| &params.release_hold);
+                            Label::new(cx, "adaptive release").class("fader-label");
+                            ParamSlider::new(cx, LambData::params, |params| {
+                                &params.adaptive_release
+                            })
+                            .set_style(ParamSliderStyle::FromLeft);
+                        }) // second
                         .height(Auto)
-                        .class("center")
-                        .right(Percentage(2.5));
-                        // time
+                        .class("center");
+                        // third
                         VStack::new(cx, |cx| {
                             Label::new(cx, "attack").class("fader-label");
                             ParamSlider::new(cx, LambData::params, |params| &params.attack);
@@ -119,28 +179,19 @@ pub(crate) fn create(
                             Label::new(cx, "release shape").class("fader-label");
                             ParamSlider::new(cx, LambData::params, |params| &params.release_shape)
                                 .set_style(ParamSliderStyle::FromLeft);
-                            Label::new(cx, "release hold").class("fader-label");
-                            ParamSlider::new(cx, LambData::params, |params| &params.release_hold);
-                            Label::new(cx, "adaptive release").class("fader-label");
-                            ParamSlider::new(cx, LambData::params, |params| {
-                                &params.adaptive_release
-                            })
-                                .set_style(ParamSliderStyle::FromLeft);
-                        }) // time
-                            .height(Auto)
-                            .class("center")
-                            .left(Percentage(2.5));
-                    })
-                    // .height(Percentage(100.0))
-                    .height(Auto)
-                    .width(Percentage(100.0)); // level + time
+                        }) // third
+                        .height(Auto)
+                        .class("center");
+                    }) // three colomns
+                        .col_between(Pixels(26.0))
+                        .height(Auto)
+                        .width(Percentage(100.0)); // three colomns
 
                     Label::new(cx, "output gain").class("fader-label");
-                    ParamSlider::new(cx, LambData::params, |params| &params.output_gain)
-                        .bottom(Pixels(6.0));
+                    ParamSlider::new(cx, LambData::params, |params| &params.output_gain);
                 }) // parameters
+                .width(Stretch(3.0))
                 .height(Auto)
-                .right(Percentage(2.5))
                 .class("center");
                 // graph + zoom
                 VStack::new(cx, |cx| {
@@ -151,57 +202,59 @@ pub(crate) fn create(
                         .right(Pixels(0.0));
                     Label::new(cx, "zoom mode").class("fader-label");
                     ParamSlider::new(cx, LambData::params, |params| &params.zoom_mode)
-                        .set_style(ParamSliderStyle::CurrentStepLabeled { even: true })
-                        .bottom(Pixels(6.0));
+                        .set_style(ParamSliderStyle::CurrentStepLabeled { even: true });
                     Label::new(cx, "").class("fader-label"); // spacer
-                    AttackReleaseGraph::new(cx, LambData::params).height(Pixels(372.0));
+                    AttackReleaseGraph::new(cx, LambData::params).height(Pixels(200.0));
+                    // .height(Pixels(260.0));
+                    Label::new(cx, "gain reduction graph").class("fader-label");
+                    HStack::new(cx, |cx| {
+                        ParamSlider::new(cx, LambData::params, |params| &params.time_scale)
+                            .width(Stretch(1.0));
+                        // .set_style(ParamSliderStyle::CurrentStep { even: true });
+                        ParamSlider::new(cx, LambData::params, |params| &params.in_out)
+                            .set_style(ParamSliderStyle::CurrentStepLabeled { even: true })
+                            .width(Stretch(1.0));
+                        HStack::new(cx, |cx| {
+                            ParamButton::new(cx, LambData::params, |params| &params.show_left)
+                                .on_press(|ex| ex.emit(AppEvent::ShowLeft))
+                                .disable_scroll_wheel()
+                                // .on_scroll(|ex| ex.emit(AppEvent::ShowLeft))
+                                .with_label("left")
+                                .class("center")
+                                .width(Stretch(1.0));
+                            ParamButton::new(cx, LambData::params, |params| &params.show_right)
+                                .on_press(|ex| ex.emit(AppEvent::ShowRight))
+                                .disable_scroll_wheel()
+                                // .on_scroll(|ex| ex.emit(AppEvent::ShowRight))
+                                .with_label("right")
+                                .class("center")
+                                .width(Stretch(1.0));
+                        })
+                        .width(Stretch(1.0));
+                    }) // graph controls
+                        .width(Percentage(100.0))
+                        .col_between(Pixels(13.0));
                 }) // graph + zoom
+                .width(Stretch(1.0))
                 .height(Auto)
                 .class("center");
             }) // parameters + graph
-            .height(Auto)
-            .width(Percentage(100.0));
-
-            // meters
-            VStack::new(cx, |cx| {
-                Label::new(cx, "input level").class("fader-label");
-                PeakMeter::new(
-                    cx,
-                    LambData::peak_meter
-                        .map(|peak_meter| util::gain_to_db(peak_meter.load(Ordering::Relaxed))),
-                    Some(Duration::from_millis(600)),
-                );
-                Label::new(cx, "gain reduction left").class("fader-label");
-                GainReductionMeter::new(
-                    cx,
-                    LambData::gain_reduction_left
-                        .map(|gain_reduction_left| gain_reduction_left.load(Ordering::Relaxed)),
-                    Some(Duration::from_millis(600)),
-                )
+                .col_between(Pixels(26.0))
+                .height(Auto)
                 .width(Percentage(100.0));
-                Label::new(cx, "gain reduction right").class("fader-label");
-                GainReductionMeter::new(
-                    cx,
-                    LambData::gain_reduction_right
-                        .map(|gain_reduction_right| gain_reduction_right.load(Ordering::Relaxed)),
-                    Some(Duration::from_millis(600)),
-                )
-                .width(Percentage(100.0));
-            }) // meters
-            .width(Percentage(100.0))
-            // .height(Percentage(100.0))
-            .height(Auto)
-            .class("center"); // meters
+            peak_graph(cx);
         }) // everything
-        .width(Percentage(95.0))
-        // .height(Percentage(95.0))
-        .height(Auto)
-        .left(Percentage(2.5))
-        .right(Percentage(2.5))
-        .class("center");
+        // .width(Percentage(100.0))
+            .width(Stretch(1.0))
+            .height(Auto)
+            .left(Pixels(26.0))
+            .right(Pixels(26.0))
+        // .class("center")
+            ;
         ResizeHandle::new(cx);
     })
 }
+
 ///////////////////////////////////////////////////////////////////////////////
 //                             AttackReleaseGraph                            //
 ///////////////////////////////////////////////////////////////////////////////
@@ -249,7 +302,8 @@ impl<AttackReleaseDataL: Lens<Target = Arc<LambParams>>> View
         // let border_width = cx.scale_factor() * cx.border_width();
         let border_width = cx.border_width();
 
-        let rounding = 3.0 * border_width;
+        // let rounding = 3.0 * border_width;
+        let rounding = 0.0;
 
         // Create a new `Path` from the `vg` module.
         let x = bounds.x + border_width / 2.0;
@@ -360,4 +414,158 @@ impl<AttackReleaseDataL: Lens<Target = Arc<LambParams>>> View
             &vg::Paint::color(border_color).with_line_width(border_width),
         );
     }
+}
+
+/// Draws a peak graph with a grid backdrop, unit ruler, and a peak meter to side.
+fn peak_graph(cx: &mut Context) {
+    HStack::new(cx, |cx| {
+        ZStack::new(cx, |cx| {
+            Grid::new(
+                cx,
+                ValueScaling::Linear,
+                (METER_MIN, METER_MAX),
+                vec![0.0, -6.0, -12.0, -18.0, -24.0],
+                Orientation::Horizontal,
+            )
+            .color(Color::rgba(160, 160, 160, 60));
+
+            // level
+            Graph::new(
+                cx,
+                LambData::level_buffer_l,
+                (METER_MIN, METER_MAX),
+                ValueScaling::Decibels,
+            )
+                .visibility(LambData::show_left)
+                .color(Color::rgba(0, 0, 255, 30))
+                .background_color(Color::rgba(0, 0, 0, 40));
+
+            // level
+            Graph::new(
+                cx,
+                LambData::level_buffer_r,
+                (METER_MIN, METER_MAX),
+                ValueScaling::Decibels,
+            )
+                .visibility(LambData::show_right)
+                .color(Color::rgba(255, 0, 0, 30))
+                .background_color(Color::rgba(0, 0, 0, 40));
+            // gain reduction
+            Graph::new(
+                cx,
+                LambData::gr_buffer_l,
+                (METER_MIN, METER_MAX),
+                ValueScaling::Decibels,
+            )
+                .visibility(LambData::show_left)
+                .color(Color::rgba(0, 0, 255, 255))
+                .background_color(Color::rgba(250, 250, 250, 50))
+                .fill_from(0.0);
+            // gain reduction
+            Graph::new(
+                cx,
+                LambData::gr_buffer_r,
+                (METER_MIN, METER_MAX),
+                ValueScaling::Decibels,
+            )
+                .visibility(LambData::show_right)
+                .color(Color::rgba(255, 0, 0, 255))
+                .background_color(Color::rgba(250, 250, 250, 50))
+                .fill_from(0.0);
+            // };
+        });
+
+        ZStack::new(cx, |cx| {
+            HStack::new(cx, |cx| {
+                // gain reduction
+                HStack::new(cx, |cx| {
+                    Meter::new(
+                        cx,
+                        LambData::gr_buffer_l,
+                        (METER_MIN, METER_MAX),
+                        ValueScaling::Decibels,
+                        Orientation::Vertical,
+                    )
+                        .background_color(Color::rgb(250, 250, 250))
+                        .color(Color::rgba(0, 0, 255, 255));
+                })
+                    .left(Pixels(4.0))
+                    .width(Pixels(15.0))
+                    .background_color(Color::rgb(203, 203, 203));
+                HStack::new(cx, |cx| {
+                    Meter::new(
+                        cx,
+                        LambData::gr_buffer_r,
+                        (METER_MIN, METER_MAX),
+                        ValueScaling::Decibels,
+                        Orientation::Vertical,
+                    )
+                        .background_color(Color::rgb(250, 250, 250))
+                        .color(Color::rgba(255, 0, 0, 255));
+                })
+                    .width(Pixels(15.0))
+                    .background_color(Color::rgb(203, 203, 203));
+                // level
+                Meter::new(
+                    cx,
+                    LambData::level_buffer_l,
+                    (METER_MIN, METER_MAX),
+                    ValueScaling::Decibels,
+                    Orientation::Vertical,
+                )
+                    .width(Pixels(15.0))
+                    .color(Color::rgba(0, 0, 255, 255))
+                    .background_color(Color::rgba(178, 178, 178, 255));
+                Meter::new(
+                    cx,
+                    LambData::level_buffer_r,
+                    (METER_MIN, METER_MAX),
+                    ValueScaling::Decibels,
+                    Orientation::Vertical,
+                )
+                    .width(Pixels(15.0))
+                    .color(Color::rgba(255, 0, 0, 255))
+                    .background_color(Color::rgba(178, 178, 178, 255));
+            })
+                .col_between(Pixels(2.))
+                .width(Auto)
+                ;
+            Grid::new(
+                cx,
+                ValueScaling::Linear,
+                (METER_MIN, METER_MAX),
+                vec![0.0, -6.0, -12.0, -18.0, -24.0],
+                Orientation::Horizontal,
+            )
+                .color(Color::rgba(160, 160, 160, 60));
+
+        })
+            .width(Pixels(70.0))
+        // .width(Auto)
+            ;
+        UnitRuler::new(
+            cx,
+            (METER_MIN, METER_MAX),
+            ValueScaling::Linear,
+            vec![
+                (-0.0, "0db"),
+                (-6.0, "-6db"),
+                (-12.0, "-12db"),
+                (-18.0, "-18db"),
+                (-24.0, "-24db"),
+            ],
+            Orientation::Vertical,
+        )
+            .left(Pixels(2.0))
+            .right(Pixels(2.0))
+            .font_size(12.)
+            .color(Color::rgb(30, 30, 30))
+            .width(Pixels(32.));
+    })
+        .width(Auto)
+        .border_color(Color::rgb(163, 163, 163))
+        .border_width(Pixels(1.4))
+        .top(Pixels(26.0))
+        .height(Pixels(268.0))
+        .width(Percentage(100.0));
 }
