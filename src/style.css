@@ -1,10 +1,11 @@
 .plugin-name {
     font-weight: light;
     font-size: 30;
-    height: 60px;
-    child-top: 1s;
-    child-bottom: 5px;
+    height: 40px;
+    child-top: 5s;
+    child-bottom: 1px;
     color: #696969;
+    background-color: #fafafa;
 }
 
 attack-release-graph {
