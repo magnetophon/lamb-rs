@@ -228,7 +228,8 @@ pub(crate) fn create(
                 .height(Auto)
                 .background_color(Color::rgb(250, 250, 250))
                 .top(Pixels(353.0))
-                .child_bottom(Pixels(26.0));
+                // overlap to hack around drawing bug:
+                .child_bottom(Pixels(30.0));
                 // Title
                 Label::new(cx, "lamb") // title
                     .class("plugin-name")
