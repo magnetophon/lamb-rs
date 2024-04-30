@@ -69,9 +69,6 @@ enum ZoomMode {
 
 #[derive(Enum, Debug, PartialEq)]
 enum TimeScale {
-    #[id = "0_5s"]
-    #[name = "0.5 seconds"]
-    HalfSec,
     #[id = "1s"]
     #[name = "1 second"]
     OneSec,
@@ -90,9 +87,6 @@ enum TimeScale {
     #[id = "32s"]
     #[name = "32 seconds"]
     ThirtytwoSec,
-    #[id = "64"]
-    #[name = "64 seconds"]
-    SixtyfourSec,
 }
 
 #[derive(Enum, Debug, PartialEq)]

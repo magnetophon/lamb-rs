@@ -291,14 +291,12 @@ impl Plugin for Lamb {
         if self.params.editor_state.is_open() {
             if self.should_update_time_scale.load(Ordering::Relaxed) {
                 let time_scale = match self.params.time_scale.value() {
-                    TimeScale::HalfSec => 0.5,
                     TimeScale::OneSec => 1.0,
                     TimeScale::TwoSec => 2.0,
                     TimeScale::FourSec => 4.0,
                     TimeScale::EightSec => 8.0,
                     TimeScale::SixteenSec => 16.0,
                     TimeScale::ThirtytwoSec => 32.0,
-                    TimeScale::SixtyfourSec => 64.0,
                 };
                 self.level_buffer_l.lock().unwrap().set_duration(time_scale);
                 self.level_buffer_r.lock().unwrap().set_duration(time_scale);
