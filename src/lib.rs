@@ -103,10 +103,10 @@ impl Default for Lamb {
             temp_output_buffer_gr_l: f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             temp_output_buffer_gr_r: f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             sample_rate: 48000.0,
-            level_buffer_l: Arc::new(Mutex::new(PeakBuffer::new(1120, 7.0, 0.0))),
-            level_buffer_r: Arc::new(Mutex::new(PeakBuffer::new(1120, 7.0, 0.0))),
-            gr_buffer_l: Arc::new(Mutex::new(MinimaBuffer::new(1120, 7.0, 0.0))),
-            gr_buffer_r: Arc::new(Mutex::new(MinimaBuffer::new(1120, 7.0, 0.0))),
+            level_buffer_l: Arc::new(Mutex::new(PeakBuffer::new(1171, 7.0, 0.0))),
+            level_buffer_r: Arc::new(Mutex::new(PeakBuffer::new(1171, 7.0, 0.0))),
+            gr_buffer_l: Arc::new(Mutex::new(MinimaBuffer::new(1171, 7.0, 0.0))),
+            gr_buffer_r: Arc::new(Mutex::new(MinimaBuffer::new(1171, 7.0, 0.0))),
             should_update_time_scale,
         }
     }
