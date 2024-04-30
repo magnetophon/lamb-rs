@@ -3,9 +3,9 @@ use nih_plug::prelude::*;
 use nih_plug_vizia::ViziaState;
 use std::sync::{Arc, Mutex};
 mod buffer;
+mod dsp_192k;
 mod dsp_48k;
 mod dsp_96k;
-mod dsp_192k;
 use buffer::*;
 use cyma::utils::{MinimaBuffer, PeakBuffer, VisualizerBuffer};
 
@@ -17,14 +17,11 @@ const MAX_SOUNDCARD_BUFFER_SIZE: usize = 32768;
 
 mod editor;
 
-/// The time it takes for the peak meter to decay by 12 dB after switching to complete silence.
-const PEAK_METER_DECAY_MS: f64 = 150.0;
-
 // Define an enum to hold the DSP's for different sample rates
 enum DspVariant {
     Dsp48k(Box<dsp_48k::LambRs48k>),
     Dsp96k(Box<dsp_96k::LambRs96k>),
-    Dsp192k(Box<dsp_192k::LambRs192k>)
+    Dsp192k(Box<dsp_192k::LambRs192k>),
 }
 impl Default for DspVariant {
     fn default() -> Self {
@@ -52,14 +49,14 @@ impl DspVariant {
             DspVariant::Dsp192k(ref dsp) => dsp.get_param(param_id),
         }
     }
-    fn set_param(&mut self, param_id: ParamIndex, val: f64)  {
+    fn set_param(&mut self, param_id: ParamIndex, val: f64) {
         match self {
-            DspVariant::Dsp48k(ref mut dsp) => dsp.set_param(param_id,val),
-            DspVariant::Dsp96k(ref mut dsp) => dsp.set_param(param_id,val),
-            DspVariant::Dsp192k(ref mut dsp) => dsp.set_param(param_id,val),
+            DspVariant::Dsp48k(ref mut dsp) => dsp.set_param(param_id, val),
+            DspVariant::Dsp96k(ref mut dsp) => dsp.set_param(param_id, val),
+            DspVariant::Dsp192k(ref mut dsp) => dsp.set_param(param_id, val),
         }
     }
-    fn compute(&mut self, count: i32, inputs: &[&[f64]], outputs: &mut[&mut[f64]]) {
+    fn compute(&mut self, count: i32, inputs: &[&[f64]], outputs: &mut [&mut [f64]]) {
         match self {
             DspVariant::Dsp48k(ref mut dsp) => dsp.compute(count, inputs, outputs),
             DspVariant::Dsp96k(ref mut dsp) => dsp.compute(count, inputs, outputs),
@@ -68,11 +65,9 @@ impl DspVariant {
     }
 }
 
-
 pub struct Lamb {
     params: Arc<LambParams>,
     // dsp_holder: DspHolder,
-
     dsp_variant: DspVariant,
 
     accum_buffer: TempBuffer,
@@ -89,8 +84,6 @@ pub struct Lamb {
     level_buffer_r: Arc<Mutex<PeakBuffer>>,
     gr_buffer_l: Arc<Mutex<MinimaBuffer>>,
     gr_buffer_r: Arc<Mutex<MinimaBuffer>>,
-    show_left: bool,
-    show_right: bool,
 
     /// If this is set at the start of the processing cycle, then the graph duration should be updated.
     should_update_time_scale: Arc<AtomicBool>,
@@ -114,8 +107,6 @@ impl Default for Lamb {
             level_buffer_r: Arc::new(Mutex::new(PeakBuffer::new(1120, 7.0, 0.0))),
             gr_buffer_l: Arc::new(Mutex::new(MinimaBuffer::new(1120, 7.0, 0.0))),
             gr_buffer_r: Arc::new(Mutex::new(MinimaBuffer::new(1120, 7.0, 0.0))),
-            show_left: true,
-            show_right: true,
             should_update_time_scale,
         }
     }
@@ -168,10 +159,8 @@ impl Plugin for Lamb {
         &mut self,
         _audio_io_layout: &AudioIOLayout,
         buffer_config: &BufferConfig,
-        context: &mut impl InitContext<Self>,
+        _context: &mut impl InitContext<Self>,
     ) -> bool {
-
-
         self.accum_buffer.resize(2, MAX_SOUNDCARD_BUFFER_SIZE);
         self.sample_rate = buffer_config.sample_rate;
 
@@ -224,8 +213,6 @@ impl Plugin for Lamb {
             self.level_buffer_r.clone(),
             self.gr_buffer_l.clone(),
             self.gr_buffer_r.clone(),
-            self.show_left.clone(),
-            self.show_right.clone(),
             self.params.editor_state.clone(),
         )
     }
@@ -266,8 +253,10 @@ impl Plugin for Lamb {
             .set_param(RELEASE_SHAPE_PI, self.params.release_shape.value() as f64);
         self.dsp_variant
             .set_param(RELEASE_HOLD_PI, self.params.release_hold.value() as f64);
-        self.dsp_variant.set_param(KNEE_PI, self.params.knee.value() as f64);
-        self.dsp_variant.set_param(LINK_PI, self.params.link.value() as f64);
+        self.dsp_variant
+            .set_param(KNEE_PI, self.params.knee.value() as f64);
+        self.dsp_variant
+            .set_param(LINK_PI, self.params.link.value() as f64);
         self.dsp_variant.set_param(
             ADAPTIVE_RELEASE_PI,
             self.params.adaptive_release.value() as f64,
@@ -287,7 +276,10 @@ impl Plugin for Lamb {
                 &mut self.temp_output_buffer_gr_r,
             ],
         );
-        let latency_samples = self.dsp_variant.get_param(LATENCY_PI).expect("no latency read") as u32;
+        let latency_samples = self
+            .dsp_variant
+            .get_param(LATENCY_PI)
+            .expect("no latency read") as u32;
         context.set_latency_samples(latency_samples);
 
         let output = buffer.as_slice();

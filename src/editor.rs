@@ -29,34 +29,14 @@ struct LambData {
     show_right: bool,
 }
 
-impl LambData {
-    pub(crate) fn new(
-        params: Arc<LambParams>,
-        level_buffer_l: Arc<Mutex<PeakBuffer>>,
-        level_buffer_r: Arc<Mutex<PeakBuffer>>,
-        gr_buffer_l: Arc<Mutex<MinimaBuffer>>,
-        gr_buffer_r: Arc<Mutex<MinimaBuffer>>,
-        show_left: bool,
-        show_right: bool,
-    ) -> Self {
-        Self {
-            params,
-            level_buffer_l,
-            level_buffer_r,
-            gr_buffer_l,
-            gr_buffer_r,
-            show_left,
-            show_right,
-        }
-    }
-}
+impl LambData {}
 pub enum AppEvent {
     ShowLeft,
     ShowRight,
 }
 impl Model for LambData {
-    fn event(&mut self, cx: &mut EventContext, event: &mut Event) {
-        event.map(|app_event, meta| match app_event {
+    fn event(&mut self, _cx: &mut EventContext, event: &mut Event) {
+        event.map(|app_event, _meta| match app_event {
             AppEvent::ShowLeft => self.show_left = self.params.show_left.value(),
             AppEvent::ShowRight => self.show_right = self.params.show_right.value(),
         });
@@ -76,8 +56,6 @@ pub(crate) fn create(
     level_buffer_r: Arc<Mutex<PeakBuffer>>,
     gr_buffer_l: Arc<Mutex<MinimaBuffer>>,
     gr_buffer_r: Arc<Mutex<MinimaBuffer>>,
-    show_left: bool,
-    show_right: bool,
     editor_state: Arc<ViziaState>,
 ) -> Option<Box<dyn Editor>> {
     create_vizia_editor(editor_state, ViziaTheming::Custom, move |cx, _| {
@@ -256,7 +234,7 @@ pub(crate) fn create(
                     .class("plugin-name")
                     .left(Pixels(0.0));
             }) // parameters + graph
-                .right(Pixels(38.0))
+                .right(Pixels(42.0))
                 .height(Auto)
                 .width(Stretch(1.0));
         }) // everything
@@ -280,7 +258,7 @@ impl<AttackReleaseDataL: Lens<Target = Arc<LambParams>>> AttackReleaseGraph<Atta
         Self {
             attack_release_data,
         }
-        .build(cx, |cx| {
+        .build(cx, |_cx| {
             // If we want the view to contain other views we can build those here.
         })
         // Redraw when lensed data changes
@@ -572,7 +550,7 @@ fn peak_graph(cx: &mut Context) {
             Orientation::Vertical,
         )
             .left(Pixels(2.0))
-            .right(Pixels(2.0))
+            .right(Pixels(6.0))
             .font_size(12.)
             .color(Color::rgb(30, 30, 30))
             .width(Pixels(32.));
@@ -580,9 +558,6 @@ fn peak_graph(cx: &mut Context) {
         .width(Auto)
         .border_color(Color::rgba(163, 163, 163, 0))
         .border_width(Pixels(1.4))
-    // .top(Pixels(26.0))
-    .height(Pixels(720.0))
-    // .height(Percentage(100.0))
-    // .height(Stretch(1.0))
-    .width(Percentage(100.0));
+        .height(Pixels(720.0))
+        .width(Percentage(100.0));
 }
