@@ -555,8 +555,8 @@ fn peak_graph(cx: &mut Context) {
             ],
             Orientation::Vertical,
         )
-            .left(Pixels(2.0))
-            .right(Pixels(6.0))
+            .left(Pixels(4.0))
+            .right(Pixels(4.0))
             .font_size(12.)
             .color(Color::rgb(30, 30, 30))
             .width(Pixels(32.));
