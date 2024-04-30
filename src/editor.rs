@@ -475,9 +475,11 @@ fn peak_graph(cx: &mut Context) {
                         ValueScaling::Decibels,
                         Orientation::Vertical,
                     )
+                        .visibility(LambData::show_left)
                         .background_color(Color::rgb(250, 250, 250))
                         .color(Color::rgba(0, 0, 255, 255));
                 })
+                    .visibility(LambData::show_left)
                     .left(Pixels(4.0))
                     .width(Pixels(15.0))
                     .background_color(Color::rgb(203, 203, 203));
@@ -489,9 +491,11 @@ fn peak_graph(cx: &mut Context) {
                         ValueScaling::Decibels,
                         Orientation::Vertical,
                     )
+                        .visibility(LambData::show_right)
                         .background_color(Color::rgb(250, 250, 250))
                         .color(Color::rgba(255, 0, 0, 255));
                 })
+                    .visibility(LambData::show_right)
                     .width(Pixels(15.0))
                     .background_color(Color::rgb(203, 203, 203));
                 // level
@@ -502,6 +506,7 @@ fn peak_graph(cx: &mut Context) {
                     ValueScaling::Decibels,
                     Orientation::Vertical,
                 )
+                    .visibility(LambData::show_left)
                     .width(Pixels(15.0))
                     .color(Color::rgba(0, 0, 255, 255))
                     .background_color(Color::rgba(178, 178, 178, 255));
@@ -512,6 +517,7 @@ fn peak_graph(cx: &mut Context) {
                     ValueScaling::Decibels,
                     Orientation::Vertical,
                 )
+                    .visibility(LambData::show_right)
                     .width(Pixels(15.0))
                     .color(Color::rgba(255, 0, 0, 255))
                     .background_color(Color::rgba(178, 178, 178, 255));
