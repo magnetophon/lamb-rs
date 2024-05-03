@@ -56,7 +56,7 @@ There are two main downsides to this plugin:
   to writing an [N dimensional memoization function](https://github.com/grame-cncm/faustlibraries/blob/d28c51f6c667e00f521a8cb2232786795c558aa4/basics.lib#L956-L1495).  
   If you are good at math or computer science and want to help me optimize it more, open an issue, or better yet a PR!
 - Long latency.  
-  The clean sound of this plugin is partially made possible by copious amount of lookahead.  
+  The clean sound of this plugin is partially made possible by a copious amount of lookahead.  
   In fixed latency mode, the latency is 100ms.  
   In minimum latency mode, the latency depends on the attack, release hold and lookahead parameters.
   
@@ -80,9 +80,6 @@ cp -r target/bundled/lamb.vst3 ~/.vst3
 ```
 
 ## User preferences
-
-  **ATTENTION** If you want to use the plugin with a samplerate of more than 48k, make sure you change MaxSampleRate at the start of lamb.dsp.  
-  There's a couple of other user preferences as well, documented in the dsp file.
 
 ## Rebuilding the Faust dsp
 
