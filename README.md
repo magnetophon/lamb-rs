@@ -1,3 +1,5 @@
+[![Automated Builds](https://github.com/magnetophon/lamb-rs/actions/workflows/build.yml/badge.svg)](https://github.com/magnetophon/lamb-rs/actions/workflows/build.yml)
+
 # lamb 🐑
 
 A lookahead compressor/limiter that's soft as a lamb. 
