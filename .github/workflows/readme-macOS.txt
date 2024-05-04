@@ -3,10 +3,10 @@ https://disable-gatekeeper.github.io/
 
 ---
 
-To install the VST3 plugins, copy the .vst3 bundles to:
+To install the VST3 plugin, copy the .vst3 bundle to:
 ~/Library/Audio/Plug-Ins/VST3
 
-To install the CLAP plugins, copy the .clap bundles to:
+To install the CLAP plugin, copy the .clap bundle to:
 ~/Library/Audio/Plug-Ins/CLAP
 
 You will need to create these directories yourself it they do not yet exist.

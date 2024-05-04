@@ -1,7 +1,7 @@
-To install the VST3 plugins, copy the .vst3 _directories_ to:
+To install the VST3 plugin, copy the .vst3 _directory to:
 C:/Program Files/Common Files/VST3/
 
-To install the CLAP plugins, copy the .clap files to:
+To install the CLAP plugin, copy the .clap file to:
 C:/Program Files/Common Files/CLAP/
 
 You will need to create these directories yourself it they do not yet exist.
