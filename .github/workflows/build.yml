@@ -100,12 +100,22 @@ jobs:
           mv target/bundled/* "$ARCHIVE_NAME/$ARCHIVE_NAME"
       - name: Add an OS-specific readme file with installation instructions
         run: cp ".github/workflows/readme-${{ runner.os }}.txt" "$ARCHIVE_NAME/$ARCHIVE_NAME/README.txt"
-      - uses: actions/upload-artifact@v4
+      - name: Make the OSX standalone app executable
+        if: startsWith(matrix.os, 'macos')
+        run: |
+            chmod +x  "$ARCHIVE_NAME/$ARCHIVE_NAME/lamb.app/Contents/MacOS/lamb"
+      # - name: Make the windows standalone app executable
+        # if: startsWith(matrix.os, 'windows')
+        # run: |
+          # git update-index --chmod=+x  "$ARCHIVE_NAME/$ARCHIVE_NAME/lamb.exe"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.ARCHIVE_NAME }}
           path: ${{ env.ARCHIVE_NAME }}
 
-      - name: zip files
+      - name: Zip files
         uses: vimtor/action-zip@v1.2
         if: startsWith(github.ref, 'refs/tags/')
         with:
