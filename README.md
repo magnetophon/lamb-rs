@@ -81,8 +81,6 @@ cargo xtask bundle lamb --release
 cp -r target/bundled/lamb.vst3 ~/.vst3
 ```
 
-## User preferences
-
 ## Rebuilding the Faust dsp
 
 NOTE:  this is only needed if you want to change the dsp, not if you just want to compile the plugin.
