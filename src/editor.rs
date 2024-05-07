@@ -7,7 +7,6 @@ use nih_plug_vizia::widgets::*;
 use nih_plug_vizia::{assets, create_vizia_editor, ViziaState, ViziaTheming};
 use std::sync::{Arc, Mutex};
 
-use cyma::visualizers::GraphModifiers;
 use cyma::{
     prelude::*,
     utils::{MinimaBuffer, PeakBuffer},
@@ -450,7 +449,7 @@ fn peak_graph(cx: &mut Context) {
                 .visibility(LambData::show_left)
                 .color(Color::rgba(0, 0, 255, 255))
                 .background_color(Color::rgba(250, 250, 250, 50))
-                .fill_from(0.0);
+                .fill_from_value(0.0);
             // gain reduction
             Graph::new(
                 cx,
@@ -461,7 +460,7 @@ fn peak_graph(cx: &mut Context) {
                 .visibility(LambData::show_right)
                 .color(Color::rgba(255, 0, 0, 255))
                 .background_color(Color::rgba(250, 250, 250, 50))
-                .fill_from(0.0);
+                .fill_from_value(0.0);
             // };
         });
 
@@ -477,13 +476,13 @@ fn peak_graph(cx: &mut Context) {
                         Orientation::Vertical,
                     )
                         .visibility(LambData::show_left)
-                        .background_color(Color::rgb(250, 250, 250))
-                        .color(Color::rgba(0, 0, 255, 255));
+                        .background_color(Color::rgb(203, 203, 203))
+                        .color(Color::rgb(0, 0, 255))
+                        .fill_from_value(0.0);
                 })
                     .visibility(LambData::show_left)
                     .left(Pixels(4.0))
-                    .width(Pixels(15.0))
-                    .background_color(Color::rgb(203, 203, 203));
+                    .width(Pixels(15.0));
                 HStack::new(cx, |cx| {
                     Meter::new(
                         cx,
@@ -493,12 +492,12 @@ fn peak_graph(cx: &mut Context) {
                         Orientation::Vertical,
                     )
                         .visibility(LambData::show_right)
-                        .background_color(Color::rgb(250, 250, 250))
-                        .color(Color::rgba(255, 0, 0, 255));
+                        .background_color(Color::rgb(203, 203, 203))
+                        .color(Color::rgb(255, 0, 0))
+                        .fill_from_value(0.0);
                 })
                     .visibility(LambData::show_right)
-                    .width(Pixels(15.0))
-                    .background_color(Color::rgb(203, 203, 203));
+                    .width(Pixels(15.0));
                 // level
                 Meter::new(
                     cx,
