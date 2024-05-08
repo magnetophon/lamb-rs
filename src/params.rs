@@ -38,8 +38,10 @@ struct LambParams {
     zoom_mode: EnumParam<ZoomMode>,
     #[id = "time_scale"]
     time_scale: EnumParam<TimeScale>,
-    #[id = "in_out"]
-    in_out: BoolParam,
+    #[id = "db_scale"]
+    db_scale: EnumParam<DBScale>,
+    #[id = "pre_post"]
+    pre_post: BoolParam,
     #[id = "show_left"]
     show_left: BoolParam,
     #[id = "show_right"]
@@ -87,6 +89,25 @@ enum TimeScale {
     #[id = "32s"]
     #[name = "32 seconds"]
     ThirtytwoSec,
+}
+// 6,12,24,48,96
+#[derive(Enum, Debug, PartialEq)]
+enum DBScale {
+    #[id = "6db"]
+    #[name = "6 dB"]
+    SixDB,
+    #[id = "12db"]
+    #[name = "12 dB"]
+    TwelveDB,
+    #[id = "24db"]
+    #[name = "24 dB"]
+    TwentyfourDB,
+    #[id = "48db"]
+    #[name = "48 dB"]
+    FortyeightDB,
+    #[id = "96"]
+    #[name = "96 dB"]
+    NinetysixDB,
 }
 
 #[derive(Enum, Debug, PartialEq)]
@@ -165,12 +186,12 @@ pub fn ratio_to_strength() -> Arc<dyn Fn(&str) -> Option<f32> + Send + Sync> {
     })
 }
 
-// .with_value_to_string(bool_to_in_out())
-// .with_string_to_value(in_out_to_bool())
-// pub fn bool_to_in_out()
+// .with_value_to_string(bool_to_pre_post())
+// .with_string_to_value(pre_post_to_bool())
+// pub fn bool_to_pre_post()
 
 /// Display 'post' or 'pre' depending on whether the parameter is true or false.
-pub fn v2s_bool_in_out() -> Arc<dyn Fn(bool) -> String + Send + Sync> {
+pub fn v2s_bool_pre_post() -> Arc<dyn Fn(bool) -> String + Send + Sync> {
     Arc::new(move |value| {
         if value {
             String::from("post")
@@ -180,8 +201,8 @@ pub fn v2s_bool_in_out() -> Arc<dyn Fn(bool) -> String + Send + Sync> {
     })
 }
 
-/// Parse a string in the same format as [`v2s_bool_in_out()`].
-pub fn s2v_bool_in_out() -> Arc<dyn Fn(&str) -> Option<bool> + Send + Sync> {
+/// Parse a string in the same format as [`v2s_bool_pre_post()`].
+pub fn s2v_bool_pre_post() -> Arc<dyn Fn(&str) -> Option<bool> + Send + Sync> {
     Arc::new(|string| {
         let string = string.trim();
         if string.eq_ignore_ascii_case("post") {
@@ -194,11 +215,6 @@ pub fn s2v_bool_in_out() -> Arc<dyn Fn(&str) -> Option<bool> + Send + Sync> {
     })
 }
 
-// impl LambParams {
-// impl Default for LambParams {
-// fn default() -> Self {
-// fn default(should_update_time_scale: Arc<AtomicBool>) -> Self {
-// pub fn new(should_update_time_scale: Arc<AtomicBool>) -> Self {
 impl LambParams {
     pub fn new(should_update_time_scale: Arc<AtomicBool>) -> Self {
         Self {
@@ -347,9 +363,16 @@ impl LambParams {
                 })
                 .hide()
                 .hide_in_generic_ui(),
-            in_out: BoolParam::new("in_out", true)
-                .with_value_to_string(v2s_bool_in_out())
-                .with_string_to_value(s2v_bool_in_out())
+            db_scale: EnumParam::new("db_scale", DBScale::FortyeightDB)
+            // .with_callback({
+            // let should_update_db_scale = should_update_db_scale.clone();
+            // Arc::new(move |_| should_update_db_scale.store(true, Ordering::Release))
+            // })
+                .hide()
+                .hide_in_generic_ui(),
+            pre_post: BoolParam::new("pre_post", true)
+                .with_value_to_string(v2s_bool_pre_post())
+                .with_string_to_value(s2v_bool_pre_post())
                 .hide()
                 .hide_in_generic_ui(),
             show_left: BoolParam::new("show_left", true)

@@ -13,6 +13,8 @@ use cyma::{
     visualizers::{Graph, Grid, Meter, UnitRuler},
 };
 
+use crate::DBScale;
+
 // to allign the grid with the controls:
 const METER_MIN: f32 = -52.3;
 const METER_MAX: f32 = 3.05;
@@ -26,18 +28,43 @@ struct LambData {
     gr_buffer_r: Arc<Mutex<MinimaBuffer>>,
     show_left: bool,
     show_right: bool,
+    meter_min: f32,
+    meter_max: f32,
 }
 
 impl LambData {}
 pub enum AppEvent {
     ShowLeft,
     ShowRight,
+    ChangeDbScale,
 }
 impl Model for LambData {
     fn event(&mut self, _cx: &mut EventContext, event: &mut Event) {
         event.map(|app_event, _meta| match app_event {
             AppEvent::ShowLeft => self.show_left = self.params.show_left.value(),
             AppEvent::ShowRight => self.show_right = self.params.show_right.value(),
+            AppEvent::ChangeDbScale => match self.params.db_scale.value() {
+                DBScale::SixDB => {
+                    self.meter_min = -7.0;
+                    self.meter_max = 1.0
+                }
+                DBScale::TwelveDB => {
+                    self.meter_min = -14.0;
+                    self.meter_max = 2.0
+                }
+                DBScale::TwentyfourDB => {
+                    self.meter_min = -27.0;
+                    self.meter_max = 2.0
+                }
+                DBScale::FortyeightDB => {
+                    self.meter_min = METER_MIN;
+                    self.meter_max = METER_MAX
+                }
+                DBScale::NinetysixDB => {
+                    self.meter_min = -100.0;
+                    self.meter_max = 5.0
+                }
+            },
         });
     }
 }
@@ -73,6 +100,8 @@ pub(crate) fn create(
             gr_buffer_r: gr_buffer_r.clone(),
             show_left: true,
             show_right: true,
+            meter_min: METER_MIN,
+            meter_max: METER_MAX,
         }
         .build(cx);
 
@@ -190,7 +219,10 @@ pub(crate) fn create(
                         HStack::new(cx, |cx| {
                             ParamSlider::new(cx, LambData::params, |params| &params.time_scale)
                                 .width(Stretch(1.0));
-                            ParamSlider::new(cx, LambData::params, |params| &params.in_out)
+                            ParamSlider::new(cx, LambData::params, |params| &params.db_scale)
+                                .on_changing(|ex| ex.emit(AppEvent::ChangeDbScale))
+                                .width(Stretch(1.0));
+                            ParamSlider::new(cx, LambData::params, |params| &params.pre_post)
                                 .set_style(ParamSliderStyle::CurrentStepLabeled { even: true })
                                 .width(Stretch(1.0));
                             HStack::new(cx, |cx| {
@@ -234,13 +266,13 @@ pub(crate) fn create(
                     .class("plugin-name")
                     .left(Pixels(0.0));
             }) // parameters + graph
-                .right(Pixels(42.0))
-                .height(Auto)
-                .width(Stretch(1.0));
+            .right(Pixels(42.0))
+            .height(Auto)
+            .width(Stretch(1.0));
         }) // everything
-            .left(Pixels(26.0))
-            .width(Stretch(1.0))
-            .height(Auto);
+        .left(Pixels(26.0))
+        .width(Stretch(1.0))
+        .height(Auto);
         ResizeHandle::new(cx);
     })
 }
@@ -446,10 +478,10 @@ fn peak_graph(cx: &mut Context) {
                 (METER_MIN, METER_MAX),
                 ValueScaling::Decibels,
             )
-                .visibility(LambData::show_left)
-                .color(Color::rgba(0, 0, 255, 255))
-                .background_color(Color::rgba(250, 250, 250, 50))
-                .fill_from_value(0.0);
+            .visibility(LambData::show_left)
+            .color(Color::rgba(0, 0, 255, 255))
+            .background_color(Color::rgba(250, 250, 250, 50))
+            .fill_from_value(0.0);
             // gain reduction
             Graph::new(
                 cx,
@@ -457,10 +489,10 @@ fn peak_graph(cx: &mut Context) {
                 (METER_MIN, METER_MAX),
                 ValueScaling::Decibels,
             )
-                .visibility(LambData::show_right)
-                .color(Color::rgba(255, 0, 0, 255))
-                .background_color(Color::rgba(250, 250, 250, 50))
-                .fill_from_value(0.0);
+            .visibility(LambData::show_right)
+            .color(Color::rgba(255, 0, 0, 255))
+            .background_color(Color::rgba(250, 250, 250, 50))
+            .fill_from_value(0.0);
             // };
         });
 
@@ -555,15 +587,15 @@ fn peak_graph(cx: &mut Context) {
             ],
             Orientation::Vertical,
         )
-            .left(Pixels(4.0))
-            .right(Pixels(4.0))
-            .font_size(12.)
-            .color(Color::rgb(30, 30, 30))
-            .width(Pixels(32.));
+        .left(Pixels(4.0))
+        .right(Pixels(4.0))
+        .font_size(12.)
+        .color(Color::rgb(30, 30, 30))
+        .width(Pixels(32.));
     })
-        .width(Auto)
-        .border_color(Color::rgba(163, 163, 163, 0))
-        .border_width(Pixels(1.4))
-        .height(Pixels(720.0))
-        .width(Percentage(100.0));
+    .width(Auto)
+    .border_color(Color::rgba(163, 163, 163, 0))
+    .border_width(Pixels(1.4))
+    .height(Pixels(720.0))
+    .width(Percentage(100.0));
 }

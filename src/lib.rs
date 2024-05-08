@@ -306,7 +306,7 @@ impl Plugin for Lamb {
                     .store(false, Ordering::Release);
             };
 
-            if self.params.in_out.value() {
+            if self.params.pre_post.value() {
                 for i in 0..count as usize {
                     self.level_buffer_l
                         .lock()
