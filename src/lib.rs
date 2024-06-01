@@ -7,7 +7,7 @@ mod dsp_192k;
 mod dsp_48k;
 mod dsp_96k;
 use buffer::*;
-use cyma::utils::{MinimaBuffer, PeakBuffer, VisualizerBuffer};
+use cyma::utils::{MinimaBuffer, PeakBuffer, VisualizerBuffer, HistogramBuffer};
 
 use default_boxed::DefaultBoxed;
 
@@ -84,6 +84,7 @@ pub struct Lamb {
     level_buffer_r: Arc<Mutex<PeakBuffer>>,
     gr_buffer_l: Arc<Mutex<MinimaBuffer>>,
     gr_buffer_r: Arc<Mutex<MinimaBuffer>>,
+    histogram_buffer: Arc<Mutex<HistogramBuffer>>,
 
     /// If this is set at the start of the processing cycle, then the graph duration should be updated.
     should_update_time_scale: Arc<AtomicBool>,
@@ -107,6 +108,7 @@ impl Default for Lamb {
             level_buffer_r: Arc::new(Mutex::new(PeakBuffer::new(1171, 7.0, 0.0))),
             gr_buffer_l: Arc::new(Mutex::new(MinimaBuffer::new(1171, 7.0, 0.0))),
             gr_buffer_r: Arc::new(Mutex::new(MinimaBuffer::new(1171, 7.0, 0.0))),
+            histogram_buffer: Arc::new(Mutex::new(HistogramBuffer::new(256, 1.0))),
             should_update_time_scale,
         }
     }
@@ -192,6 +194,13 @@ impl Plugin for Lamb {
             Err(_) => return false,
         }
 
+        match self.histogram_buffer.lock() {
+            Ok(mut buffer) => {
+                buffer.set_sample_rate(buffer_config.sample_rate);
+            }
+            Err(_) => return false,
+        }
+
         // Resize buffers and perform other potentially expensive initialization operations here.
         // The `reset()` function is always called right after this function. You can remove this
         // function if you do not need it.
@@ -213,6 +222,7 @@ impl Plugin for Lamb {
             self.level_buffer_r.clone(),
             self.gr_buffer_l.clone(),
             self.gr_buffer_r.clone(),
+            self.histogram_buffer.clone(),
             self.params.editor_state.clone(),
         )
     }
@@ -346,6 +356,10 @@ impl Plugin for Lamb {
                     .unwrap()
                     .enqueue(self.temp_output_buffer_gr_r[i] as f32);
             }
+            self.histogram_buffer
+                .lock()
+                .unwrap()
+                .enqueue_buffer(buffer, None);
         }
 
         ProcessStatus::Normal

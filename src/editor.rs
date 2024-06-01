@@ -9,8 +9,8 @@ use std::sync::{Arc, Mutex};
 
 use cyma::{
     prelude::*,
-    utils::{MinimaBuffer, PeakBuffer},
-    visualizers::{Graph, Grid, Meter, UnitRuler},
+    utils::{HistogramBuffer, MinimaBuffer, PeakBuffer},
+    visualizers::{Graph, Grid, Histogram, Meter, UnitRuler},
 };
 
 // to allign the grid with the controls:
@@ -24,6 +24,7 @@ struct LambData {
     level_buffer_r: Arc<Mutex<PeakBuffer>>,
     gr_buffer_l: Arc<Mutex<MinimaBuffer>>,
     gr_buffer_r: Arc<Mutex<MinimaBuffer>>,
+    histogram_buffer: Arc<Mutex<HistogramBuffer>>,
     show_left: bool,
     show_right: bool,
 }
@@ -55,6 +56,7 @@ pub(crate) fn create(
     level_buffer_r: Arc<Mutex<PeakBuffer>>,
     gr_buffer_l: Arc<Mutex<MinimaBuffer>>,
     gr_buffer_r: Arc<Mutex<MinimaBuffer>>,
+    histogram_buffer: Arc<Mutex<HistogramBuffer>>,
     editor_state: Arc<ViziaState>,
 ) -> Option<Box<dyn Editor>> {
     create_vizia_editor(editor_state, ViziaTheming::Custom, move |cx, _| {
@@ -71,6 +73,7 @@ pub(crate) fn create(
             level_buffer_r: level_buffer_r.clone(),
             gr_buffer_l: gr_buffer_l.clone(),
             gr_buffer_r: gr_buffer_r.clone(),
+            histogram_buffer: histogram_buffer.clone(),
             show_left: true,
             show_right: true,
         }
@@ -439,6 +442,11 @@ fn peak_graph(cx: &mut Context) {
             .visibility(LambData::show_right)
             .color(Color::rgba(255, 0, 0, 30))
             .background_color(Color::rgba(0, 0, 0, 40));
+            // histogram, under the GR graph
+            Histogram::new(cx, LambData::histogram_buffer, (METER_MIN, METER_MAX))
+                .color(Color::rgb(60, 60, 60))
+                .background_color(Color::rgb(160, 160, 160))
+                .width(Percentage(12.5));
             // gain reduction
             Graph::new(
                 cx,
@@ -461,7 +469,6 @@ fn peak_graph(cx: &mut Context) {
                 .color(Color::rgba(255, 0, 0, 255))
                 .background_color(Color::rgba(250, 250, 250, 50))
                 .fill_from_value(0.0);
-            // };
         });
 
         ZStack::new(cx, |cx| {
