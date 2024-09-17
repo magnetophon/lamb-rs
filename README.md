@@ -105,9 +105,9 @@ This plugin would not have been possible without the following projects:
 - [NIH-plug](https://github.com/robbert-vdh/nih-plug)
 - [lowpass-lr4-faust-nih-plug](https://codeberg.org/obsoleszenz/lowpass-lr4-faust-nih-plug)
 - [Vizia](https://github.com/vizia/vizia)
-- [Cyma](https://github.com/223230/cyma)
+- [Cyma](https://github.com/exa04/cyma)
 
-I would like to thank [Stéphane Letz](https://github.com/sletz), [Robbert van der Helm](https://github.com/robbert-vdh), [obsoleszenz](https://github.com/obsoleszenz), [luna](https://github.com/223230), [Dr George Atkinson](https://github.com/geom3trik) and [Dario Sanfilippo](https://github.com/dariosanfilippo) for their fantastic support and feedback!   
+I would like to thank [Stéphane Letz](https://github.com/sletz), [Robbert van der Helm](https://github.com/robbert-vdh), [obsoleszenz](https://github.com/obsoleszenz), [exa](https://github.com/exa04), [Dr George Atkinson](https://github.com/geom3trik) and [Dario Sanfilippo](https://github.com/dariosanfilippo) for their fantastic support and feedback!   
 
 🐑  
 
