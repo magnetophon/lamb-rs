@@ -13,7 +13,7 @@ use cyma::{
     visualizers::{Graph, Grid, Histogram, Meter, UnitRuler},
 };
 
-// to allign the grid with the controls:
+// to align the grid with the controls:
 const METER_MIN: f32 = -52.3;
 const METER_MAX: f32 = 3.05;
 
@@ -94,7 +94,7 @@ pub(crate) fn create(
                         // .class("plugin-name");
                         Label::new(cx, "input gain").class("fader-label");
                         ParamSlider::new(cx, LambData::params, |params| &params.input_gain);
-                        // three colomns
+                        // three columns
                         HStack::new(cx, |cx| {
                             // first
                             VStack::new(cx, |cx| {
@@ -176,10 +176,10 @@ pub(crate) fn create(
                             }) // third
                             .height(Auto)
                             .class("center");
-                        }) // three colomns
+                        }) // three columns
                         .col_between(Pixels(26.0))
                         .height(Auto)
-                        .width(Percentage(100.0)); // three colomns
+                        .width(Percentage(100.0)); // three columns
 
                         Label::new(cx, "output gain").class("fader-label");
                         ParamSlider::new(cx, LambData::params, |params| &params.output_gain);
@@ -237,13 +237,13 @@ pub(crate) fn create(
                     .class("plugin-name")
                     .left(Pixels(0.0));
             }) // parameters + graph
-                .right(Pixels(42.0))
-                .height(Auto)
-                .width(Stretch(1.0));
+            .right(Pixels(42.0))
+            .height(Auto)
+            .width(Stretch(1.0));
         }) // everything
-            .left(Pixels(26.0))
-            .width(Stretch(1.0))
-            .height(Auto);
+        .left(Pixels(26.0))
+        .width(Stretch(1.0))
+        .height(Auto);
         ResizeHandle::new(cx);
     })
 }
@@ -293,9 +293,6 @@ impl<AttackReleaseDataL: Lens<Target = Arc<LambParams>>> View
         let mut border_color: vg::Color = border_color.into();
         border_color.set_alphaf(border_color.a * opacity);
         let border_width = cx.border_width();
-
-        // let rounding = 3.0 * border_width;
-        let rounding = 0.0;
 
         // Create a new `Path` from the `vg` module.
         let x = bounds.x + border_width / 2.0;
@@ -400,7 +397,7 @@ impl<AttackReleaseDataL: Lens<Target = Arc<LambParams>>> View
         canvas.stroke_path(
             &{
                 let mut path = vg::Path::new();
-                path.rounded_rect(x, y, w, h, rounding);
+                path.rect(x, y, w, h);
                 path
             },
             &vg::Paint::color(border_color).with_line_width(border_width),
@@ -454,10 +451,10 @@ fn peak_graph(cx: &mut Context) {
                 (METER_MIN, METER_MAX),
                 ValueScaling::Decibels,
             )
-                .visibility(LambData::show_left)
-                .color(Color::rgba(0, 0, 255, 255))
-                .background_color(Color::rgba(250, 250, 250, 50))
-                .fill_from_value(0.0);
+            .visibility(LambData::show_left)
+            .color(Color::rgba(0, 0, 255, 255))
+            .background_color(Color::rgba(250, 250, 250, 50))
+            .fill_from_value(0.0);
             // gain reduction
             Graph::new(
                 cx,
@@ -465,10 +462,10 @@ fn peak_graph(cx: &mut Context) {
                 (METER_MIN, METER_MAX),
                 ValueScaling::Decibels,
             )
-                .visibility(LambData::show_right)
-                .color(Color::rgba(255, 0, 0, 255))
-                .background_color(Color::rgba(250, 250, 250, 50))
-                .fill_from_value(0.0);
+            .visibility(LambData::show_right)
+            .color(Color::rgba(255, 0, 0, 255))
+            .background_color(Color::rgba(250, 250, 250, 50))
+            .fill_from_value(0.0);
         });
 
         ZStack::new(cx, |cx| {
@@ -562,15 +559,15 @@ fn peak_graph(cx: &mut Context) {
             ],
             Orientation::Vertical,
         )
-            .left(Pixels(4.0))
-            .right(Pixels(4.0))
-            .font_size(12.)
-            .color(Color::rgb(30, 30, 30))
-            .width(Pixels(32.));
+        .left(Pixels(4.0))
+        .right(Pixels(4.0))
+        .font_size(12.)
+        .color(Color::rgb(30, 30, 30))
+        .width(Pixels(32.));
     })
-        .width(Auto)
-        .border_color(Color::rgba(163, 163, 163, 0))
-        .border_width(Pixels(1.4))
-        .height(Pixels(720.0))
-        .width(Percentage(100.0));
+    .width(Auto)
+    .border_color(Color::rgba(163, 163, 163, 0))
+    .border_width(Pixels(1.4))
+    .height(Pixels(720.0))
+    .width(Percentage(100.0));
 }

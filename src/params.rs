@@ -217,8 +217,8 @@ impl LambParams {
                     max: 24.0,
                 },
             )
-                .with_unit(" dB")
-                .with_step_size(0.1),
+            .with_unit(" dB")
+            .with_step_size(0.1),
             strength: FloatParam::new(
                 "ratio",
                 100.0,
@@ -227,8 +227,8 @@ impl LambParams {
                     max: 100.0,
                 },
             )
-                .with_value_to_string(strength_to_ratio())
-                .with_string_to_value(ratio_to_strength()),
+            .with_value_to_string(strength_to_ratio())
+            .with_string_to_value(ratio_to_strength()),
             thresh: FloatParam::new(
                 "thresh",
                 -1.0,
@@ -237,8 +237,8 @@ impl LambParams {
                     max: 0.0,
                 },
             )
-                .with_unit(" dB")
-                .with_step_size(0.1),
+            .with_unit(" dB")
+            .with_step_size(0.1),
             attack: FloatParam::new(
                 "attack",
                 9.0,
@@ -248,15 +248,15 @@ impl LambParams {
                     factor: FloatRange::skew_factor(-1.0),
                 },
             )
-                .with_unit(" ms")
-                .with_step_size(0.01)
-                .non_automatable(),
+            .with_unit(" ms")
+            .with_step_size(0.01)
+            .non_automatable(),
             attack_shape: FloatParam::new(
                 "attack_shape",
                 0.0,
                 FloatRange::Linear { min: 0.0, max: 1.0 },
             )
-                .with_step_size(0.01),
+            .with_step_size(0.01),
             release: FloatParam::new(
                 "release",
                 60.0,
@@ -266,14 +266,14 @@ impl LambParams {
                     factor: FloatRange::skew_factor(-1.0),
                 },
             )
-                .with_unit(" ms")
-                .with_step_size(0.01),
+            .with_unit(" ms")
+            .with_step_size(0.01),
             release_shape: FloatParam::new(
                 "release_shape",
                 0.5,
                 FloatRange::Linear { min: 0.0, max: 1.0 },
             )
-                .with_step_size(0.01),
+            .with_step_size(0.01),
             release_hold: FloatParam::new(
                 "release_hold",
                 50.0,
@@ -282,9 +282,9 @@ impl LambParams {
                     max: 50.0,
                 },
             )
-                .with_unit(" ms")
-                .with_step_size(0.01)
-                .non_automatable(),
+            .with_unit(" ms")
+            .with_step_size(0.01)
+            .non_automatable(),
             knee: FloatParam::new(
                 "knee",
                 1.0,
@@ -294,8 +294,8 @@ impl LambParams {
                     factor: FloatRange::skew_factor(-1.0),
                 },
             )
-                .with_unit(" dB")
-                .with_step_size(0.1),
+            .with_unit(" dB")
+            .with_step_size(0.1),
             link: FloatParam::new(
                 "link",
                 0.0,
@@ -304,8 +304,8 @@ impl LambParams {
                     max: 100.0,
                 },
             )
-                .with_unit(" %")
-                .with_step_size(1.0),
+            .with_unit(" %")
+            .with_step_size(1.0),
             adaptive_release: FloatParam::new(
                 "adaptive_release",
                 50.0,
@@ -314,8 +314,8 @@ impl LambParams {
                     max: 100.0,
                 },
             )
-                .with_unit(" %")
-                .with_step_size(1.0),
+            .with_unit(" %")
+            .with_step_size(1.0),
             lookahead: FloatParam::new(
                 "lookahead",
                 100.0,
@@ -324,9 +324,9 @@ impl LambParams {
                     max: 100.0,
                 },
             )
-                .with_unit(" %")
-                .with_step_size(1.0)
-                .non_automatable(),
+            .with_unit(" %")
+            .with_step_size(1.0)
+            .non_automatable(),
             output_gain: FloatParam::new(
                 "output_gain",
                 0.0,
@@ -335,8 +335,8 @@ impl LambParams {
                     max: 24.0,
                 },
             )
-                .with_unit(" dB")
-                .with_step_size(0.1),
+            .with_unit(" dB")
+            .with_step_size(0.1),
             zoom_mode: EnumParam::new("zoom_mode", ZoomMode::Relative)
                 .hide()
                 .hide_in_generic_ui(),

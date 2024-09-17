@@ -7,7 +7,7 @@ mod dsp_192k;
 mod dsp_48k;
 mod dsp_96k;
 use buffer::*;
-use cyma::utils::{MinimaBuffer, PeakBuffer, VisualizerBuffer, HistogramBuffer};
+use cyma::utils::{HistogramBuffer, MinimaBuffer, PeakBuffer, VisualizerBuffer};
 
 use default_boxed::DefaultBoxed;
 

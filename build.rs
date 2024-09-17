@@ -186,7 +186,6 @@ impl UI<f64> for CollectParameters {
 }
 
 fn main() {
-
     println!("cargo:rerun-if-changed=dsp");
 
     #[cfg(feature = "faust-rebuild")]
@@ -205,7 +204,5 @@ fn main() {
     faust_build::FaustBuilder::new("dsp/lamb-rs-192k.dsp", "src/dsp_192k.rs")
         .set_use_double(true)
         .set_module_name("dsp_192k".to_string())
-
         .build();
-
 }
