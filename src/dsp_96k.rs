@@ -3,8 +3,8 @@ author: "Bart Brouns"
 license: "AGPLv3"
 name: "lamb-rs"
 version: "0.1"
-Code generated with Faust 2.72.14 (https://faust.grame.fr)
-Compilation options: -a /run/user/1001/.tmpHjcpph -lang rust -ct 1 -cn LambRs96k -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0
+Code generated with Faust 2.70.3 (https://faust.grame.fr)
+Compilation options: -a /tmp/nix-shell.if1VL5/nix-shell.lpEPEE/nix-shell.lxR5mE/nix-shell.Czhm7A/nix-shell.0pXTri/nix-shell.gDGq5b/nix-shell.Y8aHKo/nix-shell.FfgGgo/nix-shell.HDW8N8/nix-shell.2rUgRg/nix-shell.KMSd6T/nix-shell.bAMBSi/nix-shell.VAh39v/nix-shell.Jv8ErE/nix-shell.4NXoTm/nix-shell.HbCfCR/nix-shell.NR17fh/nix-shell.nikzHK/nix-shell.03t5uv/nix-shell.LtFvwY/nix-shell.kSThYB/nix-shell.JAm0Jp/nix-shell.Hc9lmr/nix-shell.d6GuaM/nix-shell.j4mBOt/nix-shell.gWNpEG/nix-shell.FNoWQI/nix-shell.yim3Px/nix-shell.liJmgd/nix-shell.sY3ver/nix-shell.Qsu3wd/nix-shell.Xc781a/.tmpDm1ACH -lang rust -ct 1 -cn LambRs96k -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0
 ------------------------------------------------------------ */
 mod dsp_96k {
     #![allow(clippy::all)]
@@ -75,21 +75,6 @@ mod dsp_96k {
         return value * value;
     }
     static mut ftbl0LambRs96kSIG0: [F64; 1835008] = [0.0; 1835008];
-    mod ffi {
-        use std::os::raw::c_double;
-        // Conditionally compile the link attribute only on non-Windows platforms
-        #[cfg_attr(not(target_os = "windows"), link(name = "m"))]
-        extern "C" {
-            pub fn remainder(from: c_double, to: c_double) -> c_double;
-            pub fn rint(val: c_double) -> c_double;
-        }
-    }
-    fn remainder_f64(from: f64, to: f64) -> f64 {
-        unsafe { ffi::remainder(from, to) }
-    }
-    fn rint_f64(val: f64) -> f64 {
-        unsafe { ffi::rint(val) }
-    }
 
     #[cfg_attr(feature = "default-boxed", derive(default_boxed::DefaultBoxed))]
     #[repr(C)]
@@ -342,8 +327,8 @@ mod dsp_96k {
             );
             m.declare("basics.lib/tabulateNd:author", r"Bart Brouns");
             m.declare("basics.lib/tabulateNd:license", r"AGPL-3.0");
-            m.declare("basics.lib/version", r"1.15.0");
-            m.declare("compile_options", r"-a /run/user/1001/.tmpHjcpph -lang rust -ct 1 -cn LambRs96k -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0");
+            m.declare("basics.lib/version", r"1.12.0");
+            m.declare("compile_options", r"-a /tmp/nix-shell.if1VL5/nix-shell.lpEPEE/nix-shell.lxR5mE/nix-shell.Czhm7A/nix-shell.0pXTri/nix-shell.gDGq5b/nix-shell.Y8aHKo/nix-shell.FfgGgo/nix-shell.HDW8N8/nix-shell.2rUgRg/nix-shell.KMSd6T/nix-shell.bAMBSi/nix-shell.VAh39v/nix-shell.Jv8ErE/nix-shell.4NXoTm/nix-shell.HbCfCR/nix-shell.NR17fh/nix-shell.nikzHK/nix-shell.03t5uv/nix-shell.LtFvwY/nix-shell.kSThYB/nix-shell.JAm0Jp/nix-shell.Hc9lmr/nix-shell.d6GuaM/nix-shell.j4mBOt/nix-shell.gWNpEG/nix-shell.FNoWQI/nix-shell.yim3Px/nix-shell.liJmgd/nix-shell.sY3ver/nix-shell.Qsu3wd/nix-shell.Xc781a/.tmpDm1ACH -lang rust -ct 1 -cn LambRs96k -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0");
             m.declare("filename", r"lamb-rs-96k.dsp");
             m.declare(
                 "interpolators.lib/interpolate_linear:author",
@@ -352,7 +337,7 @@ mod dsp_96k {
             m.declare("interpolators.lib/interpolate_linear:licence", r"MIT");
             m.declare("interpolators.lib/name", r"Faust Interpolator Library");
             m.declare("interpolators.lib/remap:author", r"David Braun");
-            m.declare("interpolators.lib/version", r"1.3.1");
+            m.declare("interpolators.lib/version", r"1.3.0");
             m.declare("lamb.dsp/author", r"Bart Brouns");
             m.declare("lamb.dsp/license", r"AGPLv3");
             m.declare("lamb.dsp/name", r"lamb");
@@ -362,7 +347,7 @@ mod dsp_96k {
             m.declare("maths.lib/copyright", r"GRAME");
             m.declare("maths.lib/license", r"LGPL with exception");
             m.declare("maths.lib/name", r"Faust Math Library");
-            m.declare("maths.lib/version", r"2.8.0");
+            m.declare("maths.lib/version", r"2.7.0");
             m.declare("name", r"lamb-rs");
             m.declare("platform.lib/name", r"Generic Platform Library");
             m.declare("platform.lib/version", r"1.3.0");

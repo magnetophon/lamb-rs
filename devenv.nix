@@ -6,7 +6,7 @@
   ...
 }: {
   # https://devenv.sh/basics/
-  env.GREET = "magnetophon";
+  # env.GREET = "magnetophon";
 
   # https://devenv.sh/packages/
   packages = with pkgs; [
@@ -14,7 +14,7 @@
     # lldb
     # cargo
     # rustc
-    # rustfmt
+    rustfmt
     # rust-analyzer
     # clippy
     # cargo-watch
@@ -41,12 +41,11 @@
   ];
 
   # https://devenv.sh/scripts/
-  scripts.hello.exec = "echo hello from $GREET";
+  # scripts.hello.exec = "echo hello from $GREET";
 
   enterShell = ''
-    hello
-    # git --version
-    # fish
+    # hello
+    git --version
   '';
 
   # https://devenv.sh/tests/
