@@ -13,6 +13,13 @@ Lamb was made with these goals in mind:
 - Sound as clean as possible and as dirty as desired.
 - Give the user full control over the character with the minimum amount of knobs.
 
+User quote:
+
+"A deep complex beast that favors clean action."  
+[Nil Hartman](https://nilhartman.com), mastering engineer.
+
+
+
 ## Features
 
 The following features set it apart from other compressor/limiters:
