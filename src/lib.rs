@@ -1,3 +1,4 @@
+#![warn(clippy::nursery)]
 use faust_types::FaustDsp;
 use nih_plug::prelude::*;
 use nih_plug_vizia::ViziaState;
