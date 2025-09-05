@@ -2,13 +2,14 @@
 use faust_types::FaustDsp;
 use nih_plug::prelude::*;
 use nih_plug_vizia::ViziaState;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 mod buffer;
 mod dsp_192k;
 mod dsp_48k;
 mod dsp_96k;
 use buffer::*;
-use cyma::utils::{HistogramBuffer, MinimaBuffer, PeakBuffer, VisualizerBuffer};
+// use cyma::utils::{HistogramBuffer, MinimaBuffer, PeakBuffer, VisualizerBuffer};
+use cyma::prelude::*;
 
 use default_boxed::DefaultBoxed;
 
@@ -81,11 +82,16 @@ pub struct Lamb {
     sample_rate: f32,
 
     // These buffers will hold the sample data for the visualizers.
-    level_buffer_l: Arc<Mutex<PeakBuffer>>,
-    level_buffer_r: Arc<Mutex<PeakBuffer>>,
-    gr_buffer_l: Arc<Mutex<MinimaBuffer>>,
-    gr_buffer_r: Arc<Mutex<MinimaBuffer>>,
-    histogram_buffer: Arc<Mutex<HistogramBuffer>>,
+    // level_buffer_l: Arc<Mutex<PeakBuffer>>,
+    // level_buffer_r: Arc<Mutex<PeakBuffer>>,
+    // gr_buffer_l: Arc<Mutex<MinimaBuffer>>,
+    // gr_buffer_r: Arc<Mutex<MinimaBuffer>>,
+    // histogram_buffer: Arc<Mutex<HistogramBuffer>>,
+    bus_l: Arc<MonoBus>,
+    bus_r: Arc<MonoBus>,
+    gr_bus_l: Arc<MonoBus>,
+    gr_bus_r: Arc<MonoBus>,
+    histogram_bus: Arc<MonoBus>,
 
     /// If this is set at the start of the processing cycle, then the graph duration should be updated.
     should_update_time_scale: Arc<AtomicBool>,
@@ -105,11 +111,16 @@ impl Default for Lamb {
             temp_output_buffer_gr_l: f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             temp_output_buffer_gr_r: f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             sample_rate: 48000.0,
-            level_buffer_l: Arc::new(Mutex::new(PeakBuffer::new(1171, 7.0, 0.0))),
-            level_buffer_r: Arc::new(Mutex::new(PeakBuffer::new(1171, 7.0, 0.0))),
-            gr_buffer_l: Arc::new(Mutex::new(MinimaBuffer::new(1171, 7.0, 0.0))),
-            gr_buffer_r: Arc::new(Mutex::new(MinimaBuffer::new(1171, 7.0, 0.0))),
-            histogram_buffer: Arc::new(Mutex::new(HistogramBuffer::new(256, 1.0))),
+            // level_buffer_l: Arc::new(Mutex::new(PeakBuffer::new(1171, 7.0, 0.0))),
+            // level_buffer_r: Arc::new(Mutex::new(PeakBuffer::new(1171, 7.0, 0.0))),
+            // gr_buffer_l: Arc::new(Mutex::new(MinimaBuffer::new(1171, 7.0, 0.0))),
+            // gr_buffer_r: Arc::new(Mutex::new(MinimaBuffer::new(1171, 7.0, 0.0))),
+            // histogram_buffer: Arc::new(Mutex::new(HistogramBuffer::new(256, 1.0))),
+            bus_l: Default::default(),
+            bus_r: Default::default(),
+            gr_bus_l: Default::default(),
+            gr_bus_r: Default::default(),
+            histogram_bus: Default::default(),
             should_update_time_scale,
         }
     }
@@ -166,41 +177,47 @@ impl Plugin for Lamb {
     ) -> bool {
         self.accum_buffer.resize(2, MAX_SOUNDCARD_BUFFER_SIZE);
         self.sample_rate = buffer_config.sample_rate;
+        // TODO: make sample_rate a local variable to speed this up?
+        self.bus_l.set_sample_rate(buffer_config.sample_rate);
+        self.bus_r.set_sample_rate(buffer_config.sample_rate);
+        self.gr_bus_l.set_sample_rate(buffer_config.sample_rate);
+        self.gr_bus_r.set_sample_rate(buffer_config.sample_rate);
+        self.histogram_bus
+            .set_sample_rate(buffer_config.sample_rate);
+        // match self.level_buffer_l.lock() {
+        // Ok(mut buffer) => {
+        // buffer.set_sample_rate(buffer_config.sample_rate);
+        // }
+        // Err(_) => return false,
+        // }
 
-        match self.level_buffer_l.lock() {
-            Ok(mut buffer) => {
-                buffer.set_sample_rate(buffer_config.sample_rate);
-            }
-            Err(_) => return false,
-        }
+        // match self.level_buffer_r.lock() {
+        // Ok(mut buffer) => {
+        // buffer.set_sample_rate(buffer_config.sample_rate);
+        // }
+        // Err(_) => return false,
+        // }
 
-        match self.level_buffer_r.lock() {
-            Ok(mut buffer) => {
-                buffer.set_sample_rate(buffer_config.sample_rate);
-            }
-            Err(_) => return false,
-        }
+        // match self.gr_buffer_l.lock() {
+        // Ok(mut buffer) => {
+        // buffer.set_sample_rate(buffer_config.sample_rate);
+        // }
+        // Err(_) => return false,
+        // }
 
-        match self.gr_buffer_l.lock() {
-            Ok(mut buffer) => {
-                buffer.set_sample_rate(buffer_config.sample_rate);
-            }
-            Err(_) => return false,
-        }
+        // match self.gr_buffer_r.lock() {
+        // Ok(mut buffer) => {
+        // buffer.set_sample_rate(buffer_config.sample_rate);
+        // }
+        // Err(_) => return false,
+        // }
 
-        match self.gr_buffer_r.lock() {
-            Ok(mut buffer) => {
-                buffer.set_sample_rate(buffer_config.sample_rate);
-            }
-            Err(_) => return false,
-        }
-
-        match self.histogram_buffer.lock() {
-            Ok(mut buffer) => {
-                buffer.set_sample_rate(buffer_config.sample_rate);
-            }
-            Err(_) => return false,
-        }
+        // match self.histogram_buffer.lock() {
+        // Ok(mut buffer) => {
+        // buffer.set_sample_rate(buffer_config.sample_rate);
+        // }
+        // Err(_) => return false,
+        // }
 
         // Resize buffers and perform other potentially expensive initialization operations here.
         // The `reset()` function is always called right after this function. You can remove this
@@ -219,12 +236,17 @@ impl Plugin for Lamb {
     fn editor(&mut self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
         editor::create(
             self.params.clone(),
-            self.level_buffer_l.clone(),
-            self.level_buffer_r.clone(),
-            self.gr_buffer_l.clone(),
-            self.gr_buffer_r.clone(),
-            self.histogram_buffer.clone(),
+            // self.level_buffer_l.clone(),
+            // self.level_buffer_r.clone(),
+            // self.gr_buffer_l.clone(),
+            // self.gr_buffer_r.clone(),
+            // self.histogram_buffer.clone(),
             self.params.editor_state.clone(),
+            self.bus_l.clone(),
+            self.bus_r.clone(),
+            self.gr_bus_l.clone(),
+            self.gr_bus_r.clone(),
+            self.histogram_bus.clone(),
         )
     }
 
@@ -309,26 +331,23 @@ impl Plugin for Lamb {
                     TimeScale::SixteenSec => 16.0,
                     TimeScale::ThirtytwoSec => 32.0,
                 };
-                self.level_buffer_l.lock().unwrap().set_duration(time_scale);
-                self.level_buffer_r.lock().unwrap().set_duration(time_scale);
-                self.gr_buffer_l.lock().unwrap().set_duration(time_scale);
-                self.gr_buffer_r.lock().unwrap().set_duration(time_scale);
+                // TODO: adapt to cyma 0.2.0:
+                // self.level_buffer_l.lock().unwrap().set_duration(time_scale);
+                // self.level_buffer_r.lock().unwrap().set_duration(time_scale);
+                // self.gr_buffer_l.lock().unwrap().set_duration(time_scale);
+                // self.gr_buffer_r.lock().unwrap().set_duration(time_scale);
                 self.should_update_time_scale
                     .store(false, Ordering::Release);
             };
 
             if self.params.in_out.value() {
                 for i in 0..count as usize {
-                    self.level_buffer_l
-                        .lock()
-                        .unwrap()
-                        .enqueue(self.temp_output_buffer_l[i] as f32);
-                    self.level_buffer_r
-                        .lock()
-                        .unwrap()
-                        .enqueue(self.temp_output_buffer_r[i] as f32);
+                    self.bus_l.send(self.temp_output_buffer_l[i] as f32);
+                    self.bus_r.send(self.temp_output_buffer_r[i] as f32);
                 }
             } else {
+                // TODO: document why this is done by reversing the effect of the dsp
+                // was it so that the latency is accounted for?
                 let gain_db =
                     0.0 - (self.params.input_gain.value() + self.params.output_gain.value());
                 let gain = if self.params.bypass.value() {
@@ -337,30 +356,35 @@ impl Plugin for Lamb {
                     10f32.powf(gain_db / 20.0)
                 };
                 for i in 0..count as usize {
-                    self.level_buffer_l.lock().unwrap().enqueue(
+                    self.bus_l.send(
                         (self.temp_output_buffer_l[i] / self.temp_output_buffer_gr_l[i]) as f32
                             * gain,
                     );
-                    self.level_buffer_r.lock().unwrap().enqueue(
+                    self.bus_r.send(
                         (self.temp_output_buffer_r[i] / self.temp_output_buffer_gr_r[i]) as f32
                             * gain,
                     );
                 }
             };
             for i in 0..count as usize {
-                self.gr_buffer_l
-                    .lock()
-                    .unwrap()
-                    .enqueue(self.temp_output_buffer_gr_l[i] as f32);
-                self.gr_buffer_r
-                    .lock()
-                    .unwrap()
-                    .enqueue(self.temp_output_buffer_gr_r[i] as f32);
+                self.gr_bus_l.send(self.temp_output_buffer_gr_l[i] as f32);
+                self.gr_bus_r.send(self.temp_output_buffer_gr_r[i] as f32);
+                // self.gr_buffer_l
+                // .lock()
+                // .unwrap()
+                // .enqueue(self.temp_output_buffer_gr_l[i] as f32);
+                // self.gr_buffer_r
+                // .lock()
+                // .unwrap()
+                // .enqueue(self.temp_output_buffer_gr_r[i] as f32);
             }
-            self.histogram_buffer
-                .lock()
-                .unwrap()
-                .enqueue_buffer(buffer, None);
+            // TODO: make this react to in_out?
+            self.histogram_bus.send_buffer_summing(buffer);
+
+            // self.histogram_buffer
+            // .lock()
+            // .unwrap()
+            // .enqueue_buffer(buffer, None);
         }
 
         ProcessStatus::Normal
@@ -392,6 +416,41 @@ impl Vst3Plugin for Lamb {
         Vst3SubCategory::Mastering,
         Vst3SubCategory::Stereo,
     ];
+}
+
+fn aa_clip_wave(sine_wave: &[f32]) -> Vec<f32> {
+    // Anti-aliasing clip based on derivative calculations
+    let mut result = Vec::with_capacity(sine_wave.len());
+    let mut f1n1 = 0.0;
+    let mut f2n1 = 0.0;
+    let mut x1 = 0.0;
+
+    for &x0 in sine_wave.iter() {
+        let f1: f32;
+        let f2: f32;
+
+        if x0.abs() >= 1.0 {
+            f1 = x0 * x0.signum() - 0.5;
+            f2 = ((x0 * x0 * 0.5) - (1.0 / 6.0)) * x0.signum();
+        } else {
+            f1 = 0.5 * x0 * x0;
+            f2 = x0 * x0 * x0 * (1.0 / 3.0);
+        }
+
+        let diff = x0 - x1;
+        let out = if diff.abs() < 2_f32.powi(-18) {
+            0.5 * (-1.0_f32).max(1.0_f32.min((x0 + 2.0 * x1) / 3.0))
+        } else {
+            (x0 * (f1 - f1n1) - (f2 - f2n1)) / (diff * diff)
+        };
+
+        f1n1 = f1;
+        f2n1 = f2;
+        x1 = x0;
+        result.push(out);
+    }
+
+    result
 }
 
 nih_export_clap!(Lamb);

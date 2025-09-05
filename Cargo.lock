@@ -1156,9 +1156,10 @@ dependencies = [
 
 [[package]]
 name = "cyma"
-version = "0.1.0"
-source = "git+https://github.com/exa04/cyma.git?tag=0.1.0#b1ca68f62464d7ef731cd7ab23161164d8faa7c5"
+version = "0.2.0"
+source = "git+https://github.com/exa04/cyma.git#41e1493a5e7473a6fb87a6e134c81a19a07a8286"
 dependencies = [
+ "crossbeam-channel",
  "lazy_static",
  "nih_plug",
  "nih_plug_vizia",
