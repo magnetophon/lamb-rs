@@ -3,8 +3,8 @@ author: "Bart Brouns"
 license: "AGPLv3"
 name: "lamb-rs"
 version: "0.1"
-Code generated with Faust 2.70.3 (https://faust.grame.fr)
-Compilation options: -a /tmp/nix-shell.if1VL5/nix-shell.lpEPEE/nix-shell.lxR5mE/nix-shell.Czhm7A/nix-shell.0pXTri/nix-shell.gDGq5b/nix-shell.Y8aHKo/nix-shell.FfgGgo/nix-shell.HDW8N8/nix-shell.2rUgRg/nix-shell.KMSd6T/nix-shell.bAMBSi/nix-shell.VAh39v/nix-shell.Jv8ErE/nix-shell.4NXoTm/nix-shell.HbCfCR/nix-shell.NR17fh/nix-shell.nikzHK/nix-shell.03t5uv/nix-shell.LtFvwY/nix-shell.kSThYB/nix-shell.JAm0Jp/nix-shell.Hc9lmr/nix-shell.d6GuaM/nix-shell.j4mBOt/nix-shell.gWNpEG/nix-shell.FNoWQI/nix-shell.yim3Px/nix-shell.liJmgd/nix-shell.sY3ver/nix-shell.Qsu3wd/nix-shell.Xc781a/.tmprmHL9Q -lang rust -ct 1 -cn LambRs192k -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0
+Code generated with Faust 2.79.3 (https://faust.grame.fr)
+Compilation options: -a /tmp/.tmptHrx7j -lang rust -ct 1 -cn LambRs192k -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0
 ------------------------------------------------------------ */
 mod dsp_192k {
     #![allow(clippy::all)]
@@ -18,6 +18,8 @@ mod dsp_192k {
 
     use faust_types::*;
 
+    pub type FaustFloat = F64;
+
     pub struct LambRs192kSIG0 {
         iRec13: [i32; 2],
     }
@@ -30,37 +32,36 @@ mod dsp_192k {
             return 1;
         }
 
-        fn instance_initLambRs192kSIG0(&mut self, sample_rate: i32) {
+        pub fn instance_initLambRs192kSIG0(&mut self, sample_rate: i32) {
             for l44 in 0..2 {
                 self.iRec13[l44 as usize] = 0;
             }
         }
 
-        fn fillLambRs192kSIG0(&mut self, count: i32, table: &mut [F64]) {
+        pub fn fillLambRs192kSIG0(&mut self, count: i32, table: &mut [FaustFloat]) {
             for i1 in 0..count {
                 self.iRec13[0] = i32::wrapping_add(self.iRec13[1], 1);
-                let mut iTemp68: i32 = i32::wrapping_add(self.iRec13[0], -1);
-                let mut fTemp69: F64 = (iTemp68 % 7) as F64 as i32 as F64;
-                let mut fTemp70: F64 = 0.16666666666666666 * fTemp69;
-                let mut fTemp71: F64 = F64::powf(fTemp70, 0.06999999999999999 * fTemp69 + 1.0);
-                let mut fTemp72: F64 =
-                    (0.14285714285714285 * (iTemp68 % 3670016) as F64) as i32 as F64;
+                let mut fTemp68: F64 = (self.iRec13[1] % 7) as F64 as i32 as F64;
+                let mut fTemp69: F64 = 0.16666666666666666 * fTemp68;
+                let mut fTemp70: F64 = F64::powf(fTemp69, 0.06999999999999999 * fTemp68 + 1.0);
+                let mut fTemp71: F64 =
+                    (0.14285714285714285 * (self.iRec13[1] % 3670016) as F64) as i32 as F64;
                 table[i1 as usize] = F64::min(
                     1.0,
                     F64::max(
                         0.0,
-                        if (fTemp70 == 0.0) as i32 != 0 {
-                            0.5 * (F64::sin(5.992123881747579e-06 * fTemp72 + 4.71238898038469)
+                        (if (fTemp69 == 0.0) as i32 != 0 {
+                            0.5 * (F64::sin(5.992123881747579e-06 * fTemp71 + 4.71238898038469)
                                 + 1.0)
                         } else {
                             0.5 * (F64::sin(
                                 3.141592653589793
                                     * ((1.0
-                                        - F64::exp(-(4.615792495331755e-06 * fTemp71 * fTemp72)))
-                                        / (1.0 - F64::exp(-(2.42 * fTemp71))))
+                                        - F64::exp(-(4.615792495331755e-06 * fTemp70 * fTemp71)))
+                                        / (1.0 - F64::exp(-(2.42 * fTemp70))))
                                     + 4.71238898038469,
                             ) + 1.0)
-                        },
+                        }),
                     ),
                 );
                 self.iRec13[1] = self.iRec13[0];
@@ -75,6 +76,26 @@ mod dsp_192k {
         return value * value;
     }
     static mut ftbl0LambRs192kSIG0: [F64; 3670016] = [0.0; 3670016];
+    mod ffi {
+        use std::os::raw::c_double;
+        // Conditionally compile the link attribute only on non-Windows platforms
+        #[cfg_attr(not(target_os = "windows"), link(name = "m"))]
+        extern "C" {
+            pub fn remainder(from: c_double, to: c_double) -> c_double;
+            pub fn rint(val: c_double) -> c_double;
+        }
+    }
+    fn remainder_f64(from: f64, to: f64) -> f64 {
+        unsafe { ffi::remainder(from, to) }
+    }
+    fn rint_f64(val: f64) -> f64 {
+        unsafe { ffi::rint(val) }
+    }
+
+    pub const FAUST_INPUTS: usize = 2;
+    pub const FAUST_OUTPUTS: usize = 4;
+    pub const FAUST_ACTIVES: usize = 15;
+    pub const FAUST_PASSIVES: usize = 1;
 
     #[cfg_attr(feature = "default-boxed", derive(default_boxed::DefaultBoxed))]
     #[repr(C)]
@@ -119,8 +140,8 @@ mod dsp_192k {
         fHslider9: F64,
         fConst9: F64,
         fVec6: [F64; 3],
-        fVec7: [F64; 7],
-        fVec8: [F64; 15],
+        fVec7: [F64; 5],
+        fVec8: [F64; 12],
         fVec9: [F64; 32],
         fVec10: [F64; 64],
         fVec11: [F64; 128],
@@ -133,8 +154,8 @@ mod dsp_192k {
         fVec18: [F64; 16384],
         fRec3: [F64; 2],
         fVec19: [F64; 3],
-        fVec20: [F64; 7],
-        fVec21: [F64; 15],
+        fVec20: [F64; 5],
+        fVec21: [F64; 12],
         fVec22: [F64; 32],
         fVec23: [F64; 64],
         fVec24: [F64; 128],
@@ -160,8 +181,8 @@ mod dsp_192k {
         fRec14: [F64; 2],
         fVec36: [F64; 16384],
         fVec37: [F64; 3],
-        fVec38: [F64; 7],
-        fVec39: [F64; 15],
+        fVec38: [F64; 5],
+        fVec39: [F64; 12],
         fVec40: [F64; 32],
         fVec41: [F64; 64],
         fVec42: [F64; 128],
@@ -174,8 +195,8 @@ mod dsp_192k {
         fVec49: [F64; 16384],
         fRec17: [F64; 2],
         fVec50: [F64; 3],
-        fVec51: [F64; 7],
-        fVec52: [F64; 15],
+        fVec51: [F64; 5],
+        fVec52: [F64; 12],
         fVec53: [F64; 32],
         fVec54: [F64; 64],
         fVec55: [F64; 128],
@@ -194,10 +215,8 @@ mod dsp_192k {
         fVec66: [F64; 32768],
     }
 
-    impl FaustDsp for LambRs192k {
-        type T = F64;
-
-        fn new() -> LambRs192k {
+    impl LambRs192k {
+        pub fn new() -> LambRs192k {
             LambRs192k {
                 fCheckbox0: 0.0,
                 IOTA0: 0,
@@ -239,8 +258,8 @@ mod dsp_192k {
                 fHslider9: 0.0,
                 fConst9: 0.0,
                 fVec6: [0.0; 3],
-                fVec7: [0.0; 7],
-                fVec8: [0.0; 15],
+                fVec7: [0.0; 5],
+                fVec8: [0.0; 12],
                 fVec9: [0.0; 32],
                 fVec10: [0.0; 64],
                 fVec11: [0.0; 128],
@@ -253,8 +272,8 @@ mod dsp_192k {
                 fVec18: [0.0; 16384],
                 fRec3: [0.0; 2],
                 fVec19: [0.0; 3],
-                fVec20: [0.0; 7],
-                fVec21: [0.0; 15],
+                fVec20: [0.0; 5],
+                fVec21: [0.0; 12],
                 fVec22: [0.0; 32],
                 fVec23: [0.0; 64],
                 fVec24: [0.0; 128],
@@ -280,8 +299,8 @@ mod dsp_192k {
                 fRec14: [0.0; 2],
                 fVec36: [0.0; 16384],
                 fVec37: [0.0; 3],
-                fVec38: [0.0; 7],
-                fVec39: [0.0; 15],
+                fVec38: [0.0; 5],
+                fVec39: [0.0; 12],
                 fVec40: [0.0; 32],
                 fVec41: [0.0; 64],
                 fVec42: [0.0; 128],
@@ -294,8 +313,8 @@ mod dsp_192k {
                 fVec49: [0.0; 16384],
                 fRec17: [0.0; 2],
                 fVec50: [0.0; 3],
-                fVec51: [0.0; 7],
-                fVec52: [0.0; 15],
+                fVec51: [0.0; 5],
+                fVec52: [0.0; 12],
                 fVec53: [0.0; 32],
                 fVec54: [0.0; 64],
                 fVec55: [0.0; 128],
@@ -314,7 +333,7 @@ mod dsp_192k {
                 fVec66: [0.0; 32768],
             }
         }
-        fn metadata(&self, m: &mut dyn Meta) {
+        pub fn metadata(&self, m: &mut dyn Meta) {
             m.declare("author", r"Bart Brouns");
             m.declare("basics.lib/name", r"Faust Basic Element Library");
             m.declare("basics.lib/parallelMax:author", r"Bart Brouns");
@@ -329,14 +348,14 @@ mod dsp_192k {
                 r"Copyright (c) 2020 Bart Brouns <bart@magnetophon.nl>",
             );
             m.declare("basics.lib/parallelOp:licence", r"GPL-3.0");
+            m.declare("basics.lib/tabulateNd:author", r"Bart Brouns");
             m.declare(
-                "basics.lib/tabulateNd",
+                "basics.lib/tabulateNd:copyright",
                 r"Copyright (C) 2023 Bart Brouns <bart@magnetophon.nl>",
             );
-            m.declare("basics.lib/tabulateNd:author", r"Bart Brouns");
             m.declare("basics.lib/tabulateNd:license", r"AGPL-3.0");
-            m.declare("basics.lib/version", r"1.12.0");
-            m.declare("compile_options", r"-a /tmp/nix-shell.if1VL5/nix-shell.lpEPEE/nix-shell.lxR5mE/nix-shell.Czhm7A/nix-shell.0pXTri/nix-shell.gDGq5b/nix-shell.Y8aHKo/nix-shell.FfgGgo/nix-shell.HDW8N8/nix-shell.2rUgRg/nix-shell.KMSd6T/nix-shell.bAMBSi/nix-shell.VAh39v/nix-shell.Jv8ErE/nix-shell.4NXoTm/nix-shell.HbCfCR/nix-shell.NR17fh/nix-shell.nikzHK/nix-shell.03t5uv/nix-shell.LtFvwY/nix-shell.kSThYB/nix-shell.JAm0Jp/nix-shell.Hc9lmr/nix-shell.d6GuaM/nix-shell.j4mBOt/nix-shell.gWNpEG/nix-shell.FNoWQI/nix-shell.yim3Px/nix-shell.liJmgd/nix-shell.sY3ver/nix-shell.Qsu3wd/nix-shell.Xc781a/.tmprmHL9Q -lang rust -ct 1 -cn LambRs192k -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0");
+            m.declare("basics.lib/version", r"1.21.0");
+            m.declare("compile_options", r"-a /tmp/.tmptHrx7j -lang rust -ct 1 -cn LambRs192k -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0");
             m.declare("filename", r"lamb-rs-192k.dsp");
             m.declare(
                 "interpolators.lib/interpolate_linear:author",
@@ -345,7 +364,7 @@ mod dsp_192k {
             m.declare("interpolators.lib/interpolate_linear:licence", r"MIT");
             m.declare("interpolators.lib/name", r"Faust Interpolator Library");
             m.declare("interpolators.lib/remap:author", r"David Braun");
-            m.declare("interpolators.lib/version", r"1.3.0");
+            m.declare("interpolators.lib/version", r"1.4.0");
             m.declare("lamb.dsp/author", r"Bart Brouns");
             m.declare("lamb.dsp/license", r"AGPLv3");
             m.declare("lamb.dsp/name", r"lamb");
@@ -355,33 +374,27 @@ mod dsp_192k {
             m.declare("maths.lib/copyright", r"GRAME");
             m.declare("maths.lib/license", r"LGPL with exception");
             m.declare("maths.lib/name", r"Faust Math Library");
-            m.declare("maths.lib/version", r"2.7.0");
+            m.declare("maths.lib/version", r"2.8.1");
             m.declare("name", r"lamb-rs");
             m.declare("platform.lib/name", r"Generic Platform Library");
             m.declare("platform.lib/version", r"1.3.0");
             m.declare("routes.lib/name", r"Faust Signal Routing Library");
             m.declare("routes.lib/version", r"1.2.0");
             m.declare("signals.lib/name", r"Faust Signal Routing Library");
-            m.declare("signals.lib/version", r"1.5.0");
+            m.declare("signals.lib/version", r"1.6.0");
             m.declare("version", r"0.1");
         }
 
-        fn get_sample_rate(&self) -> i32 {
-            return self.fSampleRate;
-        }
-        fn get_num_inputs(&self) -> i32 {
-            return 2;
-        }
-        fn get_num_outputs(&self) -> i32 {
-            return 4;
+        pub fn get_sample_rate(&self) -> i32 {
+            self.fSampleRate as i32
         }
 
-        fn class_init(sample_rate: i32) {
+        pub fn class_init(sample_rate: i32) {
             let mut sig0: LambRs192kSIG0 = newLambRs192kSIG0();
             sig0.instance_initLambRs192kSIG0(sample_rate);
             sig0.fillLambRs192kSIG0(3670016, unsafe { &mut ftbl0LambRs192kSIG0 });
         }
-        fn instance_reset_params(&mut self) {
+        pub fn instance_reset_params(&mut self) {
             self.fCheckbox0 = 0.0;
             self.fHslider0 = 1e+02;
             self.fHslider1 = 9.0;
@@ -398,7 +411,7 @@ mod dsp_192k {
             self.fCheckbox1 = 0.0;
             self.fHslider12 = 0.0;
         }
-        fn instance_clear(&mut self) {
+        pub fn instance_clear(&mut self) {
             self.IOTA0 = 0;
             for l0 in 0..32768 {
                 self.iVec0[l0 as usize] = 0;
@@ -451,10 +464,10 @@ mod dsp_192k {
             for l16 in 0..3 {
                 self.fVec6[l16 as usize] = 0.0;
             }
-            for l17 in 0..7 {
+            for l17 in 0..5 {
                 self.fVec7[l17 as usize] = 0.0;
             }
-            for l18 in 0..15 {
+            for l18 in 0..12 {
                 self.fVec8[l18 as usize] = 0.0;
             }
             for l19 in 0..32 {
@@ -493,10 +506,10 @@ mod dsp_192k {
             for l30 in 0..3 {
                 self.fVec19[l30 as usize] = 0.0;
             }
-            for l31 in 0..7 {
+            for l31 in 0..5 {
                 self.fVec20[l31 as usize] = 0.0;
             }
-            for l32 in 0..15 {
+            for l32 in 0..12 {
                 self.fVec21[l32 as usize] = 0.0;
             }
             for l33 in 0..32 {
@@ -556,10 +569,10 @@ mod dsp_192k {
             for l52 in 0..3 {
                 self.fVec37[l52 as usize] = 0.0;
             }
-            for l53 in 0..7 {
+            for l53 in 0..5 {
                 self.fVec38[l53 as usize] = 0.0;
             }
-            for l54 in 0..15 {
+            for l54 in 0..12 {
                 self.fVec39[l54 as usize] = 0.0;
             }
             for l55 in 0..32 {
@@ -598,10 +611,10 @@ mod dsp_192k {
             for l66 in 0..3 {
                 self.fVec50[l66 as usize] = 0.0;
             }
-            for l67 in 0..7 {
+            for l67 in 0..5 {
                 self.fVec51[l67 as usize] = 0.0;
             }
-            for l68 in 0..15 {
+            for l68 in 0..12 {
                 self.fVec52[l68 as usize] = 0.0;
             }
             for l69 in 0..32 {
@@ -653,7 +666,7 @@ mod dsp_192k {
                 self.fVec66[l84 as usize] = 0.0;
             }
         }
-        fn instance_constants(&mut self, sample_rate: i32) {
+        pub fn instance_constants(&mut self, sample_rate: i32) {
             self.fSampleRate = sample_rate;
             self.fConst0 = F64::min(1.92e+05, F64::max(1.0, (self.fSampleRate) as F64));
             self.fConst1 = 1e+02 / self.fConst0;
@@ -667,21 +680,21 @@ mod dsp_192k {
             self.fConst9 = 0.001 * self.fConst0;
             self.fConst10 = 1e+03 / self.fConst0;
         }
-        fn instance_init(&mut self, sample_rate: i32) {
+        pub fn instance_init(&mut self, sample_rate: i32) {
             self.instance_constants(sample_rate);
             self.instance_reset_params();
             self.instance_clear();
         }
-        fn init(&mut self, sample_rate: i32) {
+        pub fn init(&mut self, sample_rate: i32) {
             LambRs192k::class_init(sample_rate);
             self.instance_init(sample_rate);
         }
 
-        fn build_user_interface(&self, ui_interface: &mut dyn UI<Self::T>) {
+        pub fn build_user_interface(&self, ui_interface: &mut dyn UI<FaustFloat>) {
             Self::build_user_interface_static(ui_interface);
         }
 
-        fn build_user_interface_static(ui_interface: &mut dyn UI<Self::T>) {
+        pub fn build_user_interface_static(ui_interface: &mut dyn UI<FaustFloat>) {
             ui_interface.open_vertical_box("lamb-rs");
             ui_interface.open_horizontal_box("0x00");
             ui_interface.declare(Some(ParamIndex(0)), "00", "");
@@ -753,7 +766,7 @@ mod dsp_192k {
             ui_interface.close_box();
         }
 
-        fn get_param(&self, param: ParamIndex) -> Option<Self::T> {
+        pub fn get_param(&self, param: ParamIndex) -> Option<FaustFloat> {
             match param.0 {
                 0 => Some(self.fCheckbox0),
                 1 => Some(self.fCheckbox1),
@@ -775,7 +788,7 @@ mod dsp_192k {
             }
         }
 
-        fn set_param(&mut self, param: ParamIndex, value: Self::T) {
+        pub fn set_param(&mut self, param: ParamIndex, value: FaustFloat) {
             match param.0 {
                 0 => self.fCheckbox0 = value,
                 1 => self.fCheckbox1 = value,
@@ -797,24 +810,24 @@ mod dsp_192k {
             }
         }
 
-        fn compute(&mut self, count: i32, inputs: &[&[Self::T]], outputs: &mut [&mut [Self::T]]) {
-            let (inputs0, inputs1) = if let [inputs0, inputs1, ..] = inputs {
-                let inputs0 = inputs0[..count as usize].iter();
-                let inputs1 = inputs1[..count as usize].iter();
-                (inputs0, inputs1)
-            } else {
-                panic!("wrong number of inputs");
+        pub fn compute(
+            &mut self,
+            count: usize,
+            inputs: &[impl AsRef<[FaustFloat]>],
+            outputs: &mut [impl AsMut<[FaustFloat]>],
+        ) {
+            let [inputs0, inputs1, ..] = inputs.as_ref() else {
+                panic!("wrong number of input buffers");
             };
-            let (outputs0, outputs1, outputs2, outputs3) =
-                if let [outputs0, outputs1, outputs2, outputs3, ..] = outputs {
-                    let outputs0 = outputs0[..count as usize].iter_mut();
-                    let outputs1 = outputs1[..count as usize].iter_mut();
-                    let outputs2 = outputs2[..count as usize].iter_mut();
-                    let outputs3 = outputs3[..count as usize].iter_mut();
-                    (outputs0, outputs1, outputs2, outputs3)
-                } else {
-                    panic!("wrong number of outputs");
-                };
+            let inputs0 = inputs0.as_ref()[..count].iter();
+            let inputs1 = inputs1.as_ref()[..count].iter();
+            let [outputs0, outputs1, outputs2, outputs3, ..] = outputs.as_mut() else {
+                panic!("wrong number of output buffers");
+            };
+            let outputs0 = outputs0.as_mut()[..count].iter_mut();
+            let outputs1 = outputs1.as_mut()[..count].iter_mut();
+            let outputs2 = outputs2.as_mut()[..count].iter_mut();
+            let outputs3 = outputs3.as_mut()[..count].iter_mut();
             let mut fSlow0: F64 = self.fCheckbox0;
             let mut fSlow1: F64 = self.fHslider1;
             let mut fSlow2: F64 = fSlow1 * self.fHslider0;
@@ -894,11 +907,11 @@ mod dsp_192k {
             let mut fSlow76: F64 = self.fConst0 * (0.001 * fSlow19 + 1e-05 * fSlow2);
             let mut fSlow77: F64 = self.fCheckbox1;
             let mut iSlow78: i32 = (F64::max(0.0, fSlow77 * (1.92e+04 - fSlow76))) as i32;
-            self.fHbargraph0 = if (fSlow77) as i32 != 0 {
+            self.fHbargraph0 = (if (fSlow77) as i32 != 0 {
                 1.92e+04
             } else {
                 fSlow76
-            };
+            });
             let mut iSlow79: i32 = (self.fHbargraph0) as i32;
             let mut fSlow80: F64 = self.fConst3 * F64::powf(1e+01, 0.05 * self.fHslider12);
             let zipped_iterators = inputs0
@@ -911,15 +924,15 @@ mod dsp_192k {
                 self.iVec0[(self.IOTA0 & 32767) as usize] = 1;
                 let mut fTemp0: F64 = self.fConst1 + self.fRec0[1];
                 let mut fTemp1: F64 = self.fRec0[1] - self.fConst1;
-                self.fRec0[0] = if (fTemp0 < fSlow0) as i32 != 0 {
+                self.fRec0[0] = (if (fTemp0 < fSlow0) as i32 != 0 {
                     fTemp0
                 } else {
-                    if (fTemp1 > fSlow0) as i32 != 0 {
+                    (if (fTemp1 > fSlow0) as i32 != 0 {
                         fTemp1
                     } else {
                         fSlow0
-                    }
-                };
+                    })
+                });
                 let mut fTemp2: F64 =
                     F64::sin(6.283185307179586 * (0.5 * self.fRec0[0] + 0.75)) + 1.0;
                 let mut fTemp3: F64 = 0.5 * fTemp2;
@@ -955,15 +968,15 @@ mod dsp_192k {
                     -(0.05
                         * F64::max(
                             0.0,
-                            if (iTemp19 == 0) as i32 != 0 {
+                            (if (iTemp19 == 0) as i32 != 0 {
                                 0.0
                             } else {
-                                if (iTemp19 == 1) as i32 != 0 {
+                                (if (iTemp19 == 1) as i32 != 0 {
                                     fSlow12 * LambRs192k_faustpower2_f(fSlow7 + fTemp20)
                                 } else {
                                     fTemp20
-                                }
-                            },
+                                })
+                            }),
                         )),
                 );
                 let mut fTemp22: F64 = 3.0 * fTemp5;
@@ -972,7 +985,7 @@ mod dsp_192k {
                 let mut fTemp25: F64 = self.fRec5[1] - self.fRec6[1];
                 let mut fTemp26: F64 =
                     (self.iVec0[((i32::wrapping_sub(self.IOTA0, 19200)) & 32767) as usize]) as F64;
-                let mut fTemp27: F64 = if (fTemp21 > self.fRec10[1]) as i32 != 0 {
+                let mut fTemp27: F64 = (if (fTemp21 > self.fRec10[1]) as i32 != 0 {
                     F64::exp(
                         -(self.fConst7
                             / F64::max(
@@ -991,30 +1004,30 @@ mod dsp_192k {
                     )
                 } else {
                     self.fConst6
-                };
+                });
                 self.fRec10[0] = self.fRec10[1] * fTemp27 + fTemp21 * (1.0 - fTemp27);
-                let mut fTemp28: F64 = if (self.fRec10[0] > self.fRec9[1]) as i32 != 0 {
+                let mut fTemp28: F64 = (if (self.fRec10[0] > self.fRec9[1]) as i32 != 0 {
                     0.0
                 } else {
                     self.fConst6
-                };
+                });
                 self.fRec9[0] = self.fRec9[1] * fTemp28 + self.fRec10[0] * (1.0 - fTemp28);
-                let mut fTemp29: F64 = if (self.fRec9[0] > self.fRec8[1]) as i32 != 0 {
+                let mut fTemp29: F64 = (if (self.fRec9[0] > self.fRec8[1]) as i32 != 0 {
                     0.0
                 } else {
                     self.fConst6
-                };
+                });
                 self.fRec8[0] = self.fRec8[1] * fTemp29 + self.fRec9[0] * (1.0 - fTemp29);
-                let mut fTemp30: F64 = if (self.fRec8[0] > self.fRec7[1]) as i32 != 0 {
+                let mut fTemp30: F64 = (if (self.fRec8[0] > self.fRec7[1]) as i32 != 0 {
                     0.0
                 } else {
                     self.fConst6
-                };
+                });
                 self.fRec7[0] = self.fRec7[1] * fTemp30 + self.fRec8[0] * (1.0 - fTemp30);
                 self.fRec5[0] =
                     2e+01 * F64::log10(F64::max(2.2250738585072014e-308, self.fRec7[0]));
                 let mut fTemp31: F64 = F64::powf(1e+01, 0.05 * (self.fRec5[1] + fTemp24));
-                let mut fTemp32: F64 = if (fTemp31 > self.fRec12[1]) as i32 != 0 {
+                let mut fTemp32: F64 = (if (fTemp31 > self.fRec12[1]) as i32 != 0 {
                     F64::exp(
                         -(self.fConst7
                             / F64::max(
@@ -1033,7 +1046,7 @@ mod dsp_192k {
                     )
                 } else {
                     self.fConst8
-                };
+                });
                 self.fRec12[0] = self.fRec12[1] * fTemp32 + fTemp31 * (1.0 - fTemp32);
                 self.fRec6[0] =
                     2e+01 * F64::log10(F64::max(2.2250738585072014e-308, self.fRec12[0]));
@@ -1056,15 +1069,15 @@ mod dsp_192k {
                     -(fSlow18
                         * F64::max(
                             0.0,
-                            if (iTemp39 == 0) as i32 != 0 {
+                            (if (iTemp39 == 0) as i32 != 0 {
                                 0.0
                             } else {
-                                if (iTemp39 == 1) as i32 != 0 {
+                                (if (iTemp39 == 1) as i32 != 0 {
                                     fSlow12 * LambRs192k_faustpower2_f(fSlow7 + fTemp40)
                                 } else {
                                     fTemp40
-                                }
-                            },
+                                })
+                            }),
                         )),
                 );
                 self.fVec5[(self.IOTA0 & 16383) as usize] = fTemp41;
@@ -1141,110 +1154,110 @@ mod dsp_192k {
                                                             F64::min(
                                                                 F64::min(
                                                                     F64::min(
-                                                                        if iSlow23 != 0 {
+                                                                        (if iSlow23 != 0 {
                                                                             fTemp41
                                                                         } else {
                                                                             1.7976931348623157e+308
-                                                                        },
-                                                                        if iSlow24 != 0 {
+                                                                        }),
+                                                                        (if iSlow24 != 0 {
                                                                             self.fVec6
                                                                                 [iSlow23 as usize]
                                                                         } else {
                                                                             1.7976931348623157e+308
-                                                                        },
+                                                                        }),
                                                                     ),
-                                                                    if iSlow25 != 0 {
+                                                                    (if iSlow25 != 0 {
                                                                         self.fVec7[iSlow26 as usize]
                                                                     } else {
                                                                         1.7976931348623157e+308
-                                                                    },
+                                                                    }),
                                                                 ),
-                                                                if iSlow27 != 0 {
+                                                                (if iSlow27 != 0 {
                                                                     self.fVec8[iSlow28 as usize]
                                                                 } else {
                                                                     1.7976931348623157e+308
-                                                                },
+                                                                }),
                                                             ),
-                                                            if iSlow29 != 0 {
+                                                            (if iSlow29 != 0 {
                                                                 self.fVec9[((i32::wrapping_sub(
                                                                     self.IOTA0, iSlow30,
                                                                 )) & 31)
                                                                     as usize]
                                                             } else {
                                                                 1.7976931348623157e+308
-                                                            },
+                                                            }),
                                                         ),
-                                                        if iSlow31 != 0 {
+                                                        (if iSlow31 != 0 {
                                                             self.fVec10[((i32::wrapping_sub(
                                                                 self.IOTA0, iSlow32,
                                                             )) & 63)
                                                                 as usize]
                                                         } else {
                                                             1.7976931348623157e+308
-                                                        },
+                                                        }),
                                                     ),
-                                                    if iSlow33 != 0 {
+                                                    (if iSlow33 != 0 {
                                                         self.fVec11[((i32::wrapping_sub(
                                                             self.IOTA0, iSlow34,
                                                         )) & 127)
                                                             as usize]
                                                     } else {
                                                         1.7976931348623157e+308
-                                                    },
+                                                    }),
                                                 ),
-                                                if iSlow35 != 0 {
+                                                (if iSlow35 != 0 {
                                                     self.fVec12[((i32::wrapping_sub(
                                                         self.IOTA0, iSlow36,
                                                     )) & 255)
                                                         as usize]
                                                 } else {
                                                     1.7976931348623157e+308
-                                                },
+                                                }),
                                             ),
-                                            if iSlow37 != 0 {
+                                            (if iSlow37 != 0 {
                                                 self.fVec13[((i32::wrapping_sub(
                                                     self.IOTA0, iSlow38,
                                                 )) & 511)
                                                     as usize]
                                             } else {
                                                 1.7976931348623157e+308
-                                            },
+                                            }),
                                         ),
-                                        if iSlow39 != 0 {
+                                        (if iSlow39 != 0 {
                                             self.fVec14[((i32::wrapping_sub(self.IOTA0, iSlow40))
                                                 & 1023)
                                                 as usize]
                                         } else {
                                             1.7976931348623157e+308
-                                        },
+                                        }),
                                     ),
-                                    if iSlow41 != 0 {
+                                    (if iSlow41 != 0 {
                                         self.fVec15[((i32::wrapping_sub(self.IOTA0, iSlow42))
                                             & 2047)
                                             as usize]
                                     } else {
                                         1.7976931348623157e+308
-                                    },
+                                    }),
                                 ),
-                                if iSlow43 != 0 {
+                                (if iSlow43 != 0 {
                                     self.fVec16
                                         [((i32::wrapping_sub(self.IOTA0, iSlow44)) & 4095) as usize]
                                 } else {
                                     1.7976931348623157e+308
-                                },
+                                }),
                             ),
-                            if iSlow45 != 0 {
+                            (if iSlow45 != 0 {
                                 self.fVec17
                                     [((i32::wrapping_sub(self.IOTA0, iSlow46)) & 8191) as usize]
                             } else {
                                 1.7976931348623157e+308
-                            },
+                            }),
                         ),
-                        if iSlow47 != 0 {
+                        (if iSlow47 != 0 {
                             self.fVec18[((i32::wrapping_sub(self.IOTA0, iSlow48)) & 16383) as usize]
                         } else {
                             1.7976931348623157e+308
-                        },
+                        }),
                     ),
                 );
                 let mut fTemp54: F64 = F64::min(self.fRec3[0], self.fRec3[1]);
@@ -1312,3202 +1325,3202 @@ mod dsp_192k {
                                                         F64::min(
                                                             F64::min(
                                                                 F64::min(
-                                                                    if iSlow4 != 0 {
+                                                                    (if iSlow4 != 0 {
                                                                         self.fRec3[0]
                                                                     } else {
                                                                         1.7976931348623157e+308
-                                                                    },
-                                                                    if iSlow49 != 0 {
+                                                                    }),
+                                                                    (if iSlow49 != 0 {
                                                                         self.fVec19[iSlow4 as usize]
                                                                     } else {
                                                                         1.7976931348623157e+308
-                                                                    },
+                                                                    }),
                                                                 ),
-                                                                if iSlow50 != 0 {
+                                                                (if iSlow50 != 0 {
                                                                     self.fVec20[iSlow51 as usize]
                                                                 } else {
                                                                     1.7976931348623157e+308
-                                                                },
+                                                                }),
                                                             ),
-                                                            if iSlow52 != 0 {
+                                                            (if iSlow52 != 0 {
                                                                 self.fVec21[iSlow53 as usize]
                                                             } else {
                                                                 1.7976931348623157e+308
-                                                            },
+                                                            }),
                                                         ),
-                                                        if iSlow54 != 0 {
+                                                        (if iSlow54 != 0 {
                                                             self.fVec22[((i32::wrapping_sub(
                                                                 self.IOTA0, iSlow55,
                                                             )) & 31)
                                                                 as usize]
                                                         } else {
                                                             1.7976931348623157e+308
-                                                        },
+                                                        }),
                                                     ),
-                                                    if iSlow56 != 0 {
+                                                    (if iSlow56 != 0 {
                                                         self.fVec23[((i32::wrapping_sub(
                                                             self.IOTA0, iSlow57,
                                                         )) & 63)
                                                             as usize]
                                                     } else {
                                                         1.7976931348623157e+308
-                                                    },
+                                                    }),
                                                 ),
-                                                if iSlow58 != 0 {
+                                                (if iSlow58 != 0 {
                                                     self.fVec24[((i32::wrapping_sub(
                                                         self.IOTA0, iSlow59,
                                                     )) & 127)
                                                         as usize]
                                                 } else {
                                                     1.7976931348623157e+308
-                                                },
+                                                }),
                                             ),
-                                            if iSlow60 != 0 {
+                                            (if iSlow60 != 0 {
                                                 self.fVec25[((i32::wrapping_sub(
                                                     self.IOTA0, iSlow61,
                                                 )) & 255)
                                                     as usize]
                                             } else {
                                                 1.7976931348623157e+308
-                                            },
+                                            }),
                                         ),
-                                        if iSlow62 != 0 {
+                                        (if iSlow62 != 0 {
                                             self.fVec26[((i32::wrapping_sub(self.IOTA0, iSlow63))
                                                 & 511)
                                                 as usize]
                                         } else {
                                             1.7976931348623157e+308
-                                        },
+                                        }),
                                     ),
-                                    if iSlow64 != 0 {
+                                    (if iSlow64 != 0 {
                                         self.fVec27[((i32::wrapping_sub(self.IOTA0, iSlow65))
                                             & 1023)
                                             as usize]
                                     } else {
                                         1.7976931348623157e+308
-                                    },
+                                    }),
                                 ),
-                                if iSlow66 != 0 {
+                                (if iSlow66 != 0 {
                                     self.fVec28
                                         [((i32::wrapping_sub(self.IOTA0, iSlow67)) & 2047) as usize]
                                 } else {
                                     1.7976931348623157e+308
-                                },
+                                }),
                             ),
-                            if iSlow68 != 0 {
+                            (if iSlow68 != 0 {
                                 self.fVec29
                                     [((i32::wrapping_sub(self.IOTA0, iSlow69)) & 4095) as usize]
                             } else {
                                 1.7976931348623157e+308
-                            },
+                            }),
                         ),
-                        if iSlow70 != 0 {
+                        (if iSlow70 != 0 {
                             self.fVec30[((i32::wrapping_sub(self.IOTA0, iSlow71)) & 8191) as usize]
                         } else {
                             1.7976931348623157e+308
-                        },
+                        }),
                     ),
-                    if iSlow72 != 0 {
+                    (if iSlow72 != 0 {
                         self.fVec31[((i32::wrapping_sub(self.IOTA0, iSlow73)) & 16383) as usize]
                     } else {
                         1.7976931348623157e+308
-                    },
+                    }),
                 ) - self.fRec2[1];
                 self.fVec32[0] = fTemp66;
                 let mut iTemp67: i32 = (fTemp66 > 0.0) as i32;
-                let mut fTemp73: F64 = if iTemp67 != 0 { fSlow75 } else { fSlow74 };
-                self.fVec33[0] = fTemp73;
-                let mut fTemp74: F64 = 6.0 * fTemp73;
-                let mut iTemp75: i32 = (fTemp74) as i32;
-                let mut iTemp76: i32 = std::cmp::max(0, std::cmp::min(iTemp75, 6));
-                let mut iTemp77: i32 = std::cmp::max(
+                let mut fTemp72: F64 = (if iTemp67 != 0 { fSlow75 } else { fSlow74 });
+                self.fVec33[0] = fTemp72;
+                let mut fTemp73: F64 = 6.0 * fTemp72;
+                let mut iTemp74: i32 = (fTemp73) as i32;
+                let mut iTemp75: i32 = std::cmp::max(0, std::cmp::min(iTemp74, 6));
+                let mut iTemp76: i32 = std::cmp::max(
                     0,
-                    std::cmp::min(i32::wrapping_add(iTemp76, 1835001), 3670015),
+                    std::cmp::min(i32::wrapping_add(iTemp75, 1835001), 3670015),
                 );
-                let mut fTemp78: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp77, 7)) as usize] };
-                let mut fTemp79: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp77 as usize] };
-                let mut fTemp80: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp77, 1)) as usize] }
-                        - fTemp79;
-                let mut fTemp81: F64 = fTemp74 - (iTemp75) as F64;
-                let mut fTemp82: F64 = fTemp79
-                    + fTemp81 * fTemp80
+                let mut fTemp77: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp76, 7)) as usize] };
+                let mut fTemp78: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp76 as usize] };
+                let mut fTemp79: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp76, 1)) as usize] }
+                        - fTemp78;
+                let mut fTemp80: F64 = fTemp73 - (iTemp74) as F64;
+                let mut fTemp81: F64 = fTemp78
+                    + fTemp80 * fTemp79
                     + 0.5
-                        * (fTemp78
-                            - (fTemp79
-                                + fTemp81
-                                    * (fTemp80
+                        * (fTemp77
+                            - (fTemp78
+                                + fTemp80
+                                    * (fTemp79
                                         - (unsafe {
                                             ftbl0LambRs192kSIG0
-                                                [(i32::wrapping_add(iTemp77, 8)) as usize]
-                                        } - fTemp78))));
-                let mut fTemp83: F64 = if iTemp67 != 0 { fTemp82 } else { 1.0 - fTemp82 };
-                let mut iTemp84: i32 = (fTemp66 < 0.0) as i32;
-                let mut fTemp85: F64 = fSlow1 * (iTemp84) as F64 + fSlow13 * (iTemp67) as F64;
-                self.fVec34[0] = fTemp85;
-                let mut fTemp86: F64 = self.fConst10 / fTemp85;
-                let mut fTemp87: F64 = fTemp86 + 0.5;
-                let mut fTemp88: F64 = 524287.0 * (1.0 - fTemp87);
-                let mut iTemp89: i32 = (fTemp88) as i32;
-                let mut iTemp90: i32 = std::cmp::max(
+                                                [(i32::wrapping_add(iTemp76, 8)) as usize]
+                                        } - fTemp77))));
+                let mut fTemp82: F64 = (if iTemp67 != 0 { fTemp81 } else { 1.0 - fTemp81 });
+                let mut iTemp83: i32 = (fTemp66 < 0.0) as i32;
+                let mut fTemp84: F64 = fSlow1 * (iTemp83) as F64 + fSlow13 * (iTemp67) as F64;
+                self.fVec34[0] = fTemp84;
+                let mut fTemp85: F64 = self.fConst10 / fTemp84;
+                let mut fTemp86: F64 = fTemp85 + 0.5;
+                let mut fTemp87: F64 = 524287.0 * (1.0 - fTemp86);
+                let mut iTemp88: i32 = (fTemp87) as i32;
+                let mut iTemp89: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp89, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp88, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp91: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp90, 7)) as usize] };
-                let mut fTemp92: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp90 as usize] };
-                let mut fTemp93: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp90, 1)) as usize] }
-                        - fTemp92;
-                let mut fTemp94: F64 = 524287.0 * fTemp87;
-                let mut iTemp95: i32 = (fTemp94) as i32;
-                let mut iTemp96: i32 = std::cmp::max(
+                let mut fTemp90: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp89, 7)) as usize] };
+                let mut fTemp91: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp89 as usize] };
+                let mut fTemp92: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp89, 1)) as usize] }
+                        - fTemp91;
+                let mut fTemp93: F64 = 524287.0 * fTemp86;
+                let mut iTemp94: i32 = (fTemp93) as i32;
+                let mut iTemp95: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp95, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp94, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp97: F64 = unsafe {
+                let mut fTemp96: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp96, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp95, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp98: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp96 as usize] };
-                let mut fTemp99: F64 = unsafe {
+                let mut fTemp97: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp95 as usize] };
+                let mut fTemp98: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp96, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp95, 1), 3670015),
                     )) as usize]
-                } - fTemp98;
-                let mut fTemp100: F64 = 6.0 * self.fVec33[1];
-                let mut iTemp101: i32 = (fTemp100) as i32;
-                let mut iTemp102: i32 = std::cmp::max(0, std::cmp::min(iTemp101, 6));
-                let mut fTemp103: F64 = 524287.0 * (1.0 - self.fRec1[1]);
-                let mut iTemp104: i32 = (fTemp103) as i32;
-                let mut iTemp105: i32 = std::cmp::max(
+                } - fTemp97;
+                let mut fTemp99: F64 = 6.0 * self.fVec33[1];
+                let mut iTemp100: i32 = (fTemp99) as i32;
+                let mut iTemp101: i32 = std::cmp::max(0, std::cmp::min(iTemp100, 6));
+                let mut fTemp102: F64 = 524287.0 * (1.0 - self.fRec1[1]);
+                let mut iTemp103: i32 = (fTemp102) as i32;
+                let mut iTemp104: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp104, 524287))),
-                            iTemp102,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp103, 524287))),
+                            iTemp101,
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp106: F64 = unsafe {
+                let mut fTemp105: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp105, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp104, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp107: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp105 as usize] };
-                let mut fTemp108: F64 = unsafe {
+                let mut fTemp106: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp104 as usize] };
+                let mut fTemp107: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp105, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp104, 1), 3670015),
                     )) as usize]
-                } - fTemp107;
-                let mut fTemp109: F64 = fTemp100 - (iTemp101) as F64;
-                let mut fTemp110: F64 = 524287.0 * self.fRec1[1];
-                let mut iTemp111: i32 = (fTemp110) as i32;
-                let mut iTemp112: i32 = std::cmp::max(
+                } - fTemp106;
+                let mut fTemp108: F64 = fTemp99 - (iTemp100) as F64;
+                let mut fTemp109: F64 = 524287.0 * self.fRec1[1];
+                let mut iTemp110: i32 = (fTemp109) as i32;
+                let mut iTemp111: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp102,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp111, 524287))),
+                            iTemp101,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp110, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp113: F64 = unsafe {
+                let mut fTemp112: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp112, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp111, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp114: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp112 as usize] };
-                let mut fTemp115: F64 = unsafe {
+                let mut fTemp113: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp111 as usize] };
+                let mut fTemp114: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp112, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp111, 1), 3670015),
                     )) as usize]
-                } - fTemp114;
-                let mut fTemp116: F64 = self.fRec1[1] + fTemp86;
-                let mut fTemp117: F64 = 524287.0 * (1.0 - fTemp116);
-                let mut iTemp118: i32 = (fTemp117) as i32;
-                let mut iTemp119: i32 = std::cmp::max(
+                } - fTemp113;
+                let mut fTemp115: F64 = self.fRec1[1] + fTemp85;
+                let mut fTemp116: F64 = 524287.0 * (1.0 - fTemp115);
+                let mut iTemp117: i32 = (fTemp116) as i32;
+                let mut iTemp118: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp118, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp117, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp120: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp119, 7)) as usize] };
-                let mut fTemp121: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp119 as usize] };
-                let mut fTemp122: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp119, 1)) as usize] }
-                        - fTemp121;
-                let mut fTemp123: F64 = 524287.0 * fTemp116;
-                let mut iTemp124: i32 = (fTemp123) as i32;
-                let mut iTemp125: i32 = std::cmp::max(
+                let mut fTemp119: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp118, 7)) as usize] };
+                let mut fTemp120: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp118 as usize] };
+                let mut fTemp121: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp118, 1)) as usize] }
+                        - fTemp120;
+                let mut fTemp122: F64 = 524287.0 * fTemp115;
+                let mut iTemp123: i32 = (fTemp122) as i32;
+                let mut iTemp124: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp124, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp123, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp126: F64 = unsafe {
+                let mut fTemp125: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp125, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp124, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp127: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp125 as usize] };
-                let mut fTemp128: F64 = unsafe {
+                let mut fTemp126: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp124 as usize] };
+                let mut fTemp127: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp125, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp124, 1), 3670015),
                     )) as usize]
-                } - fTemp127;
-                let mut fTemp129: F64 =
-                    self.fRec1[1] + self.fConst10 * (1.0 / fTemp85 + 1.0 / self.fVec34[1]);
-                let mut fTemp130: F64 = 524287.0 * (1.0 - fTemp129);
-                let mut iTemp131: i32 = (fTemp130) as i32;
-                let mut iTemp132: i32 = std::cmp::max(
+                } - fTemp126;
+                let mut fTemp128: F64 =
+                    self.fRec1[1] + self.fConst10 * (1.0 / fTemp84 + 1.0 / self.fVec34[1]);
+                let mut fTemp129: F64 = 524287.0 * (1.0 - fTemp128);
+                let mut iTemp130: i32 = (fTemp129) as i32;
+                let mut iTemp131: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp131, 524287))),
-                            iTemp76,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp130, 524287))),
+                            iTemp75,
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp133: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp132, 7)) as usize] };
-                let mut fTemp134: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp132 as usize] };
-                let mut fTemp135: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp132, 1)) as usize] }
-                        - fTemp134;
-                let mut fTemp136: F64 = 524287.0 * fTemp129;
-                let mut iTemp137: i32 = (fTemp136) as i32;
-                let mut iTemp138: i32 = std::cmp::max(
+                let mut fTemp132: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp131, 7)) as usize] };
+                let mut fTemp133: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp131 as usize] };
+                let mut fTemp134: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp131, 1)) as usize] }
+                        - fTemp133;
+                let mut fTemp135: F64 = 524287.0 * fTemp128;
+                let mut iTemp136: i32 = (fTemp135) as i32;
+                let mut iTemp137: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp137, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp136, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp139: F64 = unsafe {
+                let mut fTemp138: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp138, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp137, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp140: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp138 as usize] };
-                let mut fTemp141: F64 = unsafe {
+                let mut fTemp139: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp137 as usize] };
+                let mut fTemp140: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp138, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp137, 1), 3670015),
                     )) as usize]
-                } - fTemp140;
-                let mut fTemp142: F64 = (if iTemp67 != 0 {
-                    fTemp140
-                        + fTemp81 * fTemp141
-                        + (fTemp136 - (iTemp137) as F64)
-                            * (fTemp139
-                                - (fTemp140
-                                    + fTemp81
-                                        * (fTemp141
+                } - fTemp139;
+                let mut fTemp141: F64 = ((if iTemp67 != 0 {
+                    fTemp139
+                        + fTemp80 * fTemp140
+                        + (fTemp135 - (iTemp136) as F64)
+                            * (fTemp138
+                                - (fTemp139
+                                    + fTemp80
+                                        * (fTemp140
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0[(std::cmp::max(
                                                     0,
                                                     std::cmp::min(
-                                                        i32::wrapping_add(iTemp138, 8),
+                                                        i32::wrapping_add(iTemp137, 8),
                                                         3670015,
                                                     ),
                                                 ))
                                                     as usize]
-                                            } - fTemp139))))
+                                            } - fTemp138))))
                 } else {
-                    1.0 - (fTemp134
-                        + fTemp81 * fTemp135
-                        + (fTemp130 - (iTemp131) as F64)
-                            * (fTemp133
-                                - (fTemp134
-                                    + fTemp81
-                                        * (fTemp135
+                    1.0 - (fTemp133
+                        + fTemp80 * fTemp134
+                        + (fTemp129 - (iTemp130) as F64)
+                            * (fTemp132
+                                - (fTemp133
+                                    + fTemp80
+                                        * (fTemp134
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp132, 8)) as usize]
-                                            } - fTemp133)))))
-                } - if iTemp67 != 0 {
-                    fTemp127
-                        + fTemp81 * fTemp128
-                        + (fTemp123 - (iTemp124) as F64)
-                            * (fTemp126
-                                - (fTemp127
-                                    + fTemp81
-                                        * (fTemp128
+                                                    [(i32::wrapping_add(iTemp131, 8)) as usize]
+                                            } - fTemp132)))))
+                }) - (if iTemp67 != 0 {
+                    fTemp126
+                        + fTemp80 * fTemp127
+                        + (fTemp122 - (iTemp123) as F64)
+                            * (fTemp125
+                                - (fTemp126
+                                    + fTemp80
+                                        * (fTemp127
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0[(std::cmp::max(
                                                     0,
                                                     std::cmp::min(
-                                                        i32::wrapping_add(iTemp125, 8),
+                                                        i32::wrapping_add(iTemp124, 8),
                                                         3670015,
                                                     ),
                                                 ))
                                                     as usize]
-                                            } - fTemp126))))
+                                            } - fTemp125))))
                 } else {
-                    1.0 - (fTemp121
-                        + fTemp81 * fTemp122
-                        + (fTemp117 - (iTemp118) as F64)
-                            * (fTemp120
-                                - (fTemp121
-                                    + fTemp81
-                                        * (fTemp122
+                    1.0 - (fTemp120
+                        + fTemp80 * fTemp121
+                        + (fTemp116 - (iTemp117) as F64)
+                            * (fTemp119
+                                - (fTemp120
+                                    + fTemp80
+                                        * (fTemp121
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp119, 8)) as usize]
-                                            } - fTemp120)))))
-                }) * self.fVec32[1]
+                                                    [(i32::wrapping_add(iTemp118, 8)) as usize]
+                                            } - fTemp119)))))
+                })) * self.fVec32[1]
                     / (fTemp66
                         * (1.0
-                            - if iTemp67 != 0 {
-                                fTemp114
-                                    + fTemp109 * fTemp115
-                                    + (fTemp110 - (iTemp111) as F64)
-                                        * (fTemp113
-                                            - (fTemp114
-                                                + fTemp109
-                                                    * (fTemp115
+                            - (if iTemp67 != 0 {
+                                fTemp113
+                                    + fTemp108 * fTemp114
+                                    + (fTemp109 - (iTemp110) as F64)
+                                        * (fTemp112
+                                            - (fTemp113
+                                                + fTemp108
+                                                    * (fTemp114
                                                         - (unsafe {
                                                             ftbl0LambRs192kSIG0[(std::cmp::max(
                                                                 0,
                                                                 std::cmp::min(
-                                                                    i32::wrapping_add(iTemp112, 8),
+                                                                    i32::wrapping_add(iTemp111, 8),
                                                                     3670015,
                                                                 ),
                                                             ))
                                                                 as usize]
-                                                        } - fTemp113))))
+                                                        } - fTemp112))))
                             } else {
-                                1.0 - (fTemp107
-                                    + fTemp109 * fTemp108
-                                    + (fTemp103 - (iTemp104) as F64)
-                                        * (fTemp106
-                                            - (fTemp107
-                                                + fTemp109
-                                                    * (fTemp108
+                                1.0 - (fTemp106
+                                    + fTemp108 * fTemp107
+                                    + (fTemp102 - (iTemp103) as F64)
+                                        * (fTemp105
+                                            - (fTemp106
+                                                + fTemp108
+                                                    * (fTemp107
                                                         - (unsafe {
                                                             ftbl0LambRs192kSIG0[(std::cmp::max(
                                                                 0,
                                                                 std::cmp::min(
-                                                                    i32::wrapping_add(iTemp105, 8),
+                                                                    i32::wrapping_add(iTemp104, 8),
                                                                     3670015,
                                                                 ),
                                                             ))
                                                                 as usize]
-                                                        } - fTemp106)))))
-                            }));
-                let mut iTemp143: i32 = (fTemp142
-                    > ((if iTemp67 != 0 {
-                        fTemp98
-                            + fTemp81 * fTemp99
-                            + (fTemp94 - (iTemp95) as F64)
-                                * (fTemp97
-                                    - (fTemp98
-                                        + fTemp81
-                                            * (fTemp99
+                                                        } - fTemp105)))))
+                            })));
+                let mut iTemp142: i32 = (fTemp141
+                    > (((if iTemp67 != 0 {
+                        fTemp97
+                            + fTemp80 * fTemp98
+                            + (fTemp93 - (iTemp94) as F64)
+                                * (fTemp96
+                                    - (fTemp97
+                                        + fTemp80
+                                            * (fTemp98
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp96, 8),
+                                                            i32::wrapping_add(iTemp95, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp97))))
+                                                } - fTemp96))))
                     } else {
-                        1.0 - (fTemp92
-                            + fTemp81 * fTemp93
-                            + (fTemp88 - (iTemp89) as F64)
-                                * (fTemp91
-                                    - (fTemp92
-                                        + fTemp81
-                                            * (fTemp93
+                        1.0 - (fTemp91
+                            + fTemp80 * fTemp92
+                            + (fTemp87 - (iTemp88) as F64)
+                                * (fTemp90
+                                    - (fTemp91
+                                        + fTemp80
+                                            * (fTemp92
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp90, 8)) as usize]
-                                                } - fTemp91)))))
-                    } - fTemp83)
-                        / (1.0 - fTemp83))) as i32;
-                let mut fTemp144: F64 = if iTemp143 != 0 { 1.0 } else { 0.5 };
-                let mut fTemp145: F64 = if iTemp143 != 0 { 0.5 } else { 0.0 };
-                let mut fTemp146: F64 = fTemp145 + fTemp144;
-                let mut fTemp147: F64 = 0.5 * fTemp146;
-                let mut fTemp148: F64 = 524287.0 * (1.0 - fTemp147);
-                let mut iTemp149: i32 = (fTemp148) as i32;
-                let mut iTemp150: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp89, 8)) as usize]
+                                                } - fTemp90)))))
+                    }) - fTemp82)
+                        / (1.0 - fTemp82))) as i32;
+                let mut fTemp143: F64 = (if iTemp142 != 0 { 1.0 } else { 0.5 });
+                let mut fTemp144: F64 = (if iTemp142 != 0 { 0.5 } else { 0.0 });
+                let mut fTemp145: F64 = fTemp144 + fTemp143;
+                let mut fTemp146: F64 = 0.5 * fTemp145;
+                let mut fTemp147: F64 = 524287.0 * (1.0 - fTemp146);
+                let mut iTemp148: i32 = (fTemp147) as i32;
+                let mut iTemp149: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp149, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp148, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp151: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp150, 7)) as usize] };
-                let mut fTemp152: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp150 as usize] };
-                let mut fTemp153: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp150, 1)) as usize] }
-                        - fTemp152;
-                let mut fTemp154: F64 = 262143.5 * fTemp146;
-                let mut iTemp155: i32 = (fTemp154) as i32;
-                let mut iTemp156: i32 = std::cmp::max(
+                let mut fTemp150: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp149, 7)) as usize] };
+                let mut fTemp151: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp149 as usize] };
+                let mut fTemp152: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp149, 1)) as usize] }
+                        - fTemp151;
+                let mut fTemp153: F64 = 262143.5 * fTemp145;
+                let mut iTemp154: i32 = (fTemp153) as i32;
+                let mut iTemp155: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp155, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp154, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp157: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp156, 7)) as usize] };
-                let mut fTemp158: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp156 as usize] };
-                let mut fTemp159: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp156, 1)) as usize] }
-                        - fTemp158;
-                let mut fTemp160: F64 = if iTemp67 != 0 {
-                    fTemp158
-                        + fTemp81 * fTemp159
-                        + (fTemp154 - (iTemp155) as F64)
-                            * (fTemp157
-                                - (fTemp158
-                                    + fTemp81
-                                        * (fTemp159
+                let mut fTemp156: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp155, 7)) as usize] };
+                let mut fTemp157: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp155 as usize] };
+                let mut fTemp158: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp155, 1)) as usize] }
+                        - fTemp157;
+                let mut fTemp159: F64 = (if iTemp67 != 0 {
+                    fTemp157
+                        + fTemp80 * fTemp158
+                        + (fTemp153 - (iTemp154) as F64)
+                            * (fTemp156
+                                - (fTemp157
+                                    + fTemp80
+                                        * (fTemp158
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp156, 8)) as usize]
-                                            } - fTemp157))))
+                                                    [(i32::wrapping_add(iTemp155, 8)) as usize]
+                                            } - fTemp156))))
                 } else {
-                    1.0 - (fTemp152
-                        + fTemp81 * fTemp153
-                        + (fTemp148 - (iTemp149) as F64)
-                            * (fTemp151
-                                - (fTemp152
-                                    + fTemp81
-                                        * (fTemp153
+                    1.0 - (fTemp151
+                        + fTemp80 * fTemp152
+                        + (fTemp147 - (iTemp148) as F64)
+                            * (fTemp150
+                                - (fTemp151
+                                    + fTemp80
+                                        * (fTemp152
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp150, 8)) as usize]
-                                            } - fTemp151)))))
-                };
-                let mut fTemp161: F64 = fTemp86 + fTemp147;
-                let mut fTemp162: F64 = 524287.0 * (1.0 - fTemp161);
-                let mut iTemp163: i32 = (fTemp162) as i32;
-                let mut iTemp164: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp149, 8)) as usize]
+                                            } - fTemp150)))))
+                });
+                let mut fTemp160: F64 = fTemp85 + fTemp146;
+                let mut fTemp161: F64 = 524287.0 * (1.0 - fTemp160);
+                let mut iTemp162: i32 = (fTemp161) as i32;
+                let mut iTemp163: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp163, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp162, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp165: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp164, 7)) as usize] };
-                let mut fTemp166: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp164 as usize] };
-                let mut fTemp167: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp164, 1)) as usize] }
-                        - fTemp166;
-                let mut fTemp168: F64 = 524287.0 * fTemp161;
-                let mut iTemp169: i32 = (fTemp168) as i32;
-                let mut iTemp170: i32 = std::cmp::max(
+                let mut fTemp164: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp163, 7)) as usize] };
+                let mut fTemp165: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp163 as usize] };
+                let mut fTemp166: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp163, 1)) as usize] }
+                        - fTemp165;
+                let mut fTemp167: F64 = 524287.0 * fTemp160;
+                let mut iTemp168: i32 = (fTemp167) as i32;
+                let mut iTemp169: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp169, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp168, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp171: F64 = unsafe {
+                let mut fTemp170: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp170, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp169, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp172: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp170 as usize] };
-                let mut fTemp173: F64 = unsafe {
+                let mut fTemp171: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp169 as usize] };
+                let mut fTemp172: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp170, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp169, 1), 3670015),
                     )) as usize]
-                } - fTemp172;
-                let mut iTemp174: i32 = (fTemp142
-                    > ((if iTemp67 != 0 {
-                        fTemp172
-                            + fTemp81 * fTemp173
-                            + (fTemp168 - (iTemp169) as F64)
-                                * (fTemp171
-                                    - (fTemp172
-                                        + fTemp81
-                                            * (fTemp173
+                } - fTemp171;
+                let mut iTemp173: i32 = (fTemp141
+                    > (((if iTemp67 != 0 {
+                        fTemp171
+                            + fTemp80 * fTemp172
+                            + (fTemp167 - (iTemp168) as F64)
+                                * (fTemp170
+                                    - (fTemp171
+                                        + fTemp80
+                                            * (fTemp172
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp170, 8),
+                                                            i32::wrapping_add(iTemp169, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp171))))
+                                                } - fTemp170))))
                     } else {
-                        1.0 - (fTemp166
-                            + fTemp81 * fTemp167
-                            + (fTemp162 - (iTemp163) as F64)
-                                * (fTemp165
-                                    - (fTemp166
-                                        + fTemp81
-                                            * (fTemp167
+                        1.0 - (fTemp165
+                            + fTemp80 * fTemp166
+                            + (fTemp161 - (iTemp162) as F64)
+                                * (fTemp164
+                                    - (fTemp165
+                                        + fTemp80
+                                            * (fTemp166
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp164, 8)) as usize]
-                                                } - fTemp165)))))
-                    } - fTemp160)
-                        / (1.0 - fTemp160))) as i32;
-                let mut fTemp175: F64 = if iTemp174 != 0 { fTemp144 } else { fTemp147 };
-                let mut fTemp176: F64 = if iTemp174 != 0 { fTemp147 } else { fTemp145 };
-                let mut fTemp177: F64 = fTemp176 + fTemp175;
-                let mut fTemp178: F64 = 0.5 * fTemp177;
-                let mut fTemp179: F64 = 524287.0 * (1.0 - fTemp178);
-                let mut iTemp180: i32 = (fTemp179) as i32;
-                let mut iTemp181: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp163, 8)) as usize]
+                                                } - fTemp164)))))
+                    }) - fTemp159)
+                        / (1.0 - fTemp159))) as i32;
+                let mut fTemp174: F64 = (if iTemp173 != 0 { fTemp143 } else { fTemp146 });
+                let mut fTemp175: F64 = (if iTemp173 != 0 { fTemp146 } else { fTemp144 });
+                let mut fTemp176: F64 = fTemp175 + fTemp174;
+                let mut fTemp177: F64 = 0.5 * fTemp176;
+                let mut fTemp178: F64 = 524287.0 * (1.0 - fTemp177);
+                let mut iTemp179: i32 = (fTemp178) as i32;
+                let mut iTemp180: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp180, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp179, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp182: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp181, 7)) as usize] };
-                let mut fTemp183: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp181 as usize] };
-                let mut fTemp184: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp181, 1)) as usize] }
-                        - fTemp183;
-                let mut fTemp185: F64 = 262143.5 * fTemp177;
-                let mut iTemp186: i32 = (fTemp185) as i32;
-                let mut iTemp187: i32 = std::cmp::max(
+                let mut fTemp181: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp180, 7)) as usize] };
+                let mut fTemp182: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp180 as usize] };
+                let mut fTemp183: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp180, 1)) as usize] }
+                        - fTemp182;
+                let mut fTemp184: F64 = 262143.5 * fTemp176;
+                let mut iTemp185: i32 = (fTemp184) as i32;
+                let mut iTemp186: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp186, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp185, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp188: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp187, 7)) as usize] };
-                let mut fTemp189: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp187 as usize] };
-                let mut fTemp190: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp187, 1)) as usize] }
-                        - fTemp189;
-                let mut fTemp191: F64 = if iTemp67 != 0 {
-                    fTemp189
-                        + fTemp81 * fTemp190
-                        + (fTemp185 - (iTemp186) as F64)
-                            * (fTemp188
-                                - (fTemp189
-                                    + fTemp81
-                                        * (fTemp190
+                let mut fTemp187: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp186, 7)) as usize] };
+                let mut fTemp188: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp186 as usize] };
+                let mut fTemp189: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp186, 1)) as usize] }
+                        - fTemp188;
+                let mut fTemp190: F64 = (if iTemp67 != 0 {
+                    fTemp188
+                        + fTemp80 * fTemp189
+                        + (fTemp184 - (iTemp185) as F64)
+                            * (fTemp187
+                                - (fTemp188
+                                    + fTemp80
+                                        * (fTemp189
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp187, 8)) as usize]
-                                            } - fTemp188))))
+                                                    [(i32::wrapping_add(iTemp186, 8)) as usize]
+                                            } - fTemp187))))
                 } else {
-                    1.0 - (fTemp183
-                        + fTemp81 * fTemp184
-                        + (fTemp179 - (iTemp180) as F64)
-                            * (fTemp182
-                                - (fTemp183
-                                    + fTemp81
-                                        * (fTemp184
+                    1.0 - (fTemp182
+                        + fTemp80 * fTemp183
+                        + (fTemp178 - (iTemp179) as F64)
+                            * (fTemp181
+                                - (fTemp182
+                                    + fTemp80
+                                        * (fTemp183
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp181, 8)) as usize]
-                                            } - fTemp182)))))
-                };
-                let mut fTemp192: F64 = fTemp86 + fTemp178;
-                let mut fTemp193: F64 = 524287.0 * (1.0 - fTemp192);
-                let mut iTemp194: i32 = (fTemp193) as i32;
-                let mut iTemp195: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp180, 8)) as usize]
+                                            } - fTemp181)))))
+                });
+                let mut fTemp191: F64 = fTemp85 + fTemp177;
+                let mut fTemp192: F64 = 524287.0 * (1.0 - fTemp191);
+                let mut iTemp193: i32 = (fTemp192) as i32;
+                let mut iTemp194: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp194, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp193, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp196: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp195, 7)) as usize] };
-                let mut fTemp197: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp195 as usize] };
-                let mut fTemp198: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp195, 1)) as usize] }
-                        - fTemp197;
-                let mut fTemp199: F64 = 524287.0 * fTemp192;
-                let mut iTemp200: i32 = (fTemp199) as i32;
-                let mut iTemp201: i32 = std::cmp::max(
+                let mut fTemp195: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp194, 7)) as usize] };
+                let mut fTemp196: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp194 as usize] };
+                let mut fTemp197: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp194, 1)) as usize] }
+                        - fTemp196;
+                let mut fTemp198: F64 = 524287.0 * fTemp191;
+                let mut iTemp199: i32 = (fTemp198) as i32;
+                let mut iTemp200: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp200, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp199, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp202: F64 = unsafe {
+                let mut fTemp201: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp201, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp200, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp203: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp201 as usize] };
-                let mut fTemp204: F64 = unsafe {
+                let mut fTemp202: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp200 as usize] };
+                let mut fTemp203: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp201, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp200, 1), 3670015),
                     )) as usize]
-                } - fTemp203;
-                let mut iTemp205: i32 = (fTemp142
-                    > ((if iTemp67 != 0 {
-                        fTemp203
-                            + fTemp81 * fTemp204
-                            + (fTemp199 - (iTemp200) as F64)
-                                * (fTemp202
-                                    - (fTemp203
-                                        + fTemp81
-                                            * (fTemp204
+                } - fTemp202;
+                let mut iTemp204: i32 = (fTemp141
+                    > (((if iTemp67 != 0 {
+                        fTemp202
+                            + fTemp80 * fTemp203
+                            + (fTemp198 - (iTemp199) as F64)
+                                * (fTemp201
+                                    - (fTemp202
+                                        + fTemp80
+                                            * (fTemp203
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp201, 8),
+                                                            i32::wrapping_add(iTemp200, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp202))))
+                                                } - fTemp201))))
                     } else {
-                        1.0 - (fTemp197
-                            + fTemp81 * fTemp198
-                            + (fTemp193 - (iTemp194) as F64)
-                                * (fTemp196
-                                    - (fTemp197
-                                        + fTemp81
-                                            * (fTemp198
+                        1.0 - (fTemp196
+                            + fTemp80 * fTemp197
+                            + (fTemp192 - (iTemp193) as F64)
+                                * (fTemp195
+                                    - (fTemp196
+                                        + fTemp80
+                                            * (fTemp197
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp195, 8)) as usize]
-                                                } - fTemp196)))))
-                    } - fTemp191)
-                        / (1.0 - fTemp191))) as i32;
-                let mut fTemp206: F64 = if iTemp205 != 0 { fTemp175 } else { fTemp178 };
-                let mut fTemp207: F64 = if iTemp205 != 0 { fTemp178 } else { fTemp176 };
-                let mut fTemp208: F64 = fTemp207 + fTemp206;
-                let mut fTemp209: F64 = 0.5 * fTemp208;
-                let mut fTemp210: F64 = 524287.0 * (1.0 - fTemp209);
-                let mut iTemp211: i32 = (fTemp210) as i32;
-                let mut iTemp212: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp194, 8)) as usize]
+                                                } - fTemp195)))))
+                    }) - fTemp190)
+                        / (1.0 - fTemp190))) as i32;
+                let mut fTemp205: F64 = (if iTemp204 != 0 { fTemp174 } else { fTemp177 });
+                let mut fTemp206: F64 = (if iTemp204 != 0 { fTemp177 } else { fTemp175 });
+                let mut fTemp207: F64 = fTemp206 + fTemp205;
+                let mut fTemp208: F64 = 0.5 * fTemp207;
+                let mut fTemp209: F64 = 524287.0 * (1.0 - fTemp208);
+                let mut iTemp210: i32 = (fTemp209) as i32;
+                let mut iTemp211: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp211, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp210, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp213: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp212, 7)) as usize] };
-                let mut fTemp214: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp212 as usize] };
-                let mut fTemp215: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp212, 1)) as usize] }
-                        - fTemp214;
-                let mut fTemp216: F64 = 262143.5 * fTemp208;
-                let mut iTemp217: i32 = (fTemp216) as i32;
-                let mut iTemp218: i32 = std::cmp::max(
+                let mut fTemp212: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp211, 7)) as usize] };
+                let mut fTemp213: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp211 as usize] };
+                let mut fTemp214: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp211, 1)) as usize] }
+                        - fTemp213;
+                let mut fTemp215: F64 = 262143.5 * fTemp207;
+                let mut iTemp216: i32 = (fTemp215) as i32;
+                let mut iTemp217: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp217, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp216, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp219: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp218, 7)) as usize] };
-                let mut fTemp220: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp218 as usize] };
-                let mut fTemp221: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp218, 1)) as usize] }
-                        - fTemp220;
-                let mut fTemp222: F64 = if iTemp67 != 0 {
-                    fTemp220
-                        + fTemp81 * fTemp221
-                        + (fTemp216 - (iTemp217) as F64)
-                            * (fTemp219
-                                - (fTemp220
-                                    + fTemp81
-                                        * (fTemp221
+                let mut fTemp218: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp217, 7)) as usize] };
+                let mut fTemp219: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp217 as usize] };
+                let mut fTemp220: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp217, 1)) as usize] }
+                        - fTemp219;
+                let mut fTemp221: F64 = (if iTemp67 != 0 {
+                    fTemp219
+                        + fTemp80 * fTemp220
+                        + (fTemp215 - (iTemp216) as F64)
+                            * (fTemp218
+                                - (fTemp219
+                                    + fTemp80
+                                        * (fTemp220
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp218, 8)) as usize]
-                                            } - fTemp219))))
+                                                    [(i32::wrapping_add(iTemp217, 8)) as usize]
+                                            } - fTemp218))))
                 } else {
-                    1.0 - (fTemp214
-                        + fTemp81 * fTemp215
-                        + (fTemp210 - (iTemp211) as F64)
-                            * (fTemp213
-                                - (fTemp214
-                                    + fTemp81
-                                        * (fTemp215
+                    1.0 - (fTemp213
+                        + fTemp80 * fTemp214
+                        + (fTemp209 - (iTemp210) as F64)
+                            * (fTemp212
+                                - (fTemp213
+                                    + fTemp80
+                                        * (fTemp214
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp212, 8)) as usize]
-                                            } - fTemp213)))))
-                };
-                let mut fTemp223: F64 = fTemp86 + fTemp209;
-                let mut fTemp224: F64 = 524287.0 * (1.0 - fTemp223);
-                let mut iTemp225: i32 = (fTemp224) as i32;
-                let mut iTemp226: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp211, 8)) as usize]
+                                            } - fTemp212)))))
+                });
+                let mut fTemp222: F64 = fTemp85 + fTemp208;
+                let mut fTemp223: F64 = 524287.0 * (1.0 - fTemp222);
+                let mut iTemp224: i32 = (fTemp223) as i32;
+                let mut iTemp225: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp225, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp224, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp227: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp226, 7)) as usize] };
-                let mut fTemp228: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp226 as usize] };
-                let mut fTemp229: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp226, 1)) as usize] }
-                        - fTemp228;
-                let mut fTemp230: F64 = 524287.0 * fTemp223;
-                let mut iTemp231: i32 = (fTemp230) as i32;
-                let mut iTemp232: i32 = std::cmp::max(
+                let mut fTemp226: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp225, 7)) as usize] };
+                let mut fTemp227: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp225 as usize] };
+                let mut fTemp228: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp225, 1)) as usize] }
+                        - fTemp227;
+                let mut fTemp229: F64 = 524287.0 * fTemp222;
+                let mut iTemp230: i32 = (fTemp229) as i32;
+                let mut iTemp231: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp231, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp230, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp233: F64 = unsafe {
+                let mut fTemp232: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp232, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp231, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp234: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp232 as usize] };
-                let mut fTemp235: F64 = unsafe {
+                let mut fTemp233: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp231 as usize] };
+                let mut fTemp234: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp232, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp231, 1), 3670015),
                     )) as usize]
-                } - fTemp234;
-                let mut iTemp236: i32 = (fTemp142
-                    > ((if iTemp67 != 0 {
-                        fTemp234
-                            + fTemp81 * fTemp235
-                            + (fTemp230 - (iTemp231) as F64)
-                                * (fTemp233
-                                    - (fTemp234
-                                        + fTemp81
-                                            * (fTemp235
+                } - fTemp233;
+                let mut iTemp235: i32 = (fTemp141
+                    > (((if iTemp67 != 0 {
+                        fTemp233
+                            + fTemp80 * fTemp234
+                            + (fTemp229 - (iTemp230) as F64)
+                                * (fTemp232
+                                    - (fTemp233
+                                        + fTemp80
+                                            * (fTemp234
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp232, 8),
+                                                            i32::wrapping_add(iTemp231, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp233))))
+                                                } - fTemp232))))
                     } else {
-                        1.0 - (fTemp228
-                            + fTemp81 * fTemp229
-                            + (fTemp224 - (iTemp225) as F64)
-                                * (fTemp227
-                                    - (fTemp228
-                                        + fTemp81
-                                            * (fTemp229
+                        1.0 - (fTemp227
+                            + fTemp80 * fTemp228
+                            + (fTemp223 - (iTemp224) as F64)
+                                * (fTemp226
+                                    - (fTemp227
+                                        + fTemp80
+                                            * (fTemp228
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp226, 8)) as usize]
-                                                } - fTemp227)))))
-                    } - fTemp222)
-                        / (1.0 - fTemp222))) as i32;
-                let mut fTemp237: F64 = if iTemp236 != 0 { fTemp206 } else { fTemp209 };
-                let mut fTemp238: F64 = if iTemp236 != 0 { fTemp209 } else { fTemp207 };
-                let mut fTemp239: F64 = fTemp238 + fTemp237;
-                let mut fTemp240: F64 = 0.5 * fTemp239;
-                let mut fTemp241: F64 = 524287.0 * (1.0 - fTemp240);
-                let mut iTemp242: i32 = (fTemp241) as i32;
-                let mut iTemp243: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp225, 8)) as usize]
+                                                } - fTemp226)))))
+                    }) - fTemp221)
+                        / (1.0 - fTemp221))) as i32;
+                let mut fTemp236: F64 = (if iTemp235 != 0 { fTemp205 } else { fTemp208 });
+                let mut fTemp237: F64 = (if iTemp235 != 0 { fTemp208 } else { fTemp206 });
+                let mut fTemp238: F64 = fTemp237 + fTemp236;
+                let mut fTemp239: F64 = 0.5 * fTemp238;
+                let mut fTemp240: F64 = 524287.0 * (1.0 - fTemp239);
+                let mut iTemp241: i32 = (fTemp240) as i32;
+                let mut iTemp242: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp242, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp241, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp244: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp243, 7)) as usize] };
-                let mut fTemp245: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp243 as usize] };
-                let mut fTemp246: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp243, 1)) as usize] }
-                        - fTemp245;
-                let mut fTemp247: F64 = 262143.5 * fTemp239;
-                let mut iTemp248: i32 = (fTemp247) as i32;
-                let mut iTemp249: i32 = std::cmp::max(
+                let mut fTemp243: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp242, 7)) as usize] };
+                let mut fTemp244: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp242 as usize] };
+                let mut fTemp245: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp242, 1)) as usize] }
+                        - fTemp244;
+                let mut fTemp246: F64 = 262143.5 * fTemp238;
+                let mut iTemp247: i32 = (fTemp246) as i32;
+                let mut iTemp248: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp248, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp247, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp250: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp249, 7)) as usize] };
-                let mut fTemp251: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp249 as usize] };
-                let mut fTemp252: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp249, 1)) as usize] }
-                        - fTemp251;
-                let mut fTemp253: F64 = if iTemp67 != 0 {
-                    fTemp251
-                        + fTemp81 * fTemp252
-                        + (fTemp247 - (iTemp248) as F64)
-                            * (fTemp250
-                                - (fTemp251
-                                    + fTemp81
-                                        * (fTemp252
+                let mut fTemp249: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp248, 7)) as usize] };
+                let mut fTemp250: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp248 as usize] };
+                let mut fTemp251: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp248, 1)) as usize] }
+                        - fTemp250;
+                let mut fTemp252: F64 = (if iTemp67 != 0 {
+                    fTemp250
+                        + fTemp80 * fTemp251
+                        + (fTemp246 - (iTemp247) as F64)
+                            * (fTemp249
+                                - (fTemp250
+                                    + fTemp80
+                                        * (fTemp251
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp249, 8)) as usize]
-                                            } - fTemp250))))
+                                                    [(i32::wrapping_add(iTemp248, 8)) as usize]
+                                            } - fTemp249))))
                 } else {
-                    1.0 - (fTemp245
-                        + fTemp81 * fTemp246
-                        + (fTemp241 - (iTemp242) as F64)
-                            * (fTemp244
-                                - (fTemp245
-                                    + fTemp81
-                                        * (fTemp246
+                    1.0 - (fTemp244
+                        + fTemp80 * fTemp245
+                        + (fTemp240 - (iTemp241) as F64)
+                            * (fTemp243
+                                - (fTemp244
+                                    + fTemp80
+                                        * (fTemp245
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp243, 8)) as usize]
-                                            } - fTemp244)))))
-                };
-                let mut fTemp254: F64 = fTemp86 + fTemp240;
-                let mut fTemp255: F64 = 524287.0 * (1.0 - fTemp254);
-                let mut iTemp256: i32 = (fTemp255) as i32;
-                let mut iTemp257: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp242, 8)) as usize]
+                                            } - fTemp243)))))
+                });
+                let mut fTemp253: F64 = fTemp85 + fTemp239;
+                let mut fTemp254: F64 = 524287.0 * (1.0 - fTemp253);
+                let mut iTemp255: i32 = (fTemp254) as i32;
+                let mut iTemp256: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp256, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp255, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp258: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp257, 7)) as usize] };
-                let mut fTemp259: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp257 as usize] };
-                let mut fTemp260: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp257, 1)) as usize] }
-                        - fTemp259;
-                let mut fTemp261: F64 = 524287.0 * fTemp254;
-                let mut iTemp262: i32 = (fTemp261) as i32;
-                let mut iTemp263: i32 = std::cmp::max(
+                let mut fTemp257: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp256, 7)) as usize] };
+                let mut fTemp258: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp256 as usize] };
+                let mut fTemp259: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp256, 1)) as usize] }
+                        - fTemp258;
+                let mut fTemp260: F64 = 524287.0 * fTemp253;
+                let mut iTemp261: i32 = (fTemp260) as i32;
+                let mut iTemp262: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp262, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp261, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp264: F64 = unsafe {
+                let mut fTemp263: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp263, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp262, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp265: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp263 as usize] };
-                let mut fTemp266: F64 = unsafe {
+                let mut fTemp264: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp262 as usize] };
+                let mut fTemp265: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp263, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp262, 1), 3670015),
                     )) as usize]
-                } - fTemp265;
-                let mut iTemp267: i32 = (fTemp142
-                    > ((if iTemp67 != 0 {
-                        fTemp265
-                            + fTemp81 * fTemp266
-                            + (fTemp261 - (iTemp262) as F64)
-                                * (fTemp264
-                                    - (fTemp265
-                                        + fTemp81
-                                            * (fTemp266
+                } - fTemp264;
+                let mut iTemp266: i32 = (fTemp141
+                    > (((if iTemp67 != 0 {
+                        fTemp264
+                            + fTemp80 * fTemp265
+                            + (fTemp260 - (iTemp261) as F64)
+                                * (fTemp263
+                                    - (fTemp264
+                                        + fTemp80
+                                            * (fTemp265
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp263, 8),
+                                                            i32::wrapping_add(iTemp262, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp264))))
+                                                } - fTemp263))))
                     } else {
-                        1.0 - (fTemp259
-                            + fTemp81 * fTemp260
-                            + (fTemp255 - (iTemp256) as F64)
-                                * (fTemp258
-                                    - (fTemp259
-                                        + fTemp81
-                                            * (fTemp260
+                        1.0 - (fTemp258
+                            + fTemp80 * fTemp259
+                            + (fTemp254 - (iTemp255) as F64)
+                                * (fTemp257
+                                    - (fTemp258
+                                        + fTemp80
+                                            * (fTemp259
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp257, 8)) as usize]
-                                                } - fTemp258)))))
-                    } - fTemp253)
-                        / (1.0 - fTemp253))) as i32;
-                let mut fTemp268: F64 = if iTemp267 != 0 { fTemp237 } else { fTemp240 };
-                let mut fTemp269: F64 = if iTemp267 != 0 { fTemp240 } else { fTemp238 };
-                let mut fTemp270: F64 = fTemp269 + fTemp268;
-                let mut fTemp271: F64 = 0.5 * fTemp270;
-                let mut fTemp272: F64 = 524287.0 * (1.0 - fTemp271);
-                let mut iTemp273: i32 = (fTemp272) as i32;
-                let mut iTemp274: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp256, 8)) as usize]
+                                                } - fTemp257)))))
+                    }) - fTemp252)
+                        / (1.0 - fTemp252))) as i32;
+                let mut fTemp267: F64 = (if iTemp266 != 0 { fTemp236 } else { fTemp239 });
+                let mut fTemp268: F64 = (if iTemp266 != 0 { fTemp239 } else { fTemp237 });
+                let mut fTemp269: F64 = fTemp268 + fTemp267;
+                let mut fTemp270: F64 = 0.5 * fTemp269;
+                let mut fTemp271: F64 = 524287.0 * (1.0 - fTemp270);
+                let mut iTemp272: i32 = (fTemp271) as i32;
+                let mut iTemp273: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp273, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp272, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp275: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp274, 7)) as usize] };
-                let mut fTemp276: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp274 as usize] };
-                let mut fTemp277: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp274, 1)) as usize] }
-                        - fTemp276;
-                let mut fTemp278: F64 = 262143.5 * fTemp270;
-                let mut iTemp279: i32 = (fTemp278) as i32;
-                let mut iTemp280: i32 = std::cmp::max(
+                let mut fTemp274: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp273, 7)) as usize] };
+                let mut fTemp275: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp273 as usize] };
+                let mut fTemp276: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp273, 1)) as usize] }
+                        - fTemp275;
+                let mut fTemp277: F64 = 262143.5 * fTemp269;
+                let mut iTemp278: i32 = (fTemp277) as i32;
+                let mut iTemp279: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp279, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp278, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp281: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp280, 7)) as usize] };
-                let mut fTemp282: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp280 as usize] };
-                let mut fTemp283: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp280, 1)) as usize] }
-                        - fTemp282;
-                let mut fTemp284: F64 = if iTemp67 != 0 {
-                    fTemp282
-                        + fTemp81 * fTemp283
-                        + (fTemp278 - (iTemp279) as F64)
-                            * (fTemp281
-                                - (fTemp282
-                                    + fTemp81
-                                        * (fTemp283
+                let mut fTemp280: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp279, 7)) as usize] };
+                let mut fTemp281: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp279 as usize] };
+                let mut fTemp282: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp279, 1)) as usize] }
+                        - fTemp281;
+                let mut fTemp283: F64 = (if iTemp67 != 0 {
+                    fTemp281
+                        + fTemp80 * fTemp282
+                        + (fTemp277 - (iTemp278) as F64)
+                            * (fTemp280
+                                - (fTemp281
+                                    + fTemp80
+                                        * (fTemp282
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp280, 8)) as usize]
-                                            } - fTemp281))))
+                                                    [(i32::wrapping_add(iTemp279, 8)) as usize]
+                                            } - fTemp280))))
                 } else {
-                    1.0 - (fTemp276
-                        + fTemp81 * fTemp277
-                        + (fTemp272 - (iTemp273) as F64)
-                            * (fTemp275
-                                - (fTemp276
-                                    + fTemp81
-                                        * (fTemp277
+                    1.0 - (fTemp275
+                        + fTemp80 * fTemp276
+                        + (fTemp271 - (iTemp272) as F64)
+                            * (fTemp274
+                                - (fTemp275
+                                    + fTemp80
+                                        * (fTemp276
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp274, 8)) as usize]
-                                            } - fTemp275)))))
-                };
-                let mut fTemp285: F64 = fTemp86 + fTemp271;
-                let mut fTemp286: F64 = 524287.0 * (1.0 - fTemp285);
-                let mut iTemp287: i32 = (fTemp286) as i32;
-                let mut iTemp288: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp273, 8)) as usize]
+                                            } - fTemp274)))))
+                });
+                let mut fTemp284: F64 = fTemp85 + fTemp270;
+                let mut fTemp285: F64 = 524287.0 * (1.0 - fTemp284);
+                let mut iTemp286: i32 = (fTemp285) as i32;
+                let mut iTemp287: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp287, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp286, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp289: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp288, 7)) as usize] };
-                let mut fTemp290: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp288 as usize] };
-                let mut fTemp291: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp288, 1)) as usize] }
-                        - fTemp290;
-                let mut fTemp292: F64 = 524287.0 * fTemp285;
-                let mut iTemp293: i32 = (fTemp292) as i32;
-                let mut iTemp294: i32 = std::cmp::max(
+                let mut fTemp288: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp287, 7)) as usize] };
+                let mut fTemp289: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp287 as usize] };
+                let mut fTemp290: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp287, 1)) as usize] }
+                        - fTemp289;
+                let mut fTemp291: F64 = 524287.0 * fTemp284;
+                let mut iTemp292: i32 = (fTemp291) as i32;
+                let mut iTemp293: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp293, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp292, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp295: F64 = unsafe {
+                let mut fTemp294: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp294, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp293, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp296: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp294 as usize] };
-                let mut fTemp297: F64 = unsafe {
+                let mut fTemp295: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp293 as usize] };
+                let mut fTemp296: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp294, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp293, 1), 3670015),
                     )) as usize]
-                } - fTemp296;
-                let mut iTemp298: i32 = (fTemp142
-                    > ((if iTemp67 != 0 {
-                        fTemp296
-                            + fTemp81 * fTemp297
-                            + (fTemp292 - (iTemp293) as F64)
-                                * (fTemp295
-                                    - (fTemp296
-                                        + fTemp81
-                                            * (fTemp297
+                } - fTemp295;
+                let mut iTemp297: i32 = (fTemp141
+                    > (((if iTemp67 != 0 {
+                        fTemp295
+                            + fTemp80 * fTemp296
+                            + (fTemp291 - (iTemp292) as F64)
+                                * (fTemp294
+                                    - (fTemp295
+                                        + fTemp80
+                                            * (fTemp296
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp294, 8),
+                                                            i32::wrapping_add(iTemp293, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp295))))
+                                                } - fTemp294))))
                     } else {
-                        1.0 - (fTemp290
-                            + fTemp81 * fTemp291
-                            + (fTemp286 - (iTemp287) as F64)
-                                * (fTemp289
-                                    - (fTemp290
-                                        + fTemp81
-                                            * (fTemp291
+                        1.0 - (fTemp289
+                            + fTemp80 * fTemp290
+                            + (fTemp285 - (iTemp286) as F64)
+                                * (fTemp288
+                                    - (fTemp289
+                                        + fTemp80
+                                            * (fTemp290
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp288, 8)) as usize]
-                                                } - fTemp289)))))
-                    } - fTemp284)
-                        / (1.0 - fTemp284))) as i32;
-                let mut fTemp299: F64 = if iTemp298 != 0 { fTemp268 } else { fTemp271 };
-                let mut fTemp300: F64 = if iTemp298 != 0 { fTemp271 } else { fTemp269 };
-                let mut fTemp301: F64 = fTemp300 + fTemp299;
-                let mut fTemp302: F64 = 0.5 * fTemp301;
-                let mut fTemp303: F64 = 524287.0 * (1.0 - fTemp302);
-                let mut iTemp304: i32 = (fTemp303) as i32;
-                let mut iTemp305: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp287, 8)) as usize]
+                                                } - fTemp288)))))
+                    }) - fTemp283)
+                        / (1.0 - fTemp283))) as i32;
+                let mut fTemp298: F64 = (if iTemp297 != 0 { fTemp267 } else { fTemp270 });
+                let mut fTemp299: F64 = (if iTemp297 != 0 { fTemp270 } else { fTemp268 });
+                let mut fTemp300: F64 = fTemp299 + fTemp298;
+                let mut fTemp301: F64 = 0.5 * fTemp300;
+                let mut fTemp302: F64 = 524287.0 * (1.0 - fTemp301);
+                let mut iTemp303: i32 = (fTemp302) as i32;
+                let mut iTemp304: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp304, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp303, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp306: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp305, 7)) as usize] };
-                let mut fTemp307: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp305 as usize] };
-                let mut fTemp308: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp305, 1)) as usize] }
-                        - fTemp307;
-                let mut fTemp309: F64 = 262143.5 * fTemp301;
-                let mut iTemp310: i32 = (fTemp309) as i32;
-                let mut iTemp311: i32 = std::cmp::max(
+                let mut fTemp305: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp304, 7)) as usize] };
+                let mut fTemp306: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp304 as usize] };
+                let mut fTemp307: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp304, 1)) as usize] }
+                        - fTemp306;
+                let mut fTemp308: F64 = 262143.5 * fTemp300;
+                let mut iTemp309: i32 = (fTemp308) as i32;
+                let mut iTemp310: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp310, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp309, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp312: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp311, 7)) as usize] };
-                let mut fTemp313: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp311 as usize] };
-                let mut fTemp314: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp311, 1)) as usize] }
-                        - fTemp313;
-                let mut fTemp315: F64 = if iTemp67 != 0 {
-                    fTemp313
-                        + fTemp81 * fTemp314
-                        + (fTemp309 - (iTemp310) as F64)
-                            * (fTemp312
-                                - (fTemp313
-                                    + fTemp81
-                                        * (fTemp314
+                let mut fTemp311: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp310, 7)) as usize] };
+                let mut fTemp312: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp310 as usize] };
+                let mut fTemp313: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp310, 1)) as usize] }
+                        - fTemp312;
+                let mut fTemp314: F64 = (if iTemp67 != 0 {
+                    fTemp312
+                        + fTemp80 * fTemp313
+                        + (fTemp308 - (iTemp309) as F64)
+                            * (fTemp311
+                                - (fTemp312
+                                    + fTemp80
+                                        * (fTemp313
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp311, 8)) as usize]
-                                            } - fTemp312))))
+                                                    [(i32::wrapping_add(iTemp310, 8)) as usize]
+                                            } - fTemp311))))
                 } else {
-                    1.0 - (fTemp307
-                        + fTemp81 * fTemp308
-                        + (fTemp303 - (iTemp304) as F64)
-                            * (fTemp306
-                                - (fTemp307
-                                    + fTemp81
-                                        * (fTemp308
+                    1.0 - (fTemp306
+                        + fTemp80 * fTemp307
+                        + (fTemp302 - (iTemp303) as F64)
+                            * (fTemp305
+                                - (fTemp306
+                                    + fTemp80
+                                        * (fTemp307
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp305, 8)) as usize]
-                                            } - fTemp306)))))
-                };
-                let mut fTemp316: F64 = fTemp86 + fTemp302;
-                let mut fTemp317: F64 = 524287.0 * (1.0 - fTemp316);
-                let mut iTemp318: i32 = (fTemp317) as i32;
-                let mut iTemp319: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp304, 8)) as usize]
+                                            } - fTemp305)))))
+                });
+                let mut fTemp315: F64 = fTemp85 + fTemp301;
+                let mut fTemp316: F64 = 524287.0 * (1.0 - fTemp315);
+                let mut iTemp317: i32 = (fTemp316) as i32;
+                let mut iTemp318: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp318, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp317, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp320: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp319, 7)) as usize] };
-                let mut fTemp321: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp319 as usize] };
-                let mut fTemp322: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp319, 1)) as usize] }
-                        - fTemp321;
-                let mut fTemp323: F64 = 524287.0 * fTemp316;
-                let mut iTemp324: i32 = (fTemp323) as i32;
-                let mut iTemp325: i32 = std::cmp::max(
+                let mut fTemp319: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp318, 7)) as usize] };
+                let mut fTemp320: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp318 as usize] };
+                let mut fTemp321: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp318, 1)) as usize] }
+                        - fTemp320;
+                let mut fTemp322: F64 = 524287.0 * fTemp315;
+                let mut iTemp323: i32 = (fTemp322) as i32;
+                let mut iTemp324: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp324, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp323, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp326: F64 = unsafe {
+                let mut fTemp325: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp325, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp324, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp327: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp325 as usize] };
-                let mut fTemp328: F64 = unsafe {
+                let mut fTemp326: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp324 as usize] };
+                let mut fTemp327: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp325, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp324, 1), 3670015),
                     )) as usize]
-                } - fTemp327;
-                let mut iTemp329: i32 = (fTemp142
-                    > ((if iTemp67 != 0 {
-                        fTemp327
-                            + fTemp81 * fTemp328
-                            + (fTemp323 - (iTemp324) as F64)
-                                * (fTemp326
-                                    - (fTemp327
-                                        + fTemp81
-                                            * (fTemp328
+                } - fTemp326;
+                let mut iTemp328: i32 = (fTemp141
+                    > (((if iTemp67 != 0 {
+                        fTemp326
+                            + fTemp80 * fTemp327
+                            + (fTemp322 - (iTemp323) as F64)
+                                * (fTemp325
+                                    - (fTemp326
+                                        + fTemp80
+                                            * (fTemp327
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp325, 8),
+                                                            i32::wrapping_add(iTemp324, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp326))))
+                                                } - fTemp325))))
                     } else {
-                        1.0 - (fTemp321
-                            + fTemp81 * fTemp322
-                            + (fTemp317 - (iTemp318) as F64)
-                                * (fTemp320
-                                    - (fTemp321
-                                        + fTemp81
-                                            * (fTemp322
+                        1.0 - (fTemp320
+                            + fTemp80 * fTemp321
+                            + (fTemp316 - (iTemp317) as F64)
+                                * (fTemp319
+                                    - (fTemp320
+                                        + fTemp80
+                                            * (fTemp321
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp319, 8)) as usize]
-                                                } - fTemp320)))))
-                    } - fTemp315)
-                        / (1.0 - fTemp315))) as i32;
-                let mut fTemp330: F64 = if iTemp329 != 0 { fTemp299 } else { fTemp302 };
-                let mut fTemp331: F64 = if iTemp329 != 0 { fTemp302 } else { fTemp300 };
-                let mut fTemp332: F64 = fTemp331 + fTemp330;
-                let mut fTemp333: F64 = 0.5 * fTemp332;
-                let mut fTemp334: F64 = 524287.0 * (1.0 - fTemp333);
-                let mut iTemp335: i32 = (fTemp334) as i32;
-                let mut iTemp336: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp318, 8)) as usize]
+                                                } - fTemp319)))))
+                    }) - fTemp314)
+                        / (1.0 - fTemp314))) as i32;
+                let mut fTemp329: F64 = (if iTemp328 != 0 { fTemp298 } else { fTemp301 });
+                let mut fTemp330: F64 = (if iTemp328 != 0 { fTemp301 } else { fTemp299 });
+                let mut fTemp331: F64 = fTemp330 + fTemp329;
+                let mut fTemp332: F64 = 0.5 * fTemp331;
+                let mut fTemp333: F64 = 524287.0 * (1.0 - fTemp332);
+                let mut iTemp334: i32 = (fTemp333) as i32;
+                let mut iTemp335: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp335, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp334, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp337: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp336, 7)) as usize] };
-                let mut fTemp338: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp336 as usize] };
-                let mut fTemp339: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp336, 1)) as usize] }
-                        - fTemp338;
-                let mut fTemp340: F64 = 262143.5 * fTemp332;
-                let mut iTemp341: i32 = (fTemp340) as i32;
-                let mut iTemp342: i32 = std::cmp::max(
+                let mut fTemp336: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp335, 7)) as usize] };
+                let mut fTemp337: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp335 as usize] };
+                let mut fTemp338: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp335, 1)) as usize] }
+                        - fTemp337;
+                let mut fTemp339: F64 = 262143.5 * fTemp331;
+                let mut iTemp340: i32 = (fTemp339) as i32;
+                let mut iTemp341: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp341, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp340, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp343: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp342, 7)) as usize] };
-                let mut fTemp344: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp342 as usize] };
-                let mut fTemp345: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp342, 1)) as usize] }
-                        - fTemp344;
-                let mut fTemp346: F64 = if iTemp67 != 0 {
-                    fTemp344
-                        + fTemp81 * fTemp345
-                        + (fTemp340 - (iTemp341) as F64)
-                            * (fTemp343
-                                - (fTemp344
-                                    + fTemp81
-                                        * (fTemp345
+                let mut fTemp342: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp341, 7)) as usize] };
+                let mut fTemp343: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp341 as usize] };
+                let mut fTemp344: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp341, 1)) as usize] }
+                        - fTemp343;
+                let mut fTemp345: F64 = (if iTemp67 != 0 {
+                    fTemp343
+                        + fTemp80 * fTemp344
+                        + (fTemp339 - (iTemp340) as F64)
+                            * (fTemp342
+                                - (fTemp343
+                                    + fTemp80
+                                        * (fTemp344
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp342, 8)) as usize]
-                                            } - fTemp343))))
+                                                    [(i32::wrapping_add(iTemp341, 8)) as usize]
+                                            } - fTemp342))))
                 } else {
-                    1.0 - (fTemp338
-                        + fTemp81 * fTemp339
-                        + (fTemp334 - (iTemp335) as F64)
-                            * (fTemp337
-                                - (fTemp338
-                                    + fTemp81
-                                        * (fTemp339
+                    1.0 - (fTemp337
+                        + fTemp80 * fTemp338
+                        + (fTemp333 - (iTemp334) as F64)
+                            * (fTemp336
+                                - (fTemp337
+                                    + fTemp80
+                                        * (fTemp338
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp336, 8)) as usize]
-                                            } - fTemp337)))))
-                };
-                let mut fTemp347: F64 = fTemp86 + fTemp333;
-                let mut fTemp348: F64 = 524287.0 * (1.0 - fTemp347);
-                let mut iTemp349: i32 = (fTemp348) as i32;
-                let mut iTemp350: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp335, 8)) as usize]
+                                            } - fTemp336)))))
+                });
+                let mut fTemp346: F64 = fTemp85 + fTemp332;
+                let mut fTemp347: F64 = 524287.0 * (1.0 - fTemp346);
+                let mut iTemp348: i32 = (fTemp347) as i32;
+                let mut iTemp349: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp349, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp348, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp351: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp350, 7)) as usize] };
-                let mut fTemp352: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp350 as usize] };
-                let mut fTemp353: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp350, 1)) as usize] }
-                        - fTemp352;
-                let mut fTemp354: F64 = 524287.0 * fTemp347;
-                let mut iTemp355: i32 = (fTemp354) as i32;
-                let mut iTemp356: i32 = std::cmp::max(
+                let mut fTemp350: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp349, 7)) as usize] };
+                let mut fTemp351: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp349 as usize] };
+                let mut fTemp352: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp349, 1)) as usize] }
+                        - fTemp351;
+                let mut fTemp353: F64 = 524287.0 * fTemp346;
+                let mut iTemp354: i32 = (fTemp353) as i32;
+                let mut iTemp355: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp355, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp354, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp357: F64 = unsafe {
+                let mut fTemp356: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp356, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp355, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp358: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp356 as usize] };
-                let mut fTemp359: F64 = unsafe {
+                let mut fTemp357: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp355 as usize] };
+                let mut fTemp358: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp356, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp355, 1), 3670015),
                     )) as usize]
-                } - fTemp358;
-                let mut iTemp360: i32 = (fTemp142
-                    > ((if iTemp67 != 0 {
-                        fTemp358
-                            + fTemp81 * fTemp359
-                            + (fTemp354 - (iTemp355) as F64)
-                                * (fTemp357
-                                    - (fTemp358
-                                        + fTemp81
-                                            * (fTemp359
+                } - fTemp357;
+                let mut iTemp359: i32 = (fTemp141
+                    > (((if iTemp67 != 0 {
+                        fTemp357
+                            + fTemp80 * fTemp358
+                            + (fTemp353 - (iTemp354) as F64)
+                                * (fTemp356
+                                    - (fTemp357
+                                        + fTemp80
+                                            * (fTemp358
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp356, 8),
+                                                            i32::wrapping_add(iTemp355, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp357))))
+                                                } - fTemp356))))
                     } else {
-                        1.0 - (fTemp352
-                            + fTemp81 * fTemp353
-                            + (fTemp348 - (iTemp349) as F64)
-                                * (fTemp351
-                                    - (fTemp352
-                                        + fTemp81
-                                            * (fTemp353
+                        1.0 - (fTemp351
+                            + fTemp80 * fTemp352
+                            + (fTemp347 - (iTemp348) as F64)
+                                * (fTemp350
+                                    - (fTemp351
+                                        + fTemp80
+                                            * (fTemp352
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp350, 8)) as usize]
-                                                } - fTemp351)))))
-                    } - fTemp346)
-                        / (1.0 - fTemp346))) as i32;
-                let mut fTemp361: F64 = if iTemp360 != 0 { fTemp330 } else { fTemp333 };
-                let mut fTemp362: F64 = if iTemp360 != 0 { fTemp333 } else { fTemp331 };
-                let mut fTemp363: F64 = fTemp362 + fTemp361;
-                let mut fTemp364: F64 = 0.5 * fTemp363;
-                let mut fTemp365: F64 = 524287.0 * (1.0 - fTemp364);
-                let mut iTemp366: i32 = (fTemp365) as i32;
-                let mut iTemp367: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp349, 8)) as usize]
+                                                } - fTemp350)))))
+                    }) - fTemp345)
+                        / (1.0 - fTemp345))) as i32;
+                let mut fTemp360: F64 = (if iTemp359 != 0 { fTemp329 } else { fTemp332 });
+                let mut fTemp361: F64 = (if iTemp359 != 0 { fTemp332 } else { fTemp330 });
+                let mut fTemp362: F64 = fTemp361 + fTemp360;
+                let mut fTemp363: F64 = 0.5 * fTemp362;
+                let mut fTemp364: F64 = 524287.0 * (1.0 - fTemp363);
+                let mut iTemp365: i32 = (fTemp364) as i32;
+                let mut iTemp366: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp366, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp365, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp368: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp367, 7)) as usize] };
-                let mut fTemp369: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp367 as usize] };
-                let mut fTemp370: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp367, 1)) as usize] }
-                        - fTemp369;
-                let mut fTemp371: F64 = 262143.5 * fTemp363;
-                let mut iTemp372: i32 = (fTemp371) as i32;
-                let mut iTemp373: i32 = std::cmp::max(
+                let mut fTemp367: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp366, 7)) as usize] };
+                let mut fTemp368: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp366 as usize] };
+                let mut fTemp369: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp366, 1)) as usize] }
+                        - fTemp368;
+                let mut fTemp370: F64 = 262143.5 * fTemp362;
+                let mut iTemp371: i32 = (fTemp370) as i32;
+                let mut iTemp372: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp372, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp371, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp374: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp373, 7)) as usize] };
-                let mut fTemp375: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp373 as usize] };
-                let mut fTemp376: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp373, 1)) as usize] }
-                        - fTemp375;
-                let mut fTemp377: F64 = if iTemp67 != 0 {
-                    fTemp375
-                        + fTemp81 * fTemp376
-                        + (fTemp371 - (iTemp372) as F64)
-                            * (fTemp374
-                                - (fTemp375
-                                    + fTemp81
-                                        * (fTemp376
+                let mut fTemp373: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp372, 7)) as usize] };
+                let mut fTemp374: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp372 as usize] };
+                let mut fTemp375: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp372, 1)) as usize] }
+                        - fTemp374;
+                let mut fTemp376: F64 = (if iTemp67 != 0 {
+                    fTemp374
+                        + fTemp80 * fTemp375
+                        + (fTemp370 - (iTemp371) as F64)
+                            * (fTemp373
+                                - (fTemp374
+                                    + fTemp80
+                                        * (fTemp375
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp373, 8)) as usize]
-                                            } - fTemp374))))
+                                                    [(i32::wrapping_add(iTemp372, 8)) as usize]
+                                            } - fTemp373))))
                 } else {
-                    1.0 - (fTemp369
-                        + fTemp81 * fTemp370
-                        + (fTemp365 - (iTemp366) as F64)
-                            * (fTemp368
-                                - (fTemp369
-                                    + fTemp81
-                                        * (fTemp370
+                    1.0 - (fTemp368
+                        + fTemp80 * fTemp369
+                        + (fTemp364 - (iTemp365) as F64)
+                            * (fTemp367
+                                - (fTemp368
+                                    + fTemp80
+                                        * (fTemp369
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp367, 8)) as usize]
-                                            } - fTemp368)))))
-                };
-                let mut fTemp378: F64 = fTemp86 + fTemp364;
-                let mut fTemp379: F64 = 524287.0 * (1.0 - fTemp378);
-                let mut iTemp380: i32 = (fTemp379) as i32;
-                let mut iTemp381: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp366, 8)) as usize]
+                                            } - fTemp367)))))
+                });
+                let mut fTemp377: F64 = fTemp85 + fTemp363;
+                let mut fTemp378: F64 = 524287.0 * (1.0 - fTemp377);
+                let mut iTemp379: i32 = (fTemp378) as i32;
+                let mut iTemp380: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp380, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp379, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp382: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp381, 7)) as usize] };
-                let mut fTemp383: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp381 as usize] };
-                let mut fTemp384: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp381, 1)) as usize] }
-                        - fTemp383;
-                let mut fTemp385: F64 = 524287.0 * fTemp378;
-                let mut iTemp386: i32 = (fTemp385) as i32;
-                let mut iTemp387: i32 = std::cmp::max(
+                let mut fTemp381: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp380, 7)) as usize] };
+                let mut fTemp382: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp380 as usize] };
+                let mut fTemp383: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp380, 1)) as usize] }
+                        - fTemp382;
+                let mut fTemp384: F64 = 524287.0 * fTemp377;
+                let mut iTemp385: i32 = (fTemp384) as i32;
+                let mut iTemp386: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp386, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp385, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp388: F64 = unsafe {
+                let mut fTemp387: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp387, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp386, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp389: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp387 as usize] };
-                let mut fTemp390: F64 = unsafe {
+                let mut fTemp388: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp386 as usize] };
+                let mut fTemp389: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp387, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp386, 1), 3670015),
                     )) as usize]
-                } - fTemp389;
-                let mut iTemp391: i32 = (fTemp142
-                    > ((if iTemp67 != 0 {
-                        fTemp389
-                            + fTemp81 * fTemp390
-                            + (fTemp385 - (iTemp386) as F64)
-                                * (fTemp388
-                                    - (fTemp389
-                                        + fTemp81
-                                            * (fTemp390
+                } - fTemp388;
+                let mut iTemp390: i32 = (fTemp141
+                    > (((if iTemp67 != 0 {
+                        fTemp388
+                            + fTemp80 * fTemp389
+                            + (fTemp384 - (iTemp385) as F64)
+                                * (fTemp387
+                                    - (fTemp388
+                                        + fTemp80
+                                            * (fTemp389
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp387, 8),
+                                                            i32::wrapping_add(iTemp386, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp388))))
+                                                } - fTemp387))))
                     } else {
-                        1.0 - (fTemp383
-                            + fTemp81 * fTemp384
-                            + (fTemp379 - (iTemp380) as F64)
-                                * (fTemp382
-                                    - (fTemp383
-                                        + fTemp81
-                                            * (fTemp384
+                        1.0 - (fTemp382
+                            + fTemp80 * fTemp383
+                            + (fTemp378 - (iTemp379) as F64)
+                                * (fTemp381
+                                    - (fTemp382
+                                        + fTemp80
+                                            * (fTemp383
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp381, 8)) as usize]
-                                                } - fTemp382)))))
-                    } - fTemp377)
-                        / (1.0 - fTemp377))) as i32;
-                let mut fTemp392: F64 = if iTemp391 != 0 { fTemp361 } else { fTemp364 };
-                let mut fTemp393: F64 = if iTemp391 != 0 { fTemp364 } else { fTemp362 };
-                let mut fTemp394: F64 = fTemp393 + fTemp392;
-                let mut fTemp395: F64 = 0.5 * fTemp394;
-                let mut fTemp396: F64 = 524287.0 * (1.0 - fTemp395);
-                let mut iTemp397: i32 = (fTemp396) as i32;
-                let mut iTemp398: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp380, 8)) as usize]
+                                                } - fTemp381)))))
+                    }) - fTemp376)
+                        / (1.0 - fTemp376))) as i32;
+                let mut fTemp391: F64 = (if iTemp390 != 0 { fTemp360 } else { fTemp363 });
+                let mut fTemp392: F64 = (if iTemp390 != 0 { fTemp363 } else { fTemp361 });
+                let mut fTemp393: F64 = fTemp392 + fTemp391;
+                let mut fTemp394: F64 = 0.5 * fTemp393;
+                let mut fTemp395: F64 = 524287.0 * (1.0 - fTemp394);
+                let mut iTemp396: i32 = (fTemp395) as i32;
+                let mut iTemp397: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp397, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp396, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp399: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp398, 7)) as usize] };
-                let mut fTemp400: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp398 as usize] };
-                let mut fTemp401: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp398, 1)) as usize] }
-                        - fTemp400;
-                let mut fTemp402: F64 = 262143.5 * fTemp394;
-                let mut iTemp403: i32 = (fTemp402) as i32;
-                let mut iTemp404: i32 = std::cmp::max(
+                let mut fTemp398: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp397, 7)) as usize] };
+                let mut fTemp399: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp397 as usize] };
+                let mut fTemp400: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp397, 1)) as usize] }
+                        - fTemp399;
+                let mut fTemp401: F64 = 262143.5 * fTemp393;
+                let mut iTemp402: i32 = (fTemp401) as i32;
+                let mut iTemp403: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp403, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp402, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp405: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp404, 7)) as usize] };
-                let mut fTemp406: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp404 as usize] };
-                let mut fTemp407: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp404, 1)) as usize] }
-                        - fTemp406;
-                let mut fTemp408: F64 = if iTemp67 != 0 {
-                    fTemp406
-                        + fTemp81 * fTemp407
-                        + (fTemp402 - (iTemp403) as F64)
-                            * (fTemp405
-                                - (fTemp406
-                                    + fTemp81
-                                        * (fTemp407
+                let mut fTemp404: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp403, 7)) as usize] };
+                let mut fTemp405: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp403 as usize] };
+                let mut fTemp406: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp403, 1)) as usize] }
+                        - fTemp405;
+                let mut fTemp407: F64 = (if iTemp67 != 0 {
+                    fTemp405
+                        + fTemp80 * fTemp406
+                        + (fTemp401 - (iTemp402) as F64)
+                            * (fTemp404
+                                - (fTemp405
+                                    + fTemp80
+                                        * (fTemp406
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp404, 8)) as usize]
-                                            } - fTemp405))))
+                                                    [(i32::wrapping_add(iTemp403, 8)) as usize]
+                                            } - fTemp404))))
                 } else {
-                    1.0 - (fTemp400
-                        + fTemp81 * fTemp401
-                        + (fTemp396 - (iTemp397) as F64)
-                            * (fTemp399
-                                - (fTemp400
-                                    + fTemp81
-                                        * (fTemp401
+                    1.0 - (fTemp399
+                        + fTemp80 * fTemp400
+                        + (fTemp395 - (iTemp396) as F64)
+                            * (fTemp398
+                                - (fTemp399
+                                    + fTemp80
+                                        * (fTemp400
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp398, 8)) as usize]
-                                            } - fTemp399)))))
-                };
-                let mut fTemp409: F64 = fTemp86 + fTemp395;
-                let mut fTemp410: F64 = 524287.0 * (1.0 - fTemp409);
-                let mut iTemp411: i32 = (fTemp410) as i32;
-                let mut iTemp412: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp397, 8)) as usize]
+                                            } - fTemp398)))))
+                });
+                let mut fTemp408: F64 = fTemp85 + fTemp394;
+                let mut fTemp409: F64 = 524287.0 * (1.0 - fTemp408);
+                let mut iTemp410: i32 = (fTemp409) as i32;
+                let mut iTemp411: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp411, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp410, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp413: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp412, 7)) as usize] };
-                let mut fTemp414: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp412 as usize] };
-                let mut fTemp415: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp412, 1)) as usize] }
-                        - fTemp414;
-                let mut fTemp416: F64 = 524287.0 * fTemp409;
-                let mut iTemp417: i32 = (fTemp416) as i32;
-                let mut iTemp418: i32 = std::cmp::max(
+                let mut fTemp412: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp411, 7)) as usize] };
+                let mut fTemp413: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp411 as usize] };
+                let mut fTemp414: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp411, 1)) as usize] }
+                        - fTemp413;
+                let mut fTemp415: F64 = 524287.0 * fTemp408;
+                let mut iTemp416: i32 = (fTemp415) as i32;
+                let mut iTemp417: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp417, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp416, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp419: F64 = unsafe {
+                let mut fTemp418: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp418, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp417, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp420: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp418 as usize] };
-                let mut fTemp421: F64 = unsafe {
+                let mut fTemp419: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp417 as usize] };
+                let mut fTemp420: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp418, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp417, 1), 3670015),
                     )) as usize]
-                } - fTemp420;
-                let mut iTemp422: i32 = (fTemp142
-                    > ((if iTemp67 != 0 {
-                        fTemp420
-                            + fTemp81 * fTemp421
-                            + (fTemp416 - (iTemp417) as F64)
-                                * (fTemp419
-                                    - (fTemp420
-                                        + fTemp81
-                                            * (fTemp421
+                } - fTemp419;
+                let mut iTemp421: i32 = (fTemp141
+                    > (((if iTemp67 != 0 {
+                        fTemp419
+                            + fTemp80 * fTemp420
+                            + (fTemp415 - (iTemp416) as F64)
+                                * (fTemp418
+                                    - (fTemp419
+                                        + fTemp80
+                                            * (fTemp420
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp418, 8),
+                                                            i32::wrapping_add(iTemp417, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp419))))
+                                                } - fTemp418))))
                     } else {
-                        1.0 - (fTemp414
-                            + fTemp81 * fTemp415
-                            + (fTemp410 - (iTemp411) as F64)
-                                * (fTemp413
-                                    - (fTemp414
-                                        + fTemp81
-                                            * (fTemp415
+                        1.0 - (fTemp413
+                            + fTemp80 * fTemp414
+                            + (fTemp409 - (iTemp410) as F64)
+                                * (fTemp412
+                                    - (fTemp413
+                                        + fTemp80
+                                            * (fTemp414
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp412, 8)) as usize]
-                                                } - fTemp413)))))
-                    } - fTemp408)
-                        / (1.0 - fTemp408))) as i32;
-                let mut fTemp423: F64 = if iTemp422 != 0 { fTemp392 } else { fTemp395 };
-                let mut fTemp424: F64 = if iTemp422 != 0 { fTemp395 } else { fTemp393 };
-                let mut fTemp425: F64 = fTemp424 + fTemp423;
-                let mut fTemp426: F64 = 0.5 * fTemp425;
-                let mut fTemp427: F64 = 524287.0 * (1.0 - fTemp426);
-                let mut iTemp428: i32 = (fTemp427) as i32;
-                let mut iTemp429: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp411, 8)) as usize]
+                                                } - fTemp412)))))
+                    }) - fTemp407)
+                        / (1.0 - fTemp407))) as i32;
+                let mut fTemp422: F64 = (if iTemp421 != 0 { fTemp391 } else { fTemp394 });
+                let mut fTemp423: F64 = (if iTemp421 != 0 { fTemp394 } else { fTemp392 });
+                let mut fTemp424: F64 = fTemp423 + fTemp422;
+                let mut fTemp425: F64 = 0.5 * fTemp424;
+                let mut fTemp426: F64 = 524287.0 * (1.0 - fTemp425);
+                let mut iTemp427: i32 = (fTemp426) as i32;
+                let mut iTemp428: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp428, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp427, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp430: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp429, 7)) as usize] };
-                let mut fTemp431: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp429 as usize] };
-                let mut fTemp432: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp429, 1)) as usize] }
-                        - fTemp431;
-                let mut fTemp433: F64 = 262143.5 * fTemp425;
-                let mut iTemp434: i32 = (fTemp433) as i32;
-                let mut iTemp435: i32 = std::cmp::max(
+                let mut fTemp429: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp428, 7)) as usize] };
+                let mut fTemp430: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp428 as usize] };
+                let mut fTemp431: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp428, 1)) as usize] }
+                        - fTemp430;
+                let mut fTemp432: F64 = 262143.5 * fTemp424;
+                let mut iTemp433: i32 = (fTemp432) as i32;
+                let mut iTemp434: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp434, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp433, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp436: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp435, 7)) as usize] };
-                let mut fTemp437: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp435 as usize] };
-                let mut fTemp438: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp435, 1)) as usize] }
-                        - fTemp437;
-                let mut fTemp439: F64 = if iTemp67 != 0 {
-                    fTemp437
-                        + fTemp81 * fTemp438
-                        + (fTemp433 - (iTemp434) as F64)
-                            * (fTemp436
-                                - (fTemp437
-                                    + fTemp81
-                                        * (fTemp438
+                let mut fTemp435: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp434, 7)) as usize] };
+                let mut fTemp436: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp434 as usize] };
+                let mut fTemp437: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp434, 1)) as usize] }
+                        - fTemp436;
+                let mut fTemp438: F64 = (if iTemp67 != 0 {
+                    fTemp436
+                        + fTemp80 * fTemp437
+                        + (fTemp432 - (iTemp433) as F64)
+                            * (fTemp435
+                                - (fTemp436
+                                    + fTemp80
+                                        * (fTemp437
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp435, 8)) as usize]
-                                            } - fTemp436))))
+                                                    [(i32::wrapping_add(iTemp434, 8)) as usize]
+                                            } - fTemp435))))
                 } else {
-                    1.0 - (fTemp431
-                        + fTemp81 * fTemp432
-                        + (fTemp427 - (iTemp428) as F64)
-                            * (fTemp430
-                                - (fTemp431
-                                    + fTemp81
-                                        * (fTemp432
+                    1.0 - (fTemp430
+                        + fTemp80 * fTemp431
+                        + (fTemp426 - (iTemp427) as F64)
+                            * (fTemp429
+                                - (fTemp430
+                                    + fTemp80
+                                        * (fTemp431
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp429, 8)) as usize]
-                                            } - fTemp430)))))
-                };
-                let mut fTemp440: F64 = fTemp86 + fTemp426;
-                let mut fTemp441: F64 = 524287.0 * (1.0 - fTemp440);
-                let mut iTemp442: i32 = (fTemp441) as i32;
-                let mut iTemp443: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp428, 8)) as usize]
+                                            } - fTemp429)))))
+                });
+                let mut fTemp439: F64 = fTemp85 + fTemp425;
+                let mut fTemp440: F64 = 524287.0 * (1.0 - fTemp439);
+                let mut iTemp441: i32 = (fTemp440) as i32;
+                let mut iTemp442: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp442, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp441, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp444: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp443, 7)) as usize] };
-                let mut fTemp445: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp443 as usize] };
-                let mut fTemp446: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp443, 1)) as usize] }
-                        - fTemp445;
-                let mut fTemp447: F64 = 524287.0 * fTemp440;
-                let mut iTemp448: i32 = (fTemp447) as i32;
-                let mut iTemp449: i32 = std::cmp::max(
+                let mut fTemp443: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp442, 7)) as usize] };
+                let mut fTemp444: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp442 as usize] };
+                let mut fTemp445: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp442, 1)) as usize] }
+                        - fTemp444;
+                let mut fTemp446: F64 = 524287.0 * fTemp439;
+                let mut iTemp447: i32 = (fTemp446) as i32;
+                let mut iTemp448: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp448, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp447, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp450: F64 = unsafe {
+                let mut fTemp449: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp449, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp448, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp451: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp449 as usize] };
-                let mut fTemp452: F64 = unsafe {
+                let mut fTemp450: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp448 as usize] };
+                let mut fTemp451: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp449, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp448, 1), 3670015),
                     )) as usize]
-                } - fTemp451;
-                let mut iTemp453: i32 = (fTemp142
-                    > ((if iTemp67 != 0 {
-                        fTemp451
-                            + fTemp81 * fTemp452
-                            + (fTemp447 - (iTemp448) as F64)
-                                * (fTemp450
-                                    - (fTemp451
-                                        + fTemp81
-                                            * (fTemp452
+                } - fTemp450;
+                let mut iTemp452: i32 = (fTemp141
+                    > (((if iTemp67 != 0 {
+                        fTemp450
+                            + fTemp80 * fTemp451
+                            + (fTemp446 - (iTemp447) as F64)
+                                * (fTemp449
+                                    - (fTemp450
+                                        + fTemp80
+                                            * (fTemp451
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp449, 8),
+                                                            i32::wrapping_add(iTemp448, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp450))))
+                                                } - fTemp449))))
                     } else {
-                        1.0 - (fTemp445
-                            + fTemp81 * fTemp446
-                            + (fTemp441 - (iTemp442) as F64)
-                                * (fTemp444
-                                    - (fTemp445
-                                        + fTemp81
-                                            * (fTemp446
+                        1.0 - (fTemp444
+                            + fTemp80 * fTemp445
+                            + (fTemp440 - (iTemp441) as F64)
+                                * (fTemp443
+                                    - (fTemp444
+                                        + fTemp80
+                                            * (fTemp445
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp443, 8)) as usize]
-                                                } - fTemp444)))))
-                    } - fTemp439)
-                        / (1.0 - fTemp439))) as i32;
-                let mut fTemp454: F64 = if iTemp453 != 0 { fTemp423 } else { fTemp426 };
-                let mut fTemp455: F64 = if iTemp453 != 0 { fTemp426 } else { fTemp424 };
-                let mut fTemp456: F64 = fTemp455 + fTemp454;
-                let mut fTemp457: F64 = 0.5 * fTemp456;
-                let mut fTemp458: F64 = 524287.0 * (1.0 - fTemp457);
-                let mut iTemp459: i32 = (fTemp458) as i32;
-                let mut iTemp460: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp442, 8)) as usize]
+                                                } - fTemp443)))))
+                    }) - fTemp438)
+                        / (1.0 - fTemp438))) as i32;
+                let mut fTemp453: F64 = (if iTemp452 != 0 { fTemp422 } else { fTemp425 });
+                let mut fTemp454: F64 = (if iTemp452 != 0 { fTemp425 } else { fTemp423 });
+                let mut fTemp455: F64 = fTemp454 + fTemp453;
+                let mut fTemp456: F64 = 0.5 * fTemp455;
+                let mut fTemp457: F64 = 524287.0 * (1.0 - fTemp456);
+                let mut iTemp458: i32 = (fTemp457) as i32;
+                let mut iTemp459: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp459, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp458, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp461: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp460, 7)) as usize] };
-                let mut fTemp462: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp460 as usize] };
-                let mut fTemp463: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp460, 1)) as usize] }
-                        - fTemp462;
-                let mut fTemp464: F64 = 262143.5 * fTemp456;
-                let mut iTemp465: i32 = (fTemp464) as i32;
-                let mut iTemp466: i32 = std::cmp::max(
+                let mut fTemp460: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp459, 7)) as usize] };
+                let mut fTemp461: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp459 as usize] };
+                let mut fTemp462: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp459, 1)) as usize] }
+                        - fTemp461;
+                let mut fTemp463: F64 = 262143.5 * fTemp455;
+                let mut iTemp464: i32 = (fTemp463) as i32;
+                let mut iTemp465: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp465, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp464, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp467: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp466, 7)) as usize] };
-                let mut fTemp468: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp466 as usize] };
-                let mut fTemp469: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp466, 1)) as usize] }
-                        - fTemp468;
-                let mut fTemp470: F64 = if iTemp67 != 0 {
-                    fTemp468
-                        + fTemp81 * fTemp469
-                        + (fTemp464 - (iTemp465) as F64)
-                            * (fTemp467
-                                - (fTemp468
-                                    + fTemp81
-                                        * (fTemp469
+                let mut fTemp466: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp465, 7)) as usize] };
+                let mut fTemp467: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp465 as usize] };
+                let mut fTemp468: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp465, 1)) as usize] }
+                        - fTemp467;
+                let mut fTemp469: F64 = (if iTemp67 != 0 {
+                    fTemp467
+                        + fTemp80 * fTemp468
+                        + (fTemp463 - (iTemp464) as F64)
+                            * (fTemp466
+                                - (fTemp467
+                                    + fTemp80
+                                        * (fTemp468
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp466, 8)) as usize]
-                                            } - fTemp467))))
+                                                    [(i32::wrapping_add(iTemp465, 8)) as usize]
+                                            } - fTemp466))))
                 } else {
-                    1.0 - (fTemp462
-                        + fTemp81 * fTemp463
-                        + (fTemp458 - (iTemp459) as F64)
-                            * (fTemp461
-                                - (fTemp462
-                                    + fTemp81
-                                        * (fTemp463
+                    1.0 - (fTemp461
+                        + fTemp80 * fTemp462
+                        + (fTemp457 - (iTemp458) as F64)
+                            * (fTemp460
+                                - (fTemp461
+                                    + fTemp80
+                                        * (fTemp462
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp460, 8)) as usize]
-                                            } - fTemp461)))))
-                };
-                let mut fTemp471: F64 = fTemp86 + fTemp457;
-                let mut fTemp472: F64 = 524287.0 * (1.0 - fTemp471);
-                let mut iTemp473: i32 = (fTemp472) as i32;
-                let mut iTemp474: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp459, 8)) as usize]
+                                            } - fTemp460)))))
+                });
+                let mut fTemp470: F64 = fTemp85 + fTemp456;
+                let mut fTemp471: F64 = 524287.0 * (1.0 - fTemp470);
+                let mut iTemp472: i32 = (fTemp471) as i32;
+                let mut iTemp473: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp473, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp472, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp475: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp474, 7)) as usize] };
-                let mut fTemp476: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp474 as usize] };
-                let mut fTemp477: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp474, 1)) as usize] }
-                        - fTemp476;
-                let mut fTemp478: F64 = 524287.0 * fTemp471;
-                let mut iTemp479: i32 = (fTemp478) as i32;
-                let mut iTemp480: i32 = std::cmp::max(
+                let mut fTemp474: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp473, 7)) as usize] };
+                let mut fTemp475: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp473 as usize] };
+                let mut fTemp476: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp473, 1)) as usize] }
+                        - fTemp475;
+                let mut fTemp477: F64 = 524287.0 * fTemp470;
+                let mut iTemp478: i32 = (fTemp477) as i32;
+                let mut iTemp479: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp479, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp478, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp481: F64 = unsafe {
+                let mut fTemp480: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp480, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp479, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp482: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp480 as usize] };
-                let mut fTemp483: F64 = unsafe {
+                let mut fTemp481: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp479 as usize] };
+                let mut fTemp482: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp480, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp479, 1), 3670015),
                     )) as usize]
-                } - fTemp482;
-                let mut iTemp484: i32 = (fTemp142
-                    > ((if iTemp67 != 0 {
-                        fTemp482
-                            + fTemp81 * fTemp483
-                            + (fTemp478 - (iTemp479) as F64)
-                                * (fTemp481
-                                    - (fTemp482
-                                        + fTemp81
-                                            * (fTemp483
+                } - fTemp481;
+                let mut iTemp483: i32 = (fTemp141
+                    > (((if iTemp67 != 0 {
+                        fTemp481
+                            + fTemp80 * fTemp482
+                            + (fTemp477 - (iTemp478) as F64)
+                                * (fTemp480
+                                    - (fTemp481
+                                        + fTemp80
+                                            * (fTemp482
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp480, 8),
+                                                            i32::wrapping_add(iTemp479, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp481))))
+                                                } - fTemp480))))
                     } else {
-                        1.0 - (fTemp476
-                            + fTemp81 * fTemp477
-                            + (fTemp472 - (iTemp473) as F64)
-                                * (fTemp475
-                                    - (fTemp476
-                                        + fTemp81
-                                            * (fTemp477
+                        1.0 - (fTemp475
+                            + fTemp80 * fTemp476
+                            + (fTemp471 - (iTemp472) as F64)
+                                * (fTemp474
+                                    - (fTemp475
+                                        + fTemp80
+                                            * (fTemp476
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp474, 8)) as usize]
-                                                } - fTemp475)))))
-                    } - fTemp470)
-                        / (1.0 - fTemp470))) as i32;
-                let mut fTemp485: F64 = if iTemp484 != 0 { fTemp454 } else { fTemp457 };
-                let mut fTemp486: F64 = if iTemp484 != 0 { fTemp457 } else { fTemp455 };
-                let mut fTemp487: F64 = fTemp486 + fTemp485;
-                let mut fTemp488: F64 = 0.5 * fTemp487;
-                let mut fTemp489: F64 = 524287.0 * (1.0 - fTemp488);
-                let mut iTemp490: i32 = (fTemp489) as i32;
-                let mut iTemp491: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp473, 8)) as usize]
+                                                } - fTemp474)))))
+                    }) - fTemp469)
+                        / (1.0 - fTemp469))) as i32;
+                let mut fTemp484: F64 = (if iTemp483 != 0 { fTemp453 } else { fTemp456 });
+                let mut fTemp485: F64 = (if iTemp483 != 0 { fTemp456 } else { fTemp454 });
+                let mut fTemp486: F64 = fTemp485 + fTemp484;
+                let mut fTemp487: F64 = 0.5 * fTemp486;
+                let mut fTemp488: F64 = 524287.0 * (1.0 - fTemp487);
+                let mut iTemp489: i32 = (fTemp488) as i32;
+                let mut iTemp490: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp490, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp489, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp492: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp491, 7)) as usize] };
-                let mut fTemp493: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp491 as usize] };
-                let mut fTemp494: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp491, 1)) as usize] }
-                        - fTemp493;
-                let mut fTemp495: F64 = 262143.5 * fTemp487;
-                let mut iTemp496: i32 = (fTemp495) as i32;
-                let mut iTemp497: i32 = std::cmp::max(
+                let mut fTemp491: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp490, 7)) as usize] };
+                let mut fTemp492: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp490 as usize] };
+                let mut fTemp493: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp490, 1)) as usize] }
+                        - fTemp492;
+                let mut fTemp494: F64 = 262143.5 * fTemp486;
+                let mut iTemp495: i32 = (fTemp494) as i32;
+                let mut iTemp496: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp496, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp495, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp498: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp497, 7)) as usize] };
-                let mut fTemp499: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp497 as usize] };
-                let mut fTemp500: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp497, 1)) as usize] }
-                        - fTemp499;
-                let mut fTemp501: F64 = if iTemp67 != 0 {
-                    fTemp499
-                        + fTemp81 * fTemp500
-                        + (fTemp495 - (iTemp496) as F64)
-                            * (fTemp498
-                                - (fTemp499
-                                    + fTemp81
-                                        * (fTemp500
+                let mut fTemp497: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp496, 7)) as usize] };
+                let mut fTemp498: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp496 as usize] };
+                let mut fTemp499: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp496, 1)) as usize] }
+                        - fTemp498;
+                let mut fTemp500: F64 = (if iTemp67 != 0 {
+                    fTemp498
+                        + fTemp80 * fTemp499
+                        + (fTemp494 - (iTemp495) as F64)
+                            * (fTemp497
+                                - (fTemp498
+                                    + fTemp80
+                                        * (fTemp499
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp497, 8)) as usize]
-                                            } - fTemp498))))
+                                                    [(i32::wrapping_add(iTemp496, 8)) as usize]
+                                            } - fTemp497))))
                 } else {
-                    1.0 - (fTemp493
-                        + fTemp81 * fTemp494
-                        + (fTemp489 - (iTemp490) as F64)
-                            * (fTemp492
-                                - (fTemp493
-                                    + fTemp81
-                                        * (fTemp494
+                    1.0 - (fTemp492
+                        + fTemp80 * fTemp493
+                        + (fTemp488 - (iTemp489) as F64)
+                            * (fTemp491
+                                - (fTemp492
+                                    + fTemp80
+                                        * (fTemp493
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp491, 8)) as usize]
-                                            } - fTemp492)))))
-                };
-                let mut fTemp502: F64 = fTemp86 + fTemp488;
-                let mut fTemp503: F64 = 524287.0 * (1.0 - fTemp502);
-                let mut iTemp504: i32 = (fTemp503) as i32;
-                let mut iTemp505: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp490, 8)) as usize]
+                                            } - fTemp491)))))
+                });
+                let mut fTemp501: F64 = fTemp85 + fTemp487;
+                let mut fTemp502: F64 = 524287.0 * (1.0 - fTemp501);
+                let mut iTemp503: i32 = (fTemp502) as i32;
+                let mut iTemp504: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp504, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp503, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp506: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp505, 7)) as usize] };
-                let mut fTemp507: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp505 as usize] };
-                let mut fTemp508: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp505, 1)) as usize] }
-                        - fTemp507;
-                let mut fTemp509: F64 = 524287.0 * fTemp502;
-                let mut iTemp510: i32 = (fTemp509) as i32;
-                let mut iTemp511: i32 = std::cmp::max(
+                let mut fTemp505: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp504, 7)) as usize] };
+                let mut fTemp506: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp504 as usize] };
+                let mut fTemp507: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp504, 1)) as usize] }
+                        - fTemp506;
+                let mut fTemp508: F64 = 524287.0 * fTemp501;
+                let mut iTemp509: i32 = (fTemp508) as i32;
+                let mut iTemp510: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp510, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp509, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp512: F64 = unsafe {
+                let mut fTemp511: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp511, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp510, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp513: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp511 as usize] };
-                let mut fTemp514: F64 = unsafe {
+                let mut fTemp512: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp510 as usize] };
+                let mut fTemp513: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp511, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp510, 1), 3670015),
                     )) as usize]
-                } - fTemp513;
-                let mut iTemp515: i32 = (fTemp142
-                    > ((if iTemp67 != 0 {
-                        fTemp513
-                            + fTemp81 * fTemp514
-                            + (fTemp509 - (iTemp510) as F64)
-                                * (fTemp512
-                                    - (fTemp513
-                                        + fTemp81
-                                            * (fTemp514
+                } - fTemp512;
+                let mut iTemp514: i32 = (fTemp141
+                    > (((if iTemp67 != 0 {
+                        fTemp512
+                            + fTemp80 * fTemp513
+                            + (fTemp508 - (iTemp509) as F64)
+                                * (fTemp511
+                                    - (fTemp512
+                                        + fTemp80
+                                            * (fTemp513
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp511, 8),
+                                                            i32::wrapping_add(iTemp510, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp512))))
+                                                } - fTemp511))))
                     } else {
-                        1.0 - (fTemp507
-                            + fTemp81 * fTemp508
-                            + (fTemp503 - (iTemp504) as F64)
-                                * (fTemp506
-                                    - (fTemp507
-                                        + fTemp81
-                                            * (fTemp508
+                        1.0 - (fTemp506
+                            + fTemp80 * fTemp507
+                            + (fTemp502 - (iTemp503) as F64)
+                                * (fTemp505
+                                    - (fTemp506
+                                        + fTemp80
+                                            * (fTemp507
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp505, 8)) as usize]
-                                                } - fTemp506)))))
-                    } - fTemp501)
-                        / (1.0 - fTemp501))) as i32;
-                let mut fTemp516: F64 = if iTemp515 != 0 { fTemp485 } else { fTemp488 };
-                let mut fTemp517: F64 = if iTemp515 != 0 { fTemp488 } else { fTemp486 };
-                let mut fTemp518: F64 = fTemp517 + fTemp516;
-                let mut fTemp519: F64 = 0.5 * fTemp518;
-                let mut fTemp520: F64 = 524287.0 * (1.0 - fTemp519);
-                let mut iTemp521: i32 = (fTemp520) as i32;
-                let mut iTemp522: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp504, 8)) as usize]
+                                                } - fTemp505)))))
+                    }) - fTemp500)
+                        / (1.0 - fTemp500))) as i32;
+                let mut fTemp515: F64 = (if iTemp514 != 0 { fTemp484 } else { fTemp487 });
+                let mut fTemp516: F64 = (if iTemp514 != 0 { fTemp487 } else { fTemp485 });
+                let mut fTemp517: F64 = fTemp516 + fTemp515;
+                let mut fTemp518: F64 = 0.5 * fTemp517;
+                let mut fTemp519: F64 = 524287.0 * (1.0 - fTemp518);
+                let mut iTemp520: i32 = (fTemp519) as i32;
+                let mut iTemp521: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp521, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp520, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp523: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp522, 7)) as usize] };
-                let mut fTemp524: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp522 as usize] };
-                let mut fTemp525: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp522, 1)) as usize] }
-                        - fTemp524;
-                let mut fTemp526: F64 = 262143.5 * fTemp518;
-                let mut iTemp527: i32 = (fTemp526) as i32;
-                let mut iTemp528: i32 = std::cmp::max(
+                let mut fTemp522: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp521, 7)) as usize] };
+                let mut fTemp523: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp521 as usize] };
+                let mut fTemp524: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp521, 1)) as usize] }
+                        - fTemp523;
+                let mut fTemp525: F64 = 262143.5 * fTemp517;
+                let mut iTemp526: i32 = (fTemp525) as i32;
+                let mut iTemp527: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp527, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp526, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp529: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp528, 7)) as usize] };
-                let mut fTemp530: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp528 as usize] };
-                let mut fTemp531: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp528, 1)) as usize] }
-                        - fTemp530;
-                let mut fTemp532: F64 = if iTemp67 != 0 {
-                    fTemp530
-                        + fTemp81 * fTemp531
-                        + (fTemp526 - (iTemp527) as F64)
-                            * (fTemp529
-                                - (fTemp530
-                                    + fTemp81
-                                        * (fTemp531
+                let mut fTemp528: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp527, 7)) as usize] };
+                let mut fTemp529: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp527 as usize] };
+                let mut fTemp530: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp527, 1)) as usize] }
+                        - fTemp529;
+                let mut fTemp531: F64 = (if iTemp67 != 0 {
+                    fTemp529
+                        + fTemp80 * fTemp530
+                        + (fTemp525 - (iTemp526) as F64)
+                            * (fTemp528
+                                - (fTemp529
+                                    + fTemp80
+                                        * (fTemp530
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp528, 8)) as usize]
-                                            } - fTemp529))))
+                                                    [(i32::wrapping_add(iTemp527, 8)) as usize]
+                                            } - fTemp528))))
                 } else {
-                    1.0 - (fTemp524
-                        + fTemp81 * fTemp525
-                        + (fTemp520 - (iTemp521) as F64)
-                            * (fTemp523
-                                - (fTemp524
-                                    + fTemp81
-                                        * (fTemp525
+                    1.0 - (fTemp523
+                        + fTemp80 * fTemp524
+                        + (fTemp519 - (iTemp520) as F64)
+                            * (fTemp522
+                                - (fTemp523
+                                    + fTemp80
+                                        * (fTemp524
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp522, 8)) as usize]
-                                            } - fTemp523)))))
-                };
-                let mut fTemp533: F64 = fTemp86 + fTemp519;
-                let mut fTemp534: F64 = 524287.0 * (1.0 - fTemp533);
-                let mut iTemp535: i32 = (fTemp534) as i32;
-                let mut iTemp536: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp521, 8)) as usize]
+                                            } - fTemp522)))))
+                });
+                let mut fTemp532: F64 = fTemp85 + fTemp518;
+                let mut fTemp533: F64 = 524287.0 * (1.0 - fTemp532);
+                let mut iTemp534: i32 = (fTemp533) as i32;
+                let mut iTemp535: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp535, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp534, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp537: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp536, 7)) as usize] };
-                let mut fTemp538: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp536 as usize] };
-                let mut fTemp539: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp536, 1)) as usize] }
-                        - fTemp538;
-                let mut fTemp540: F64 = 524287.0 * fTemp533;
-                let mut iTemp541: i32 = (fTemp540) as i32;
-                let mut iTemp542: i32 = std::cmp::max(
+                let mut fTemp536: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp535, 7)) as usize] };
+                let mut fTemp537: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp535 as usize] };
+                let mut fTemp538: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp535, 1)) as usize] }
+                        - fTemp537;
+                let mut fTemp539: F64 = 524287.0 * fTemp532;
+                let mut iTemp540: i32 = (fTemp539) as i32;
+                let mut iTemp541: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp541, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp540, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp543: F64 = unsafe {
+                let mut fTemp542: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp542, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp541, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp544: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp542 as usize] };
-                let mut fTemp545: F64 = unsafe {
+                let mut fTemp543: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp541 as usize] };
+                let mut fTemp544: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp542, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp541, 1), 3670015),
                     )) as usize]
-                } - fTemp544;
-                let mut iTemp546: i32 = (fTemp142
-                    > ((if iTemp67 != 0 {
-                        fTemp544
-                            + fTemp81 * fTemp545
-                            + (fTemp540 - (iTemp541) as F64)
-                                * (fTemp543
-                                    - (fTemp544
-                                        + fTemp81
-                                            * (fTemp545
+                } - fTemp543;
+                let mut iTemp545: i32 = (fTemp141
+                    > (((if iTemp67 != 0 {
+                        fTemp543
+                            + fTemp80 * fTemp544
+                            + (fTemp539 - (iTemp540) as F64)
+                                * (fTemp542
+                                    - (fTemp543
+                                        + fTemp80
+                                            * (fTemp544
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp542, 8),
+                                                            i32::wrapping_add(iTemp541, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp543))))
+                                                } - fTemp542))))
                     } else {
-                        1.0 - (fTemp538
-                            + fTemp81 * fTemp539
-                            + (fTemp534 - (iTemp535) as F64)
-                                * (fTemp537
-                                    - (fTemp538
-                                        + fTemp81
-                                            * (fTemp539
+                        1.0 - (fTemp537
+                            + fTemp80 * fTemp538
+                            + (fTemp533 - (iTemp534) as F64)
+                                * (fTemp536
+                                    - (fTemp537
+                                        + fTemp80
+                                            * (fTemp538
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp536, 8)) as usize]
-                                                } - fTemp537)))))
-                    } - fTemp532)
-                        / (1.0 - fTemp532))) as i32;
-                let mut fTemp547: F64 = if iTemp546 != 0 { fTemp516 } else { fTemp519 };
-                let mut fTemp548: F64 = if iTemp546 != 0 { fTemp519 } else { fTemp517 };
-                let mut fTemp549: F64 = fTemp548 + fTemp547;
-                let mut fTemp550: F64 = 0.5 * fTemp549;
-                let mut fTemp551: F64 = 524287.0 * (1.0 - fTemp550);
-                let mut iTemp552: i32 = (fTemp551) as i32;
-                let mut iTemp553: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp535, 8)) as usize]
+                                                } - fTemp536)))))
+                    }) - fTemp531)
+                        / (1.0 - fTemp531))) as i32;
+                let mut fTemp546: F64 = (if iTemp545 != 0 { fTemp515 } else { fTemp518 });
+                let mut fTemp547: F64 = (if iTemp545 != 0 { fTemp518 } else { fTemp516 });
+                let mut fTemp548: F64 = fTemp547 + fTemp546;
+                let mut fTemp549: F64 = 0.5 * fTemp548;
+                let mut fTemp550: F64 = 524287.0 * (1.0 - fTemp549);
+                let mut iTemp551: i32 = (fTemp550) as i32;
+                let mut iTemp552: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp552, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp551, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp554: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp553, 7)) as usize] };
-                let mut fTemp555: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp553 as usize] };
-                let mut fTemp556: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp553, 1)) as usize] }
-                        - fTemp555;
-                let mut fTemp557: F64 = 262143.5 * fTemp549;
-                let mut iTemp558: i32 = (fTemp557) as i32;
-                let mut iTemp559: i32 = std::cmp::max(
+                let mut fTemp553: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp552, 7)) as usize] };
+                let mut fTemp554: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp552 as usize] };
+                let mut fTemp555: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp552, 1)) as usize] }
+                        - fTemp554;
+                let mut fTemp556: F64 = 262143.5 * fTemp548;
+                let mut iTemp557: i32 = (fTemp556) as i32;
+                let mut iTemp558: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp558, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp557, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp560: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp559, 7)) as usize] };
-                let mut fTemp561: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp559 as usize] };
-                let mut fTemp562: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp559, 1)) as usize] }
-                        - fTemp561;
-                let mut fTemp563: F64 = if iTemp67 != 0 {
-                    fTemp561
-                        + fTemp81 * fTemp562
-                        + (fTemp557 - (iTemp558) as F64)
-                            * (fTemp560
-                                - (fTemp561
-                                    + fTemp81
-                                        * (fTemp562
+                let mut fTemp559: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp558, 7)) as usize] };
+                let mut fTemp560: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp558 as usize] };
+                let mut fTemp561: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp558, 1)) as usize] }
+                        - fTemp560;
+                let mut fTemp562: F64 = (if iTemp67 != 0 {
+                    fTemp560
+                        + fTemp80 * fTemp561
+                        + (fTemp556 - (iTemp557) as F64)
+                            * (fTemp559
+                                - (fTemp560
+                                    + fTemp80
+                                        * (fTemp561
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp559, 8)) as usize]
-                                            } - fTemp560))))
+                                                    [(i32::wrapping_add(iTemp558, 8)) as usize]
+                                            } - fTemp559))))
                 } else {
-                    1.0 - (fTemp555
-                        + fTemp81 * fTemp556
-                        + (fTemp551 - (iTemp552) as F64)
-                            * (fTemp554
-                                - (fTemp555
-                                    + fTemp81
-                                        * (fTemp556
+                    1.0 - (fTemp554
+                        + fTemp80 * fTemp555
+                        + (fTemp550 - (iTemp551) as F64)
+                            * (fTemp553
+                                - (fTemp554
+                                    + fTemp80
+                                        * (fTemp555
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp553, 8)) as usize]
-                                            } - fTemp554)))))
-                };
-                let mut fTemp564: F64 = fTemp86 + fTemp550;
-                let mut fTemp565: F64 = 524287.0 * (1.0 - fTemp564);
-                let mut iTemp566: i32 = (fTemp565) as i32;
-                let mut iTemp567: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp552, 8)) as usize]
+                                            } - fTemp553)))))
+                });
+                let mut fTemp563: F64 = fTemp85 + fTemp549;
+                let mut fTemp564: F64 = 524287.0 * (1.0 - fTemp563);
+                let mut iTemp565: i32 = (fTemp564) as i32;
+                let mut iTemp566: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp566, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp565, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp568: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp567, 7)) as usize] };
-                let mut fTemp569: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp567 as usize] };
-                let mut fTemp570: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp567, 1)) as usize] }
-                        - fTemp569;
-                let mut fTemp571: F64 = 524287.0 * fTemp564;
-                let mut iTemp572: i32 = (fTemp571) as i32;
-                let mut iTemp573: i32 = std::cmp::max(
+                let mut fTemp567: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp566, 7)) as usize] };
+                let mut fTemp568: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp566 as usize] };
+                let mut fTemp569: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp566, 1)) as usize] }
+                        - fTemp568;
+                let mut fTemp570: F64 = 524287.0 * fTemp563;
+                let mut iTemp571: i32 = (fTemp570) as i32;
+                let mut iTemp572: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp572, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp571, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp574: F64 = unsafe {
+                let mut fTemp573: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp573, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp572, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp575: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp573 as usize] };
-                let mut fTemp576: F64 = unsafe {
+                let mut fTemp574: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp572 as usize] };
+                let mut fTemp575: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp573, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp572, 1), 3670015),
                     )) as usize]
-                } - fTemp575;
-                let mut iTemp577: i32 = (fTemp142
-                    > ((if iTemp67 != 0 {
-                        fTemp575
-                            + fTemp81 * fTemp576
-                            + (fTemp571 - (iTemp572) as F64)
-                                * (fTemp574
-                                    - (fTemp575
-                                        + fTemp81
-                                            * (fTemp576
+                } - fTemp574;
+                let mut iTemp576: i32 = (fTemp141
+                    > (((if iTemp67 != 0 {
+                        fTemp574
+                            + fTemp80 * fTemp575
+                            + (fTemp570 - (iTemp571) as F64)
+                                * (fTemp573
+                                    - (fTemp574
+                                        + fTemp80
+                                            * (fTemp575
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp573, 8),
+                                                            i32::wrapping_add(iTemp572, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp574))))
+                                                } - fTemp573))))
                     } else {
-                        1.0 - (fTemp569
-                            + fTemp81 * fTemp570
-                            + (fTemp565 - (iTemp566) as F64)
-                                * (fTemp568
-                                    - (fTemp569
-                                        + fTemp81
-                                            * (fTemp570
+                        1.0 - (fTemp568
+                            + fTemp80 * fTemp569
+                            + (fTemp564 - (iTemp565) as F64)
+                                * (fTemp567
+                                    - (fTemp568
+                                        + fTemp80
+                                            * (fTemp569
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp567, 8)) as usize]
-                                                } - fTemp568)))))
-                    } - fTemp563)
-                        / (1.0 - fTemp563))) as i32;
-                let mut fTemp578: F64 = if iTemp577 != 0 { fTemp547 } else { fTemp550 };
-                let mut fTemp579: F64 = if iTemp577 != 0 { fTemp550 } else { fTemp548 };
-                let mut fTemp580: F64 = fTemp579 + fTemp578;
-                let mut fTemp581: F64 = 0.5 * fTemp580;
-                let mut fTemp582: F64 = 524287.0 * (1.0 - fTemp581);
-                let mut iTemp583: i32 = (fTemp582) as i32;
-                let mut iTemp584: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp566, 8)) as usize]
+                                                } - fTemp567)))))
+                    }) - fTemp562)
+                        / (1.0 - fTemp562))) as i32;
+                let mut fTemp577: F64 = (if iTemp576 != 0 { fTemp546 } else { fTemp549 });
+                let mut fTemp578: F64 = (if iTemp576 != 0 { fTemp549 } else { fTemp547 });
+                let mut fTemp579: F64 = fTemp578 + fTemp577;
+                let mut fTemp580: F64 = 0.5 * fTemp579;
+                let mut fTemp581: F64 = 524287.0 * (1.0 - fTemp580);
+                let mut iTemp582: i32 = (fTemp581) as i32;
+                let mut iTemp583: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp583, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp582, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp585: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp584, 7)) as usize] };
-                let mut fTemp586: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp584 as usize] };
-                let mut fTemp587: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp584, 1)) as usize] }
-                        - fTemp586;
-                let mut fTemp588: F64 = 262143.5 * fTemp580;
-                let mut iTemp589: i32 = (fTemp588) as i32;
-                let mut iTemp590: i32 = std::cmp::max(
+                let mut fTemp584: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp583, 7)) as usize] };
+                let mut fTemp585: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp583 as usize] };
+                let mut fTemp586: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp583, 1)) as usize] }
+                        - fTemp585;
+                let mut fTemp587: F64 = 262143.5 * fTemp579;
+                let mut iTemp588: i32 = (fTemp587) as i32;
+                let mut iTemp589: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp589, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp588, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp591: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp590, 7)) as usize] };
-                let mut fTemp592: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp590 as usize] };
-                let mut fTemp593: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp590, 1)) as usize] }
-                        - fTemp592;
-                let mut fTemp594: F64 = if iTemp67 != 0 {
-                    fTemp592
-                        + fTemp81 * fTemp593
-                        + (fTemp588 - (iTemp589) as F64)
-                            * (fTemp591
-                                - (fTemp592
-                                    + fTemp81
-                                        * (fTemp593
+                let mut fTemp590: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp589, 7)) as usize] };
+                let mut fTemp591: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp589 as usize] };
+                let mut fTemp592: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp589, 1)) as usize] }
+                        - fTemp591;
+                let mut fTemp593: F64 = (if iTemp67 != 0 {
+                    fTemp591
+                        + fTemp80 * fTemp592
+                        + (fTemp587 - (iTemp588) as F64)
+                            * (fTemp590
+                                - (fTemp591
+                                    + fTemp80
+                                        * (fTemp592
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp590, 8)) as usize]
-                                            } - fTemp591))))
+                                                    [(i32::wrapping_add(iTemp589, 8)) as usize]
+                                            } - fTemp590))))
                 } else {
-                    1.0 - (fTemp586
-                        + fTemp81 * fTemp587
-                        + (fTemp582 - (iTemp583) as F64)
-                            * (fTemp585
-                                - (fTemp586
-                                    + fTemp81
-                                        * (fTemp587
+                    1.0 - (fTemp585
+                        + fTemp80 * fTemp586
+                        + (fTemp581 - (iTemp582) as F64)
+                            * (fTemp584
+                                - (fTemp585
+                                    + fTemp80
+                                        * (fTemp586
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp584, 8)) as usize]
-                                            } - fTemp585)))))
-                };
-                let mut fTemp595: F64 = fTemp86 + fTemp581;
-                let mut fTemp596: F64 = 524287.0 * (1.0 - fTemp595);
-                let mut iTemp597: i32 = (fTemp596) as i32;
-                let mut iTemp598: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp583, 8)) as usize]
+                                            } - fTemp584)))))
+                });
+                let mut fTemp594: F64 = fTemp85 + fTemp580;
+                let mut fTemp595: F64 = 524287.0 * (1.0 - fTemp594);
+                let mut iTemp596: i32 = (fTemp595) as i32;
+                let mut iTemp597: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp597, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp596, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp599: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp598, 7)) as usize] };
-                let mut fTemp600: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp598 as usize] };
-                let mut fTemp601: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp598, 1)) as usize] }
-                        - fTemp600;
-                let mut fTemp602: F64 = 524287.0 * fTemp595;
-                let mut iTemp603: i32 = (fTemp602) as i32;
-                let mut iTemp604: i32 = std::cmp::max(
+                let mut fTemp598: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp597, 7)) as usize] };
+                let mut fTemp599: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp597 as usize] };
+                let mut fTemp600: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp597, 1)) as usize] }
+                        - fTemp599;
+                let mut fTemp601: F64 = 524287.0 * fTemp594;
+                let mut iTemp602: i32 = (fTemp601) as i32;
+                let mut iTemp603: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp603, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp602, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp605: F64 = unsafe {
+                let mut fTemp604: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp604, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp603, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp606: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp604 as usize] };
-                let mut fTemp607: F64 = unsafe {
+                let mut fTemp605: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp603 as usize] };
+                let mut fTemp606: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp604, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp603, 1), 3670015),
                     )) as usize]
-                } - fTemp606;
-                let mut iTemp608: i32 = (fTemp142
-                    > ((if iTemp67 != 0 {
-                        fTemp606
-                            + fTemp81 * fTemp607
-                            + (fTemp602 - (iTemp603) as F64)
-                                * (fTemp605
-                                    - (fTemp606
-                                        + fTemp81
-                                            * (fTemp607
+                } - fTemp605;
+                let mut iTemp607: i32 = (fTemp141
+                    > (((if iTemp67 != 0 {
+                        fTemp605
+                            + fTemp80 * fTemp606
+                            + (fTemp601 - (iTemp602) as F64)
+                                * (fTemp604
+                                    - (fTemp605
+                                        + fTemp80
+                                            * (fTemp606
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp604, 8),
+                                                            i32::wrapping_add(iTemp603, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp605))))
+                                                } - fTemp604))))
                     } else {
-                        1.0 - (fTemp600
-                            + fTemp81 * fTemp601
-                            + (fTemp596 - (iTemp597) as F64)
-                                * (fTemp599
-                                    - (fTemp600
-                                        + fTemp81
-                                            * (fTemp601
+                        1.0 - (fTemp599
+                            + fTemp80 * fTemp600
+                            + (fTemp595 - (iTemp596) as F64)
+                                * (fTemp598
+                                    - (fTemp599
+                                        + fTemp80
+                                            * (fTemp600
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp598, 8)) as usize]
-                                                } - fTemp599)))))
-                    } - fTemp594)
-                        / (1.0 - fTemp594))) as i32;
-                let mut fTemp609: F64 = if iTemp608 != 0 { fTemp578 } else { fTemp581 };
-                let mut fTemp610: F64 = if iTemp608 != 0 { fTemp581 } else { fTemp579 };
-                let mut fTemp611: F64 = fTemp610 + fTemp609;
-                let mut fTemp612: F64 = 0.5 * fTemp611;
-                let mut fTemp613: F64 = 524287.0 * (1.0 - fTemp612);
-                let mut iTemp614: i32 = (fTemp613) as i32;
-                let mut iTemp615: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp597, 8)) as usize]
+                                                } - fTemp598)))))
+                    }) - fTemp593)
+                        / (1.0 - fTemp593))) as i32;
+                let mut fTemp608: F64 = (if iTemp607 != 0 { fTemp577 } else { fTemp580 });
+                let mut fTemp609: F64 = (if iTemp607 != 0 { fTemp580 } else { fTemp578 });
+                let mut fTemp610: F64 = fTemp609 + fTemp608;
+                let mut fTemp611: F64 = 0.5 * fTemp610;
+                let mut fTemp612: F64 = 524287.0 * (1.0 - fTemp611);
+                let mut iTemp613: i32 = (fTemp612) as i32;
+                let mut iTemp614: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp614, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp613, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp616: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp615, 7)) as usize] };
-                let mut fTemp617: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp615 as usize] };
-                let mut fTemp618: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp615, 1)) as usize] }
-                        - fTemp617;
-                let mut fTemp619: F64 = 262143.5 * fTemp611;
-                let mut iTemp620: i32 = (fTemp619) as i32;
-                let mut iTemp621: i32 = std::cmp::max(
+                let mut fTemp615: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp614, 7)) as usize] };
+                let mut fTemp616: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp614 as usize] };
+                let mut fTemp617: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp614, 1)) as usize] }
+                        - fTemp616;
+                let mut fTemp618: F64 = 262143.5 * fTemp610;
+                let mut iTemp619: i32 = (fTemp618) as i32;
+                let mut iTemp620: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp620, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp619, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp622: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp621, 7)) as usize] };
-                let mut fTemp623: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp621 as usize] };
-                let mut fTemp624: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp621, 1)) as usize] }
-                        - fTemp623;
-                let mut fTemp625: F64 = if iTemp67 != 0 {
-                    fTemp623
-                        + fTemp81 * fTemp624
-                        + (fTemp619 - (iTemp620) as F64)
-                            * (fTemp622
-                                - (fTemp623
-                                    + fTemp81
-                                        * (fTemp624
+                let mut fTemp621: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp620, 7)) as usize] };
+                let mut fTemp622: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp620 as usize] };
+                let mut fTemp623: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp620, 1)) as usize] }
+                        - fTemp622;
+                let mut fTemp624: F64 = (if iTemp67 != 0 {
+                    fTemp622
+                        + fTemp80 * fTemp623
+                        + (fTemp618 - (iTemp619) as F64)
+                            * (fTemp621
+                                - (fTemp622
+                                    + fTemp80
+                                        * (fTemp623
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp621, 8)) as usize]
-                                            } - fTemp622))))
+                                                    [(i32::wrapping_add(iTemp620, 8)) as usize]
+                                            } - fTemp621))))
                 } else {
-                    1.0 - (fTemp617
-                        + fTemp81 * fTemp618
-                        + (fTemp613 - (iTemp614) as F64)
-                            * (fTemp616
-                                - (fTemp617
-                                    + fTemp81
-                                        * (fTemp618
+                    1.0 - (fTemp616
+                        + fTemp80 * fTemp617
+                        + (fTemp612 - (iTemp613) as F64)
+                            * (fTemp615
+                                - (fTemp616
+                                    + fTemp80
+                                        * (fTemp617
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp615, 8)) as usize]
-                                            } - fTemp616)))))
-                };
-                let mut fTemp626: F64 = fTemp86 + fTemp612;
-                let mut fTemp627: F64 = 524287.0 * (1.0 - fTemp626);
-                let mut iTemp628: i32 = (fTemp627) as i32;
-                let mut iTemp629: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp614, 8)) as usize]
+                                            } - fTemp615)))))
+                });
+                let mut fTemp625: F64 = fTemp85 + fTemp611;
+                let mut fTemp626: F64 = 524287.0 * (1.0 - fTemp625);
+                let mut iTemp627: i32 = (fTemp626) as i32;
+                let mut iTemp628: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp628, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp627, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp630: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp629, 7)) as usize] };
-                let mut fTemp631: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp629 as usize] };
-                let mut fTemp632: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp629, 1)) as usize] }
-                        - fTemp631;
-                let mut fTemp633: F64 = 524287.0 * fTemp626;
-                let mut iTemp634: i32 = (fTemp633) as i32;
-                let mut iTemp635: i32 = std::cmp::max(
+                let mut fTemp629: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp628, 7)) as usize] };
+                let mut fTemp630: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp628 as usize] };
+                let mut fTemp631: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp628, 1)) as usize] }
+                        - fTemp630;
+                let mut fTemp632: F64 = 524287.0 * fTemp625;
+                let mut iTemp633: i32 = (fTemp632) as i32;
+                let mut iTemp634: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp634, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp633, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp636: F64 = unsafe {
+                let mut fTemp635: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp635, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp634, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp637: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp635 as usize] };
-                let mut fTemp638: F64 = unsafe {
+                let mut fTemp636: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp634 as usize] };
+                let mut fTemp637: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp635, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp634, 1), 3670015),
                     )) as usize]
-                } - fTemp637;
-                let mut iTemp639: i32 = (fTemp142
-                    > ((if iTemp67 != 0 {
-                        fTemp637
-                            + fTemp81 * fTemp638
-                            + (fTemp633 - (iTemp634) as F64)
-                                * (fTemp636
-                                    - (fTemp637
-                                        + fTemp81
-                                            * (fTemp638
+                } - fTemp636;
+                let mut iTemp638: i32 = (fTemp141
+                    > (((if iTemp67 != 0 {
+                        fTemp636
+                            + fTemp80 * fTemp637
+                            + (fTemp632 - (iTemp633) as F64)
+                                * (fTemp635
+                                    - (fTemp636
+                                        + fTemp80
+                                            * (fTemp637
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp635, 8),
+                                                            i32::wrapping_add(iTemp634, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp636))))
+                                                } - fTemp635))))
                     } else {
-                        1.0 - (fTemp631
-                            + fTemp81 * fTemp632
-                            + (fTemp627 - (iTemp628) as F64)
-                                * (fTemp630
-                                    - (fTemp631
-                                        + fTemp81
-                                            * (fTemp632
+                        1.0 - (fTemp630
+                            + fTemp80 * fTemp631
+                            + (fTemp626 - (iTemp627) as F64)
+                                * (fTemp629
+                                    - (fTemp630
+                                        + fTemp80
+                                            * (fTemp631
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp629, 8)) as usize]
-                                                } - fTemp630)))))
-                    } - fTemp625)
-                        / (1.0 - fTemp625))) as i32;
-                let mut fTemp640: F64 = if iTemp639 != 0 { fTemp609 } else { fTemp612 };
-                let mut fTemp641: F64 = if iTemp639 != 0 { fTemp612 } else { fTemp610 };
-                let mut fTemp642: F64 = fTemp641 + fTemp640;
-                let mut fTemp643: F64 = 0.5 * fTemp642;
-                let mut fTemp644: F64 = 524287.0 * (1.0 - fTemp643);
-                let mut iTemp645: i32 = (fTemp644) as i32;
-                let mut iTemp646: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp628, 8)) as usize]
+                                                } - fTemp629)))))
+                    }) - fTemp624)
+                        / (1.0 - fTemp624))) as i32;
+                let mut fTemp639: F64 = (if iTemp638 != 0 { fTemp608 } else { fTemp611 });
+                let mut fTemp640: F64 = (if iTemp638 != 0 { fTemp611 } else { fTemp609 });
+                let mut fTemp641: F64 = fTemp640 + fTemp639;
+                let mut fTemp642: F64 = 0.5 * fTemp641;
+                let mut fTemp643: F64 = 524287.0 * (1.0 - fTemp642);
+                let mut iTemp644: i32 = (fTemp643) as i32;
+                let mut iTemp645: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp645, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp644, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp647: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp646, 7)) as usize] };
-                let mut fTemp648: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp646 as usize] };
-                let mut fTemp649: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp646, 1)) as usize] }
-                        - fTemp648;
-                let mut fTemp650: F64 = 262143.5 * fTemp642;
-                let mut iTemp651: i32 = (fTemp650) as i32;
-                let mut iTemp652: i32 = std::cmp::max(
+                let mut fTemp646: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp645, 7)) as usize] };
+                let mut fTemp647: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp645 as usize] };
+                let mut fTemp648: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp645, 1)) as usize] }
+                        - fTemp647;
+                let mut fTemp649: F64 = 262143.5 * fTemp641;
+                let mut iTemp650: i32 = (fTemp649) as i32;
+                let mut iTemp651: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp651, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp650, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp653: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp652, 7)) as usize] };
-                let mut fTemp654: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp652 as usize] };
-                let mut fTemp655: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp652, 1)) as usize] }
-                        - fTemp654;
-                let mut fTemp656: F64 = if iTemp67 != 0 {
-                    fTemp654
-                        + fTemp81 * fTemp655
-                        + (fTemp650 - (iTemp651) as F64)
-                            * (fTemp653
-                                - (fTemp654
-                                    + fTemp81
-                                        * (fTemp655
+                let mut fTemp652: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp651, 7)) as usize] };
+                let mut fTemp653: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp651 as usize] };
+                let mut fTemp654: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp651, 1)) as usize] }
+                        - fTemp653;
+                let mut fTemp655: F64 = (if iTemp67 != 0 {
+                    fTemp653
+                        + fTemp80 * fTemp654
+                        + (fTemp649 - (iTemp650) as F64)
+                            * (fTemp652
+                                - (fTemp653
+                                    + fTemp80
+                                        * (fTemp654
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp652, 8)) as usize]
-                                            } - fTemp653))))
+                                                    [(i32::wrapping_add(iTemp651, 8)) as usize]
+                                            } - fTemp652))))
                 } else {
-                    1.0 - (fTemp648
-                        + fTemp81 * fTemp649
-                        + (fTemp644 - (iTemp645) as F64)
-                            * (fTemp647
-                                - (fTemp648
-                                    + fTemp81
-                                        * (fTemp649
+                    1.0 - (fTemp647
+                        + fTemp80 * fTemp648
+                        + (fTemp643 - (iTemp644) as F64)
+                            * (fTemp646
+                                - (fTemp647
+                                    + fTemp80
+                                        * (fTemp648
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp646, 8)) as usize]
-                                            } - fTemp647)))))
-                };
-                let mut fTemp657: F64 = fTemp86 + fTemp643;
-                let mut fTemp658: F64 = 524287.0 * (1.0 - fTemp657);
-                let mut iTemp659: i32 = (fTemp658) as i32;
-                let mut iTemp660: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp645, 8)) as usize]
+                                            } - fTemp646)))))
+                });
+                let mut fTemp656: F64 = fTemp85 + fTemp642;
+                let mut fTemp657: F64 = 524287.0 * (1.0 - fTemp656);
+                let mut iTemp658: i32 = (fTemp657) as i32;
+                let mut iTemp659: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp659, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp658, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp661: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp660, 7)) as usize] };
-                let mut fTemp662: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp660 as usize] };
-                let mut fTemp663: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp660, 1)) as usize] }
-                        - fTemp662;
-                let mut fTemp664: F64 = 524287.0 * fTemp657;
-                let mut iTemp665: i32 = (fTemp664) as i32;
-                let mut iTemp666: i32 = std::cmp::max(
+                let mut fTemp660: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp659, 7)) as usize] };
+                let mut fTemp661: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp659 as usize] };
+                let mut fTemp662: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp659, 1)) as usize] }
+                        - fTemp661;
+                let mut fTemp663: F64 = 524287.0 * fTemp656;
+                let mut iTemp664: i32 = (fTemp663) as i32;
+                let mut iTemp665: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp665, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp664, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp667: F64 = unsafe {
+                let mut fTemp666: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp666, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp665, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp668: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp666 as usize] };
-                let mut fTemp669: F64 = unsafe {
+                let mut fTemp667: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp665 as usize] };
+                let mut fTemp668: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp666, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp665, 1), 3670015),
                     )) as usize]
-                } - fTemp668;
-                let mut iTemp670: i32 = (fTemp142
-                    > ((if iTemp67 != 0 {
-                        fTemp668
-                            + fTemp81 * fTemp669
-                            + (fTemp664 - (iTemp665) as F64)
-                                * (fTemp667
-                                    - (fTemp668
-                                        + fTemp81
-                                            * (fTemp669
+                } - fTemp667;
+                let mut iTemp669: i32 = (fTemp141
+                    > (((if iTemp67 != 0 {
+                        fTemp667
+                            + fTemp80 * fTemp668
+                            + (fTemp663 - (iTemp664) as F64)
+                                * (fTemp666
+                                    - (fTemp667
+                                        + fTemp80
+                                            * (fTemp668
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp666, 8),
+                                                            i32::wrapping_add(iTemp665, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp667))))
+                                                } - fTemp666))))
                     } else {
-                        1.0 - (fTemp662
-                            + fTemp81 * fTemp663
-                            + (fTemp658 - (iTemp659) as F64)
-                                * (fTemp661
-                                    - (fTemp662
-                                        + fTemp81
-                                            * (fTemp663
+                        1.0 - (fTemp661
+                            + fTemp80 * fTemp662
+                            + (fTemp657 - (iTemp658) as F64)
+                                * (fTemp660
+                                    - (fTemp661
+                                        + fTemp80
+                                            * (fTemp662
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp660, 8)) as usize]
-                                                } - fTemp661)))))
-                    } - fTemp656)
-                        / (1.0 - fTemp656))) as i32;
-                let mut fTemp671: F64 = if iTemp670 != 0 { fTemp640 } else { fTemp643 };
-                let mut fTemp672: F64 = if iTemp670 != 0 { fTemp643 } else { fTemp641 };
-                let mut fTemp673: F64 = fTemp672 + fTemp671;
-                let mut fTemp674: F64 = 0.5 * fTemp673;
-                let mut fTemp675: F64 = 524287.0 * (1.0 - fTemp674);
-                let mut iTemp676: i32 = (fTemp675) as i32;
-                let mut iTemp677: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp659, 8)) as usize]
+                                                } - fTemp660)))))
+                    }) - fTemp655)
+                        / (1.0 - fTemp655))) as i32;
+                let mut fTemp670: F64 = (if iTemp669 != 0 { fTemp639 } else { fTemp642 });
+                let mut fTemp671: F64 = (if iTemp669 != 0 { fTemp642 } else { fTemp640 });
+                let mut fTemp672: F64 = fTemp671 + fTemp670;
+                let mut fTemp673: F64 = 0.5 * fTemp672;
+                let mut fTemp674: F64 = 524287.0 * (1.0 - fTemp673);
+                let mut iTemp675: i32 = (fTemp674) as i32;
+                let mut iTemp676: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp676, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp675, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp678: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp677, 7)) as usize] };
-                let mut fTemp679: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp677 as usize] };
-                let mut fTemp680: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp677, 1)) as usize] }
-                        - fTemp679;
-                let mut fTemp681: F64 = 262143.5 * fTemp673;
-                let mut iTemp682: i32 = (fTemp681) as i32;
-                let mut iTemp683: i32 = std::cmp::max(
+                let mut fTemp677: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp676, 7)) as usize] };
+                let mut fTemp678: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp676 as usize] };
+                let mut fTemp679: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp676, 1)) as usize] }
+                        - fTemp678;
+                let mut fTemp680: F64 = 262143.5 * fTemp672;
+                let mut iTemp681: i32 = (fTemp680) as i32;
+                let mut iTemp682: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp682, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp681, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp684: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp683, 7)) as usize] };
-                let mut fTemp685: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp683 as usize] };
-                let mut fTemp686: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp683, 1)) as usize] }
-                        - fTemp685;
-                let mut fTemp687: F64 = if iTemp67 != 0 {
-                    fTemp685
-                        + fTemp81 * fTemp686
-                        + (fTemp681 - (iTemp682) as F64)
-                            * (fTemp684
-                                - (fTemp685
-                                    + fTemp81
-                                        * (fTemp686
+                let mut fTemp683: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp682, 7)) as usize] };
+                let mut fTemp684: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp682 as usize] };
+                let mut fTemp685: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp682, 1)) as usize] }
+                        - fTemp684;
+                let mut fTemp686: F64 = (if iTemp67 != 0 {
+                    fTemp684
+                        + fTemp80 * fTemp685
+                        + (fTemp680 - (iTemp681) as F64)
+                            * (fTemp683
+                                - (fTemp684
+                                    + fTemp80
+                                        * (fTemp685
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0[(std::cmp::max(
                                                     0,
                                                     std::cmp::min(
-                                                        i32::wrapping_add(iTemp683, 8),
+                                                        i32::wrapping_add(iTemp682, 8),
                                                         3670015,
                                                     ),
                                                 ))
                                                     as usize]
-                                            } - fTemp684))))
+                                            } - fTemp683))))
                 } else {
-                    1.0 - (fTemp679
-                        + fTemp81 * fTemp680
-                        + (fTemp675 - (iTemp676) as F64)
-                            * (fTemp678
-                                - (fTemp679
-                                    + fTemp81
-                                        * (fTemp680
+                    1.0 - (fTemp678
+                        + fTemp80 * fTemp679
+                        + (fTemp674 - (iTemp675) as F64)
+                            * (fTemp677
+                                - (fTemp678
+                                    + fTemp80
+                                        * (fTemp679
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0[(std::cmp::max(
                                                     0,
                                                     std::cmp::min(
-                                                        i32::wrapping_add(iTemp677, 8),
+                                                        i32::wrapping_add(iTemp676, 8),
                                                         3670015,
                                                     ),
                                                 ))
                                                     as usize]
-                                            } - fTemp678)))))
-                };
-                let mut fTemp688: F64 = fTemp86 + fTemp674;
-                let mut fTemp689: F64 = 524287.0 * (1.0 - fTemp688);
-                let mut iTemp690: i32 = (fTemp689) as i32;
-                let mut iTemp691: i32 = std::cmp::max(
+                                            } - fTemp677)))))
+                });
+                let mut fTemp687: F64 = fTemp85 + fTemp673;
+                let mut fTemp688: F64 = 524287.0 * (1.0 - fTemp687);
+                let mut iTemp689: i32 = (fTemp688) as i32;
+                let mut iTemp690: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp690, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp689, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp692: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp691, 7)) as usize] };
-                let mut fTemp693: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp691 as usize] };
-                let mut fTemp694: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp691, 1)) as usize] }
-                        - fTemp693;
-                let mut fTemp695: F64 = 524287.0 * fTemp688;
-                let mut iTemp696: i32 = (fTemp695) as i32;
-                let mut iTemp697: i32 = std::cmp::max(
+                let mut fTemp691: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp690, 7)) as usize] };
+                let mut fTemp692: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp690 as usize] };
+                let mut fTemp693: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp690, 1)) as usize] }
+                        - fTemp692;
+                let mut fTemp694: F64 = 524287.0 * fTemp687;
+                let mut iTemp695: i32 = (fTemp694) as i32;
+                let mut iTemp696: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp696, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp695, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp698: F64 = unsafe {
+                let mut fTemp697: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp697, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp696, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp699: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp697 as usize] };
-                let mut fTemp700: F64 = unsafe {
+                let mut fTemp698: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp696 as usize] };
+                let mut fTemp699: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp697, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp696, 1), 3670015),
                     )) as usize]
-                } - fTemp699;
-                let mut iTemp701: i32 = (fTemp142
-                    > ((if iTemp67 != 0 {
-                        fTemp699
-                            + fTemp81 * fTemp700
-                            + (fTemp695 - (iTemp696) as F64)
-                                * (fTemp698
-                                    - (fTemp699
-                                        + fTemp81
-                                            * (fTemp700
+                } - fTemp698;
+                let mut iTemp700: i32 = (fTemp141
+                    > (((if iTemp67 != 0 {
+                        fTemp698
+                            + fTemp80 * fTemp699
+                            + (fTemp694 - (iTemp695) as F64)
+                                * (fTemp697
+                                    - (fTemp698
+                                        + fTemp80
+                                            * (fTemp699
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp697, 8),
+                                                            i32::wrapping_add(iTemp696, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp698))))
+                                                } - fTemp697))))
                     } else {
-                        1.0 - (fTemp693
-                            + fTemp81 * fTemp694
-                            + (fTemp689 - (iTemp690) as F64)
-                                * (fTemp692
-                                    - (fTemp693
-                                        + fTemp81
-                                            * (fTemp694
+                        1.0 - (fTemp692
+                            + fTemp80 * fTemp693
+                            + (fTemp688 - (iTemp689) as F64)
+                                * (fTemp691
+                                    - (fTemp692
+                                        + fTemp80
+                                            * (fTemp693
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp691, 8)) as usize]
-                                                } - fTemp692)))))
-                    } - fTemp687)
-                        / (1.0 - fTemp687))) as i32;
-                let mut fTemp702: F64 = F64::min(
+                                                        [(i32::wrapping_add(iTemp690, 8)) as usize]
+                                                } - fTemp691)))))
+                    }) - fTemp686)
+                        / (1.0 - fTemp686))) as i32;
+                let mut fTemp701: F64 = F64::min(
                     1.0,
                     F64::max(
                         0.0,
-                        0.5 * (if iTemp701 != 0 { fTemp674 } else { fTemp672 }
-                            + if iTemp701 != 0 { fTemp671 } else { fTemp674 }),
+                        0.5 * ((if iTemp700 != 0 { fTemp673 } else { fTemp671 })
+                            + (if iTemp700 != 0 { fTemp670 } else { fTemp673 })),
                     ),
                 );
-                self.fRec1[0] = fTemp702;
-                let mut fTemp703: F64 = 524287.0 * (1.0 - fTemp702);
-                let mut iTemp704: i32 = (fTemp703) as i32;
-                let mut iTemp705: i32 = std::cmp::max(
+                self.fRec1[0] = fTemp701;
+                let mut fTemp702: F64 = 524287.0 * (1.0 - fTemp701);
+                let mut iTemp703: i32 = (fTemp702) as i32;
+                let mut iTemp704: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp704, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp703, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp706: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp705, 7)) as usize] };
-                let mut fTemp707: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp705 as usize] };
-                let mut fTemp708: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp705, 1)) as usize] }
-                        - fTemp707;
-                let mut fTemp709: F64 = 524287.0 * fTemp702;
-                let mut iTemp710: i32 = (fTemp709) as i32;
-                let mut iTemp711: i32 = std::cmp::max(
+                let mut fTemp705: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp704, 7)) as usize] };
+                let mut fTemp706: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp704 as usize] };
+                let mut fTemp707: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp704, 1)) as usize] }
+                        - fTemp706;
+                let mut fTemp708: F64 = 524287.0 * fTemp701;
+                let mut iTemp709: i32 = (fTemp708) as i32;
+                let mut iTemp710: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp710, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp709, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp712: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp711, 7)) as usize] };
-                let mut fTemp713: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp711 as usize] };
-                let mut fTemp714: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp711, 1)) as usize] }
-                        - fTemp713;
-                let mut fTemp715: F64 = if iTemp67 != 0 {
-                    fTemp713
-                        + fTemp81 * fTemp714
-                        + (fTemp709 - (iTemp710) as F64)
-                            * (fTemp712
-                                - (fTemp713
-                                    + fTemp81
-                                        * (fTemp714
+                let mut fTemp711: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp710, 7)) as usize] };
+                let mut fTemp712: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp710 as usize] };
+                let mut fTemp713: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp710, 1)) as usize] }
+                        - fTemp712;
+                let mut fTemp714: F64 = (if iTemp67 != 0 {
+                    fTemp712
+                        + fTemp80 * fTemp713
+                        + (fTemp708 - (iTemp709) as F64)
+                            * (fTemp711
+                                - (fTemp712
+                                    + fTemp80
+                                        * (fTemp713
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0[(std::cmp::max(
                                                     0,
                                                     std::cmp::min(
-                                                        i32::wrapping_add(iTemp711, 8),
+                                                        i32::wrapping_add(iTemp710, 8),
                                                         3670015,
                                                     ),
                                                 ))
                                                     as usize]
-                                            } - fTemp712))))
+                                            } - fTemp711))))
                 } else {
-                    1.0 - (fTemp707
-                        + fTemp81 * fTemp708
-                        + (fTemp703 - (iTemp704) as F64)
-                            * (fTemp706
-                                - (fTemp707
-                                    + fTemp81
-                                        * (fTemp708
+                    1.0 - (fTemp706
+                        + fTemp80 * fTemp707
+                        + (fTemp702 - (iTemp703) as F64)
+                            * (fTemp705
+                                - (fTemp706
+                                    + fTemp80
+                                        * (fTemp707
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0[(std::cmp::max(
                                                     0,
                                                     std::cmp::min(
-                                                        i32::wrapping_add(iTemp705, 8),
+                                                        i32::wrapping_add(iTemp704, 8),
                                                         3670015,
                                                     ),
                                                 ))
                                                     as usize]
-                                            } - fTemp706)))))
-                };
-                let mut fTemp716: F64 = fTemp86 + fTemp702;
-                let mut fTemp717: F64 = 524287.0 * (1.0 - fTemp716);
-                let mut iTemp718: i32 = (fTemp717) as i32;
-                let mut iTemp719: i32 = std::cmp::max(
+                                            } - fTemp705)))))
+                });
+                let mut fTemp715: F64 = fTemp85 + fTemp701;
+                let mut fTemp716: F64 = 524287.0 * (1.0 - fTemp715);
+                let mut iTemp717: i32 = (fTemp716) as i32;
+                let mut iTemp718: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp718, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp717, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp720: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp719, 7)) as usize] };
-                let mut fTemp721: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp719 as usize] };
-                let mut fTemp722: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp719, 1)) as usize] }
-                        - fTemp721;
-                let mut fTemp723: F64 = 524287.0 * fTemp716;
-                let mut iTemp724: i32 = (fTemp723) as i32;
-                let mut iTemp725: i32 = std::cmp::max(
+                let mut fTemp719: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp718, 7)) as usize] };
+                let mut fTemp720: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp718 as usize] };
+                let mut fTemp721: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp718, 1)) as usize] }
+                        - fTemp720;
+                let mut fTemp722: F64 = 524287.0 * fTemp715;
+                let mut iTemp723: i32 = (fTemp722) as i32;
+                let mut iTemp724: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp76,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp724, 524287))),
+                            iTemp75,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp723, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp726: F64 = unsafe {
+                let mut fTemp725: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp725, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp724, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp727: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp725 as usize] };
-                let mut fTemp728: F64 = unsafe {
+                let mut fTemp726: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp724 as usize] };
+                let mut fTemp727: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp725, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp724, 1), 3670015),
                     )) as usize]
-                } - fTemp727;
-                let mut fTemp729: F64 = self.fRec2[1]
-                    + if ((0.001 * fTemp85) == 0.0) as i32 != 0 {
+                } - fTemp726;
+                let mut fTemp728: F64 = self.fRec2[1]
+                    + (if ((0.001 * fTemp84) == 0.0) as i32 != 0 {
                         fTemp66
                     } else {
                         fTemp66
-                            * (if iTemp67 != 0 {
-                                fTemp727
-                                    + fTemp81 * fTemp728
-                                    + (fTemp723 - (iTemp724) as F64)
-                                        * (fTemp726
-                                            - (fTemp727
-                                                + fTemp81
-                                                    * (fTemp728
+                            * ((if iTemp67 != 0 {
+                                fTemp726
+                                    + fTemp80 * fTemp727
+                                    + (fTemp722 - (iTemp723) as F64)
+                                        * (fTemp725
+                                            - (fTemp726
+                                                + fTemp80
+                                                    * (fTemp727
                                                         - (unsafe {
                                                             ftbl0LambRs192kSIG0[(std::cmp::max(
                                                                 0,
                                                                 std::cmp::min(
-                                                                    i32::wrapping_add(iTemp725, 8),
+                                                                    i32::wrapping_add(iTemp724, 8),
                                                                     3670015,
                                                                 ),
                                                             ))
                                                                 as usize]
-                                                        } - fTemp726))))
+                                                        } - fTemp725))))
                             } else {
-                                1.0 - (fTemp721
-                                    + fTemp81 * fTemp722
-                                    + (fTemp717 - (iTemp718) as F64)
-                                        * (fTemp720
-                                            - (fTemp721
-                                                + fTemp81
-                                                    * (fTemp722
+                                1.0 - (fTemp720
+                                    + fTemp80 * fTemp721
+                                    + (fTemp716 - (iTemp717) as F64)
+                                        * (fTemp719
+                                            - (fTemp720
+                                                + fTemp80
+                                                    * (fTemp721
                                                         - (unsafe {
                                                             ftbl0LambRs192kSIG0[(i32::wrapping_add(
-                                                                iTemp719, 8,
+                                                                iTemp718, 8,
                                                             ))
                                                                 as usize]
-                                                        } - fTemp720)))))
-                            } - fTemp715)
-                            / (1.0 - fTemp715)
-                    };
-                self.fRec2[0] = if iTemp84 != 0 {
-                    F64::min(fTemp729, self.fRec2[1])
+                                                        } - fTemp719)))))
+                            }) - fTemp714)
+                            / (1.0 - fTemp714)
+                    });
+                self.fRec2[0] = (if iTemp83 != 0 {
+                    F64::min(fTemp728, self.fRec2[1])
                 } else {
-                    F64::max(fTemp729, self.fRec2[1])
-                };
+                    F64::max(fTemp728, self.fRec2[1])
+                });
                 self.fVec35[(self.IOTA0 & 32767) as usize] = F64::powf(1e+01, 0.05 * self.fRec2[0]);
-                let mut fTemp730: F64 =
+                let mut fTemp729: F64 =
                     self.fVec35[((i32::wrapping_sub(self.IOTA0, iSlow78)) & 32767) as usize];
                 self.fRec14[0] = fSlow80 + self.fConst4 * self.fRec14[1];
                 *output0 = 0.5
@@ -4515,82 +4528,82 @@ mod dsp_192k {
                     * fTemp2
                     + self.fRec14[0]
                         * self.fVec2[((i32::wrapping_sub(self.IOTA0, iSlow79)) & 32767) as usize]
-                        * fTemp730
+                        * fTemp729
                         * fTemp4;
-                let mut fTemp731: F64 = fTemp36 + fSlow17 * (fTemp37 - fTemp36);
-                let mut iTemp732: i32 =
-                    ((fTemp731 > fSlow11) as i32) + ((fTemp731 > fSlow9) as i32);
-                let mut fTemp733: F64 = fTemp731 - fSlow8;
-                let mut fTemp734: F64 = F64::min(
+                let mut fTemp730: F64 = fTemp36 + fSlow17 * (fTemp37 - fTemp36);
+                let mut iTemp731: i32 =
+                    ((fTemp730 > fSlow11) as i32) + ((fTemp730 > fSlow9) as i32);
+                let mut fTemp732: F64 = fTemp730 - fSlow8;
+                let mut fTemp733: F64 = F64::min(
                     fTemp34,
                     -(fSlow18
                         * F64::max(
                             0.0,
-                            if (iTemp732 == 0) as i32 != 0 {
+                            (if (iTemp731 == 0) as i32 != 0 {
                                 0.0
                             } else {
-                                if (iTemp732 == 1) as i32 != 0 {
-                                    fSlow12 * LambRs192k_faustpower2_f(fSlow7 + fTemp733)
+                                (if (iTemp731 == 1) as i32 != 0 {
+                                    fSlow12 * LambRs192k_faustpower2_f(fSlow7 + fTemp732)
                                 } else {
-                                    fTemp733
-                                }
-                            },
+                                    fTemp732
+                                })
+                            }),
                         )),
                 );
-                self.fVec36[(self.IOTA0 & 16383) as usize] = fTemp734;
-                let mut fTemp735: F64 = F64::min(
-                    fTemp734,
+                self.fVec36[(self.IOTA0 & 16383) as usize] = fTemp733;
+                let mut fTemp734: F64 = F64::min(
+                    fTemp733,
                     self.fVec36[((i32::wrapping_sub(self.IOTA0, 1)) & 16383) as usize],
                 );
-                self.fVec37[0] = fTemp735;
-                let mut fTemp736: F64 = F64::min(fTemp735, self.fVec37[2]);
-                self.fVec38[0] = fTemp736;
-                let mut fTemp737: F64 = F64::min(fTemp736, self.fVec38[4]);
-                self.fVec39[0] = fTemp737;
-                let mut fTemp738: F64 = F64::min(fTemp737, self.fVec39[8]);
-                self.fVec40[(self.IOTA0 & 31) as usize] = fTemp738;
-                let mut fTemp739: F64 = F64::min(
-                    fTemp738,
+                self.fVec37[0] = fTemp734;
+                let mut fTemp735: F64 = F64::min(fTemp734, self.fVec37[2]);
+                self.fVec38[0] = fTemp735;
+                let mut fTemp736: F64 = F64::min(fTemp735, self.fVec38[4]);
+                self.fVec39[0] = fTemp736;
+                let mut fTemp737: F64 = F64::min(fTemp736, self.fVec39[8]);
+                self.fVec40[(self.IOTA0 & 31) as usize] = fTemp737;
+                let mut fTemp738: F64 = F64::min(
+                    fTemp737,
                     self.fVec40[((i32::wrapping_sub(self.IOTA0, 16)) & 31) as usize],
                 );
-                self.fVec41[(self.IOTA0 & 63) as usize] = fTemp739;
-                let mut fTemp740: F64 = F64::min(
-                    fTemp739,
+                self.fVec41[(self.IOTA0 & 63) as usize] = fTemp738;
+                let mut fTemp739: F64 = F64::min(
+                    fTemp738,
                     self.fVec41[((i32::wrapping_sub(self.IOTA0, 32)) & 63) as usize],
                 );
-                self.fVec42[(self.IOTA0 & 127) as usize] = fTemp740;
-                let mut fTemp741: F64 = F64::min(
-                    fTemp740,
+                self.fVec42[(self.IOTA0 & 127) as usize] = fTemp739;
+                let mut fTemp740: F64 = F64::min(
+                    fTemp739,
                     self.fVec42[((i32::wrapping_sub(self.IOTA0, 64)) & 127) as usize],
                 );
-                self.fVec43[(self.IOTA0 & 255) as usize] = fTemp741;
-                let mut fTemp742: F64 = F64::min(
-                    fTemp741,
+                self.fVec43[(self.IOTA0 & 255) as usize] = fTemp740;
+                let mut fTemp741: F64 = F64::min(
+                    fTemp740,
                     self.fVec43[((i32::wrapping_sub(self.IOTA0, 128)) & 255) as usize],
                 );
-                self.fVec44[(self.IOTA0 & 511) as usize] = fTemp742;
-                let mut fTemp743: F64 = F64::min(
-                    fTemp742,
+                self.fVec44[(self.IOTA0 & 511) as usize] = fTemp741;
+                let mut fTemp742: F64 = F64::min(
+                    fTemp741,
                     self.fVec44[((i32::wrapping_sub(self.IOTA0, 256)) & 511) as usize],
                 );
-                self.fVec45[(self.IOTA0 & 1023) as usize] = fTemp743;
-                let mut fTemp744: F64 = F64::min(
-                    fTemp743,
+                self.fVec45[(self.IOTA0 & 1023) as usize] = fTemp742;
+                let mut fTemp743: F64 = F64::min(
+                    fTemp742,
                     self.fVec45[((i32::wrapping_sub(self.IOTA0, 512)) & 1023) as usize],
                 );
-                self.fVec46[(self.IOTA0 & 2047) as usize] = fTemp744;
-                let mut fTemp745: F64 = F64::min(
-                    fTemp744,
+                self.fVec46[(self.IOTA0 & 2047) as usize] = fTemp743;
+                let mut fTemp744: F64 = F64::min(
+                    fTemp743,
                     self.fVec46[((i32::wrapping_sub(self.IOTA0, 1024)) & 2047) as usize],
                 );
-                self.fVec47[(self.IOTA0 & 4095) as usize] = fTemp745;
-                let mut fTemp746: F64 = F64::min(
-                    fTemp745,
+                self.fVec47[(self.IOTA0 & 4095) as usize] = fTemp744;
+                let mut fTemp745: F64 = F64::min(
+                    fTemp744,
                     self.fVec47[((i32::wrapping_sub(self.IOTA0, 2048)) & 4095) as usize],
                 );
-                self.fVec48[(self.IOTA0 & 8191) as usize] = fTemp746;
+                self.fVec48[(self.IOTA0 & 8191) as usize] = fTemp745;
                 self.fVec49[(self.IOTA0 & 16383) as usize] = F64::min(
-                    fTemp746,
+                    fTemp745,
                     self.fVec48[((i32::wrapping_sub(self.IOTA0, 4096)) & 8191) as usize],
                 );
                 self.fRec17[0] = F64::max(
@@ -4611,166 +4624,166 @@ mod dsp_192k {
                                                             F64::min(
                                                                 F64::min(
                                                                     F64::min(
-                                                                        if iSlow23 != 0 {
-                                                                            fTemp734
+                                                                        (if iSlow23 != 0 {
+                                                                            fTemp733
                                                                         } else {
                                                                             1.7976931348623157e+308
-                                                                        },
-                                                                        if iSlow24 != 0 {
+                                                                        }),
+                                                                        (if iSlow24 != 0 {
                                                                             self.fVec37
                                                                                 [iSlow23 as usize]
                                                                         } else {
                                                                             1.7976931348623157e+308
-                                                                        },
+                                                                        }),
                                                                     ),
-                                                                    if iSlow25 != 0 {
+                                                                    (if iSlow25 != 0 {
                                                                         self.fVec38
                                                                             [iSlow26 as usize]
                                                                     } else {
                                                                         1.7976931348623157e+308
-                                                                    },
+                                                                    }),
                                                                 ),
-                                                                if iSlow27 != 0 {
+                                                                (if iSlow27 != 0 {
                                                                     self.fVec39[iSlow28 as usize]
                                                                 } else {
                                                                     1.7976931348623157e+308
-                                                                },
+                                                                }),
                                                             ),
-                                                            if iSlow29 != 0 {
+                                                            (if iSlow29 != 0 {
                                                                 self.fVec40[((i32::wrapping_sub(
                                                                     self.IOTA0, iSlow30,
                                                                 )) & 31)
                                                                     as usize]
                                                             } else {
                                                                 1.7976931348623157e+308
-                                                            },
+                                                            }),
                                                         ),
-                                                        if iSlow31 != 0 {
+                                                        (if iSlow31 != 0 {
                                                             self.fVec41[((i32::wrapping_sub(
                                                                 self.IOTA0, iSlow32,
                                                             )) & 63)
                                                                 as usize]
                                                         } else {
                                                             1.7976931348623157e+308
-                                                        },
+                                                        }),
                                                     ),
-                                                    if iSlow33 != 0 {
+                                                    (if iSlow33 != 0 {
                                                         self.fVec42[((i32::wrapping_sub(
                                                             self.IOTA0, iSlow34,
                                                         )) & 127)
                                                             as usize]
                                                     } else {
                                                         1.7976931348623157e+308
-                                                    },
+                                                    }),
                                                 ),
-                                                if iSlow35 != 0 {
+                                                (if iSlow35 != 0 {
                                                     self.fVec43[((i32::wrapping_sub(
                                                         self.IOTA0, iSlow36,
                                                     )) & 255)
                                                         as usize]
                                                 } else {
                                                     1.7976931348623157e+308
-                                                },
+                                                }),
                                             ),
-                                            if iSlow37 != 0 {
+                                            (if iSlow37 != 0 {
                                                 self.fVec44[((i32::wrapping_sub(
                                                     self.IOTA0, iSlow38,
                                                 )) & 511)
                                                     as usize]
                                             } else {
                                                 1.7976931348623157e+308
-                                            },
+                                            }),
                                         ),
-                                        if iSlow39 != 0 {
+                                        (if iSlow39 != 0 {
                                             self.fVec45[((i32::wrapping_sub(self.IOTA0, iSlow40))
                                                 & 1023)
                                                 as usize]
                                         } else {
                                             1.7976931348623157e+308
-                                        },
+                                        }),
                                     ),
-                                    if iSlow41 != 0 {
+                                    (if iSlow41 != 0 {
                                         self.fVec46[((i32::wrapping_sub(self.IOTA0, iSlow42))
                                             & 2047)
                                             as usize]
                                     } else {
                                         1.7976931348623157e+308
-                                    },
+                                    }),
                                 ),
-                                if iSlow43 != 0 {
+                                (if iSlow43 != 0 {
                                     self.fVec47
                                         [((i32::wrapping_sub(self.IOTA0, iSlow44)) & 4095) as usize]
                                 } else {
                                     1.7976931348623157e+308
-                                },
+                                }),
                             ),
-                            if iSlow45 != 0 {
+                            (if iSlow45 != 0 {
                                 self.fVec48
                                     [((i32::wrapping_sub(self.IOTA0, iSlow46)) & 8191) as usize]
                             } else {
                                 1.7976931348623157e+308
-                            },
+                            }),
                         ),
-                        if iSlow47 != 0 {
+                        (if iSlow47 != 0 {
                             self.fVec49[((i32::wrapping_sub(self.IOTA0, iSlow48)) & 16383) as usize]
                         } else {
                             1.7976931348623157e+308
-                        },
+                        }),
                     ),
                 );
-                let mut fTemp747: F64 = F64::min(self.fRec17[0], self.fRec17[1]);
-                self.fVec50[0] = fTemp747;
-                let mut fTemp748: F64 = F64::min(fTemp747, self.fVec50[2]);
-                self.fVec51[0] = fTemp748;
-                let mut fTemp749: F64 = F64::min(fTemp748, self.fVec51[4]);
-                self.fVec52[0] = fTemp749;
-                let mut fTemp750: F64 = F64::min(fTemp749, self.fVec52[8]);
-                self.fVec53[(self.IOTA0 & 31) as usize] = fTemp750;
-                let mut fTemp751: F64 = F64::min(
-                    fTemp750,
+                let mut fTemp746: F64 = F64::min(self.fRec17[0], self.fRec17[1]);
+                self.fVec50[0] = fTemp746;
+                let mut fTemp747: F64 = F64::min(fTemp746, self.fVec50[2]);
+                self.fVec51[0] = fTemp747;
+                let mut fTemp748: F64 = F64::min(fTemp747, self.fVec51[4]);
+                self.fVec52[0] = fTemp748;
+                let mut fTemp749: F64 = F64::min(fTemp748, self.fVec52[8]);
+                self.fVec53[(self.IOTA0 & 31) as usize] = fTemp749;
+                let mut fTemp750: F64 = F64::min(
+                    fTemp749,
                     self.fVec53[((i32::wrapping_sub(self.IOTA0, 16)) & 31) as usize],
                 );
-                self.fVec54[(self.IOTA0 & 63) as usize] = fTemp751;
-                let mut fTemp752: F64 = F64::min(
-                    fTemp751,
+                self.fVec54[(self.IOTA0 & 63) as usize] = fTemp750;
+                let mut fTemp751: F64 = F64::min(
+                    fTemp750,
                     self.fVec54[((i32::wrapping_sub(self.IOTA0, 32)) & 63) as usize],
                 );
-                self.fVec55[(self.IOTA0 & 127) as usize] = fTemp752;
-                let mut fTemp753: F64 = F64::min(
-                    fTemp752,
+                self.fVec55[(self.IOTA0 & 127) as usize] = fTemp751;
+                let mut fTemp752: F64 = F64::min(
+                    fTemp751,
                     self.fVec55[((i32::wrapping_sub(self.IOTA0, 64)) & 127) as usize],
                 );
-                self.fVec56[(self.IOTA0 & 255) as usize] = fTemp753;
-                let mut fTemp754: F64 = F64::min(
-                    fTemp753,
+                self.fVec56[(self.IOTA0 & 255) as usize] = fTemp752;
+                let mut fTemp753: F64 = F64::min(
+                    fTemp752,
                     self.fVec56[((i32::wrapping_sub(self.IOTA0, 128)) & 255) as usize],
                 );
-                self.fVec57[(self.IOTA0 & 511) as usize] = fTemp754;
-                let mut fTemp755: F64 = F64::min(
-                    fTemp754,
+                self.fVec57[(self.IOTA0 & 511) as usize] = fTemp753;
+                let mut fTemp754: F64 = F64::min(
+                    fTemp753,
                     self.fVec57[((i32::wrapping_sub(self.IOTA0, 256)) & 511) as usize],
                 );
-                self.fVec58[(self.IOTA0 & 1023) as usize] = fTemp755;
-                let mut fTemp756: F64 = F64::min(
-                    fTemp755,
+                self.fVec58[(self.IOTA0 & 1023) as usize] = fTemp754;
+                let mut fTemp755: F64 = F64::min(
+                    fTemp754,
                     self.fVec58[((i32::wrapping_sub(self.IOTA0, 512)) & 1023) as usize],
                 );
-                self.fVec59[(self.IOTA0 & 2047) as usize] = fTemp756;
-                let mut fTemp757: F64 = F64::min(
-                    fTemp756,
+                self.fVec59[(self.IOTA0 & 2047) as usize] = fTemp755;
+                let mut fTemp756: F64 = F64::min(
+                    fTemp755,
                     self.fVec59[((i32::wrapping_sub(self.IOTA0, 1024)) & 2047) as usize],
                 );
-                self.fVec60[(self.IOTA0 & 4095) as usize] = fTemp757;
-                let mut fTemp758: F64 = F64::min(
-                    fTemp757,
+                self.fVec60[(self.IOTA0 & 4095) as usize] = fTemp756;
+                let mut fTemp757: F64 = F64::min(
+                    fTemp756,
                     self.fVec60[((i32::wrapping_sub(self.IOTA0, 2048)) & 4095) as usize],
                 );
-                self.fVec61[(self.IOTA0 & 8191) as usize] = fTemp758;
+                self.fVec61[(self.IOTA0 & 8191) as usize] = fTemp757;
                 self.fVec62[(self.IOTA0 & 16383) as usize] = F64::min(
-                    fTemp758,
+                    fTemp757,
                     self.fVec61[((i32::wrapping_sub(self.IOTA0, 4096)) & 8191) as usize],
                 );
-                let mut fTemp759: F64 = F64::min(
+                let mut fTemp758: F64 = F64::min(
                     F64::min(
                         F64::min(
                             F64::min(
@@ -4783,3369 +4796,3369 @@ mod dsp_192k {
                                                         F64::min(
                                                             F64::min(
                                                                 F64::min(
-                                                                    if iSlow4 != 0 {
+                                                                    (if iSlow4 != 0 {
                                                                         self.fRec17[0]
                                                                     } else {
                                                                         1.7976931348623157e+308
-                                                                    },
-                                                                    if iSlow49 != 0 {
+                                                                    }),
+                                                                    (if iSlow49 != 0 {
                                                                         self.fVec50[iSlow4 as usize]
                                                                     } else {
                                                                         1.7976931348623157e+308
-                                                                    },
+                                                                    }),
                                                                 ),
-                                                                if iSlow50 != 0 {
+                                                                (if iSlow50 != 0 {
                                                                     self.fVec51[iSlow51 as usize]
                                                                 } else {
                                                                     1.7976931348623157e+308
-                                                                },
+                                                                }),
                                                             ),
-                                                            if iSlow52 != 0 {
+                                                            (if iSlow52 != 0 {
                                                                 self.fVec52[iSlow53 as usize]
                                                             } else {
                                                                 1.7976931348623157e+308
-                                                            },
+                                                            }),
                                                         ),
-                                                        if iSlow54 != 0 {
+                                                        (if iSlow54 != 0 {
                                                             self.fVec53[((i32::wrapping_sub(
                                                                 self.IOTA0, iSlow55,
                                                             )) & 31)
                                                                 as usize]
                                                         } else {
                                                             1.7976931348623157e+308
-                                                        },
+                                                        }),
                                                     ),
-                                                    if iSlow56 != 0 {
+                                                    (if iSlow56 != 0 {
                                                         self.fVec54[((i32::wrapping_sub(
                                                             self.IOTA0, iSlow57,
                                                         )) & 63)
                                                             as usize]
                                                     } else {
                                                         1.7976931348623157e+308
-                                                    },
+                                                    }),
                                                 ),
-                                                if iSlow58 != 0 {
+                                                (if iSlow58 != 0 {
                                                     self.fVec55[((i32::wrapping_sub(
                                                         self.IOTA0, iSlow59,
                                                     )) & 127)
                                                         as usize]
                                                 } else {
                                                     1.7976931348623157e+308
-                                                },
+                                                }),
                                             ),
-                                            if iSlow60 != 0 {
+                                            (if iSlow60 != 0 {
                                                 self.fVec56[((i32::wrapping_sub(
                                                     self.IOTA0, iSlow61,
                                                 )) & 255)
                                                     as usize]
                                             } else {
                                                 1.7976931348623157e+308
-                                            },
+                                            }),
                                         ),
-                                        if iSlow62 != 0 {
+                                        (if iSlow62 != 0 {
                                             self.fVec57[((i32::wrapping_sub(self.IOTA0, iSlow63))
                                                 & 511)
                                                 as usize]
                                         } else {
                                             1.7976931348623157e+308
-                                        },
+                                        }),
                                     ),
-                                    if iSlow64 != 0 {
+                                    (if iSlow64 != 0 {
                                         self.fVec58[((i32::wrapping_sub(self.IOTA0, iSlow65))
                                             & 1023)
                                             as usize]
                                     } else {
                                         1.7976931348623157e+308
-                                    },
+                                    }),
                                 ),
-                                if iSlow66 != 0 {
+                                (if iSlow66 != 0 {
                                     self.fVec59
                                         [((i32::wrapping_sub(self.IOTA0, iSlow67)) & 2047) as usize]
                                 } else {
                                     1.7976931348623157e+308
-                                },
+                                }),
                             ),
-                            if iSlow68 != 0 {
+                            (if iSlow68 != 0 {
                                 self.fVec60
                                     [((i32::wrapping_sub(self.IOTA0, iSlow69)) & 4095) as usize]
                             } else {
                                 1.7976931348623157e+308
-                            },
+                            }),
                         ),
-                        if iSlow70 != 0 {
+                        (if iSlow70 != 0 {
                             self.fVec61[((i32::wrapping_sub(self.IOTA0, iSlow71)) & 8191) as usize]
                         } else {
                             1.7976931348623157e+308
-                        },
+                        }),
                     ),
-                    if iSlow72 != 0 {
+                    (if iSlow72 != 0 {
                         self.fVec62[((i32::wrapping_sub(self.IOTA0, iSlow73)) & 16383) as usize]
                     } else {
                         1.7976931348623157e+308
-                    },
+                    }),
                 ) - self.fRec16[1];
-                self.fVec63[0] = fTemp759;
-                let mut iTemp760: i32 = (fTemp759 > 0.0) as i32;
-                let mut fTemp761: F64 = if iTemp760 != 0 { fSlow75 } else { fSlow74 };
-                self.fVec64[0] = fTemp761;
-                let mut fTemp762: F64 = 6.0 * fTemp761;
-                let mut iTemp763: i32 = (fTemp762) as i32;
-                let mut iTemp764: i32 = std::cmp::max(0, std::cmp::min(iTemp763, 6));
-                let mut iTemp765: i32 = std::cmp::max(
+                self.fVec63[0] = fTemp758;
+                let mut iTemp759: i32 = (fTemp758 > 0.0) as i32;
+                let mut fTemp760: F64 = (if iTemp759 != 0 { fSlow75 } else { fSlow74 });
+                self.fVec64[0] = fTemp760;
+                let mut fTemp761: F64 = 6.0 * fTemp760;
+                let mut iTemp762: i32 = (fTemp761) as i32;
+                let mut iTemp763: i32 = std::cmp::max(0, std::cmp::min(iTemp762, 6));
+                let mut iTemp764: i32 = std::cmp::max(
                     0,
-                    std::cmp::min(i32::wrapping_add(iTemp764, 1835001), 3670015),
+                    std::cmp::min(i32::wrapping_add(iTemp763, 1835001), 3670015),
                 );
-                let mut fTemp766: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp765, 7)) as usize] };
-                let mut fTemp767: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp765 as usize] };
-                let mut fTemp768: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp765, 1)) as usize] }
-                        - fTemp767;
-                let mut fTemp769: F64 = fTemp762 - (iTemp763) as F64;
-                let mut fTemp770: F64 = fTemp767
-                    + fTemp769 * fTemp768
+                let mut fTemp765: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp764, 7)) as usize] };
+                let mut fTemp766: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp764 as usize] };
+                let mut fTemp767: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp764, 1)) as usize] }
+                        - fTemp766;
+                let mut fTemp768: F64 = fTemp761 - (iTemp762) as F64;
+                let mut fTemp769: F64 = fTemp766
+                    + fTemp768 * fTemp767
                     + 0.5
-                        * (fTemp766
-                            - (fTemp767
-                                + fTemp769
-                                    * (fTemp768
+                        * (fTemp765
+                            - (fTemp766
+                                + fTemp768
+                                    * (fTemp767
                                         - (unsafe {
                                             ftbl0LambRs192kSIG0
-                                                [(i32::wrapping_add(iTemp765, 8)) as usize]
-                                        } - fTemp766))));
-                let mut fTemp771: F64 = if iTemp760 != 0 {
-                    fTemp770
+                                                [(i32::wrapping_add(iTemp764, 8)) as usize]
+                                        } - fTemp765))));
+                let mut fTemp770: F64 = (if iTemp759 != 0 {
+                    fTemp769
                 } else {
-                    1.0 - fTemp770
-                };
-                let mut iTemp772: i32 = (fTemp759 < 0.0) as i32;
-                let mut fTemp773: F64 = fSlow1 * (iTemp772) as F64 + fSlow13 * (iTemp760) as F64;
-                self.fVec65[0] = fTemp773;
-                let mut fTemp774: F64 = self.fConst10 / fTemp773;
-                let mut fTemp775: F64 = fTemp774 + 0.5;
-                let mut fTemp776: F64 = 524287.0 * (1.0 - fTemp775);
-                let mut iTemp777: i32 = (fTemp776) as i32;
-                let mut iTemp778: i32 = std::cmp::max(
+                    1.0 - fTemp769
+                });
+                let mut iTemp771: i32 = (fTemp758 < 0.0) as i32;
+                let mut fTemp772: F64 = fSlow1 * (iTemp771) as F64 + fSlow13 * (iTemp759) as F64;
+                self.fVec65[0] = fTemp772;
+                let mut fTemp773: F64 = self.fConst10 / fTemp772;
+                let mut fTemp774: F64 = fTemp773 + 0.5;
+                let mut fTemp775: F64 = 524287.0 * (1.0 - fTemp774);
+                let mut iTemp776: i32 = (fTemp775) as i32;
+                let mut iTemp777: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp777, 524287))),
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp776, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp779: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp778, 7)) as usize] };
-                let mut fTemp780: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp778 as usize] };
-                let mut fTemp781: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp778, 1)) as usize] }
-                        - fTemp780;
-                let mut fTemp782: F64 = 524287.0 * fTemp775;
-                let mut iTemp783: i32 = (fTemp782) as i32;
-                let mut iTemp784: i32 = std::cmp::max(
+                let mut fTemp778: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp777, 7)) as usize] };
+                let mut fTemp779: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp777 as usize] };
+                let mut fTemp780: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp777, 1)) as usize] }
+                        - fTemp779;
+                let mut fTemp781: F64 = 524287.0 * fTemp774;
+                let mut iTemp782: i32 = (fTemp781) as i32;
+                let mut iTemp783: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp783, 524287))),
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp782, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp785: F64 = unsafe {
+                let mut fTemp784: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp784, 7), 3670015),
-                    )) as usize]
-                };
-                let mut fTemp786: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp784 as usize] };
-                let mut fTemp787: F64 = unsafe {
-                    ftbl0LambRs192kSIG0[(std::cmp::max(
-                        0,
-                        std::cmp::min(i32::wrapping_add(iTemp784, 1), 3670015),
-                    )) as usize]
-                } - fTemp786;
-                let mut fTemp788: F64 = 6.0 * self.fVec64[1];
-                let mut iTemp789: i32 = (fTemp788) as i32;
-                let mut iTemp790: i32 = std::cmp::max(0, std::cmp::min(iTemp789, 6));
-                let mut fTemp791: F64 = 524287.0 * (1.0 - self.fRec15[1]);
-                let mut iTemp792: i32 = (fTemp791) as i32;
-                let mut iTemp793: i32 = std::cmp::max(
-                    0,
-                    std::cmp::min(
-                        i32::wrapping_add(
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp792, 524287))),
-                            iTemp790,
-                        ),
-                        3670015,
-                    ),
-                );
-                let mut fTemp794: F64 = unsafe {
-                    ftbl0LambRs192kSIG0[(std::cmp::max(
-                        0,
-                        std::cmp::min(i32::wrapping_add(iTemp793, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp783, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp795: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp793 as usize] };
-                let mut fTemp796: F64 = unsafe {
+                let mut fTemp785: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp783 as usize] };
+                let mut fTemp786: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp793, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp783, 1), 3670015),
                     )) as usize]
-                } - fTemp795;
-                let mut fTemp797: F64 = fTemp788 - (iTemp789) as F64;
-                let mut fTemp798: F64 = 524287.0 * self.fRec15[1];
-                let mut iTemp799: i32 = (fTemp798) as i32;
-                let mut iTemp800: i32 = std::cmp::max(
+                } - fTemp785;
+                let mut fTemp787: F64 = 6.0 * self.fVec64[1];
+                let mut iTemp788: i32 = (fTemp787) as i32;
+                let mut iTemp789: i32 = std::cmp::max(0, std::cmp::min(iTemp788, 6));
+                let mut fTemp790: F64 = 524287.0 * (1.0 - self.fRec15[1]);
+                let mut iTemp791: i32 = (fTemp790) as i32;
+                let mut iTemp792: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp790,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp799, 524287))),
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp791, 524287))),
+                            iTemp789,
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp801: F64 = unsafe {
+                let mut fTemp793: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp800, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp792, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp802: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp800 as usize] };
-                let mut fTemp803: F64 = unsafe {
+                let mut fTemp794: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp792 as usize] };
+                let mut fTemp795: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp800, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp792, 1), 3670015),
                     )) as usize]
-                } - fTemp802;
-                let mut fTemp804: F64 = self.fRec15[1] + fTemp774;
-                let mut fTemp805: F64 = 524287.0 * (1.0 - fTemp804);
-                let mut iTemp806: i32 = (fTemp805) as i32;
-                let mut iTemp807: i32 = std::cmp::max(
+                } - fTemp794;
+                let mut fTemp796: F64 = fTemp787 - (iTemp788) as F64;
+                let mut fTemp797: F64 = 524287.0 * self.fRec15[1];
+                let mut iTemp798: i32 = (fTemp797) as i32;
+                let mut iTemp799: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp806, 524287))),
+                            iTemp789,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp798, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp808: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp807, 7)) as usize] };
-                let mut fTemp809: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp807 as usize] };
-                let mut fTemp810: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp807, 1)) as usize] }
-                        - fTemp809;
-                let mut fTemp811: F64 = 524287.0 * fTemp804;
-                let mut iTemp812: i32 = (fTemp811) as i32;
-                let mut iTemp813: i32 = std::cmp::max(
-                    0,
-                    std::cmp::min(
-                        i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp812, 524287))),
-                        ),
-                        3670015,
-                    ),
-                );
-                let mut fTemp814: F64 = unsafe {
+                let mut fTemp800: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp813, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp799, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp815: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp813 as usize] };
-                let mut fTemp816: F64 = unsafe {
+                let mut fTemp801: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp799 as usize] };
+                let mut fTemp802: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp813, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp799, 1), 3670015),
                     )) as usize]
-                } - fTemp815;
-                let mut fTemp817: F64 =
-                    self.fRec15[1] + self.fConst10 * (1.0 / fTemp773 + 1.0 / self.fVec65[1]);
-                let mut fTemp818: F64 = 524287.0 * (1.0 - fTemp817);
-                let mut iTemp819: i32 = (fTemp818) as i32;
-                let mut iTemp820: i32 = std::cmp::max(
+                } - fTemp801;
+                let mut fTemp803: F64 = self.fRec15[1] + fTemp773;
+                let mut fTemp804: F64 = 524287.0 * (1.0 - fTemp803);
+                let mut iTemp805: i32 = (fTemp804) as i32;
+                let mut iTemp806: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp819, 524287))),
-                            iTemp764,
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp805, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp821: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp820, 7)) as usize] };
-                let mut fTemp822: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp820 as usize] };
-                let mut fTemp823: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp820, 1)) as usize] }
-                        - fTemp822;
-                let mut fTemp824: F64 = 524287.0 * fTemp817;
-                let mut iTemp825: i32 = (fTemp824) as i32;
-                let mut iTemp826: i32 = std::cmp::max(
+                let mut fTemp807: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp806, 7)) as usize] };
+                let mut fTemp808: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp806 as usize] };
+                let mut fTemp809: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp806, 1)) as usize] }
+                        - fTemp808;
+                let mut fTemp810: F64 = 524287.0 * fTemp803;
+                let mut iTemp811: i32 = (fTemp810) as i32;
+                let mut iTemp812: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp825, 524287))),
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp811, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp827: F64 = unsafe {
+                let mut fTemp813: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp826, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp812, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp828: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp826 as usize] };
-                let mut fTemp829: F64 = unsafe {
+                let mut fTemp814: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp812 as usize] };
+                let mut fTemp815: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp826, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp812, 1), 3670015),
                     )) as usize]
-                } - fTemp828;
-                let mut fTemp830: F64 = (if iTemp760 != 0 {
-                    fTemp828
-                        + fTemp769 * fTemp829
-                        + (fTemp824 - (iTemp825) as F64)
-                            * (fTemp827
-                                - (fTemp828
-                                    + fTemp769
-                                        * (fTemp829
+                } - fTemp814;
+                let mut fTemp816: F64 =
+                    self.fRec15[1] + self.fConst10 * (1.0 / fTemp772 + 1.0 / self.fVec65[1]);
+                let mut fTemp817: F64 = 524287.0 * (1.0 - fTemp816);
+                let mut iTemp818: i32 = (fTemp817) as i32;
+                let mut iTemp819: i32 = std::cmp::max(
+                    0,
+                    std::cmp::min(
+                        i32::wrapping_add(
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp818, 524287))),
+                            iTemp763,
+                        ),
+                        3670015,
+                    ),
+                );
+                let mut fTemp820: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp819, 7)) as usize] };
+                let mut fTemp821: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp819 as usize] };
+                let mut fTemp822: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp819, 1)) as usize] }
+                        - fTemp821;
+                let mut fTemp823: F64 = 524287.0 * fTemp816;
+                let mut iTemp824: i32 = (fTemp823) as i32;
+                let mut iTemp825: i32 = std::cmp::max(
+                    0,
+                    std::cmp::min(
+                        i32::wrapping_add(
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp824, 524287))),
+                        ),
+                        3670015,
+                    ),
+                );
+                let mut fTemp826: F64 = unsafe {
+                    ftbl0LambRs192kSIG0[(std::cmp::max(
+                        0,
+                        std::cmp::min(i32::wrapping_add(iTemp825, 7), 3670015),
+                    )) as usize]
+                };
+                let mut fTemp827: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp825 as usize] };
+                let mut fTemp828: F64 = unsafe {
+                    ftbl0LambRs192kSIG0[(std::cmp::max(
+                        0,
+                        std::cmp::min(i32::wrapping_add(iTemp825, 1), 3670015),
+                    )) as usize]
+                } - fTemp827;
+                let mut fTemp829: F64 = ((if iTemp759 != 0 {
+                    fTemp827
+                        + fTemp768 * fTemp828
+                        + (fTemp823 - (iTemp824) as F64)
+                            * (fTemp826
+                                - (fTemp827
+                                    + fTemp768
+                                        * (fTemp828
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0[(std::cmp::max(
                                                     0,
                                                     std::cmp::min(
-                                                        i32::wrapping_add(iTemp826, 8),
+                                                        i32::wrapping_add(iTemp825, 8),
                                                         3670015,
                                                     ),
                                                 ))
                                                     as usize]
-                                            } - fTemp827))))
+                                            } - fTemp826))))
                 } else {
-                    1.0 - (fTemp822
-                        + fTemp769 * fTemp823
-                        + (fTemp818 - (iTemp819) as F64)
-                            * (fTemp821
-                                - (fTemp822
-                                    + fTemp769
-                                        * (fTemp823
+                    1.0 - (fTemp821
+                        + fTemp768 * fTemp822
+                        + (fTemp817 - (iTemp818) as F64)
+                            * (fTemp820
+                                - (fTemp821
+                                    + fTemp768
+                                        * (fTemp822
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp820, 8)) as usize]
-                                            } - fTemp821)))))
-                } - if iTemp760 != 0 {
-                    fTemp815
-                        + fTemp769 * fTemp816
-                        + (fTemp811 - (iTemp812) as F64)
-                            * (fTemp814
-                                - (fTemp815
-                                    + fTemp769
-                                        * (fTemp816
+                                                    [(i32::wrapping_add(iTemp819, 8)) as usize]
+                                            } - fTemp820)))))
+                }) - (if iTemp759 != 0 {
+                    fTemp814
+                        + fTemp768 * fTemp815
+                        + (fTemp810 - (iTemp811) as F64)
+                            * (fTemp813
+                                - (fTemp814
+                                    + fTemp768
+                                        * (fTemp815
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0[(std::cmp::max(
                                                     0,
                                                     std::cmp::min(
-                                                        i32::wrapping_add(iTemp813, 8),
+                                                        i32::wrapping_add(iTemp812, 8),
                                                         3670015,
                                                     ),
                                                 ))
                                                     as usize]
-                                            } - fTemp814))))
+                                            } - fTemp813))))
                 } else {
-                    1.0 - (fTemp809
-                        + fTemp769 * fTemp810
-                        + (fTemp805 - (iTemp806) as F64)
-                            * (fTemp808
-                                - (fTemp809
-                                    + fTemp769
-                                        * (fTemp810
+                    1.0 - (fTemp808
+                        + fTemp768 * fTemp809
+                        + (fTemp804 - (iTemp805) as F64)
+                            * (fTemp807
+                                - (fTemp808
+                                    + fTemp768
+                                        * (fTemp809
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp807, 8)) as usize]
-                                            } - fTemp808)))))
-                }) * self.fVec63[1]
-                    / (fTemp759
+                                                    [(i32::wrapping_add(iTemp806, 8)) as usize]
+                                            } - fTemp807)))))
+                })) * self.fVec63[1]
+                    / (fTemp758
                         * (1.0
-                            - if iTemp760 != 0 {
-                                fTemp802
-                                    + fTemp797 * fTemp803
-                                    + (fTemp798 - (iTemp799) as F64)
-                                        * (fTemp801
-                                            - (fTemp802
-                                                + fTemp797
-                                                    * (fTemp803
+                            - (if iTemp759 != 0 {
+                                fTemp801
+                                    + fTemp796 * fTemp802
+                                    + (fTemp797 - (iTemp798) as F64)
+                                        * (fTemp800
+                                            - (fTemp801
+                                                + fTemp796
+                                                    * (fTemp802
                                                         - (unsafe {
                                                             ftbl0LambRs192kSIG0[(std::cmp::max(
                                                                 0,
                                                                 std::cmp::min(
-                                                                    i32::wrapping_add(iTemp800, 8),
+                                                                    i32::wrapping_add(iTemp799, 8),
                                                                     3670015,
                                                                 ),
                                                             ))
                                                                 as usize]
-                                                        } - fTemp801))))
+                                                        } - fTemp800))))
                             } else {
-                                1.0 - (fTemp795
-                                    + fTemp797 * fTemp796
-                                    + (fTemp791 - (iTemp792) as F64)
-                                        * (fTemp794
-                                            - (fTemp795
-                                                + fTemp797
-                                                    * (fTemp796
+                                1.0 - (fTemp794
+                                    + fTemp796 * fTemp795
+                                    + (fTemp790 - (iTemp791) as F64)
+                                        * (fTemp793
+                                            - (fTemp794
+                                                + fTemp796
+                                                    * (fTemp795
                                                         - (unsafe {
                                                             ftbl0LambRs192kSIG0[(std::cmp::max(
                                                                 0,
                                                                 std::cmp::min(
-                                                                    i32::wrapping_add(iTemp793, 8),
+                                                                    i32::wrapping_add(iTemp792, 8),
                                                                     3670015,
                                                                 ),
                                                             ))
                                                                 as usize]
-                                                        } - fTemp794)))))
-                            }));
-                let mut iTemp831: i32 = (fTemp830
-                    > ((if iTemp760 != 0 {
-                        fTemp786
-                            + fTemp769 * fTemp787
-                            + (fTemp782 - (iTemp783) as F64)
-                                * (fTemp785
-                                    - (fTemp786
-                                        + fTemp769
-                                            * (fTemp787
+                                                        } - fTemp793)))))
+                            })));
+                let mut iTemp830: i32 = (fTemp829
+                    > (((if iTemp759 != 0 {
+                        fTemp785
+                            + fTemp768 * fTemp786
+                            + (fTemp781 - (iTemp782) as F64)
+                                * (fTemp784
+                                    - (fTemp785
+                                        + fTemp768
+                                            * (fTemp786
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp784, 8),
+                                                            i32::wrapping_add(iTemp783, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp785))))
+                                                } - fTemp784))))
                     } else {
-                        1.0 - (fTemp780
-                            + fTemp769 * fTemp781
-                            + (fTemp776 - (iTemp777) as F64)
-                                * (fTemp779
-                                    - (fTemp780
-                                        + fTemp769
-                                            * (fTemp781
+                        1.0 - (fTemp779
+                            + fTemp768 * fTemp780
+                            + (fTemp775 - (iTemp776) as F64)
+                                * (fTemp778
+                                    - (fTemp779
+                                        + fTemp768
+                                            * (fTemp780
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp778, 8)) as usize]
-                                                } - fTemp779)))))
-                    } - fTemp771)
-                        / (1.0 - fTemp771))) as i32;
-                let mut fTemp832: F64 = if iTemp831 != 0 { 1.0 } else { 0.5 };
-                let mut fTemp833: F64 = if iTemp831 != 0 { 0.5 } else { 0.0 };
-                let mut fTemp834: F64 = fTemp833 + fTemp832;
-                let mut fTemp835: F64 = 0.5 * fTemp834;
-                let mut fTemp836: F64 = 524287.0 * (1.0 - fTemp835);
-                let mut iTemp837: i32 = (fTemp836) as i32;
-                let mut iTemp838: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp777, 8)) as usize]
+                                                } - fTemp778)))))
+                    }) - fTemp770)
+                        / (1.0 - fTemp770))) as i32;
+                let mut fTemp831: F64 = (if iTemp830 != 0 { 1.0 } else { 0.5 });
+                let mut fTemp832: F64 = (if iTemp830 != 0 { 0.5 } else { 0.0 });
+                let mut fTemp833: F64 = fTemp832 + fTemp831;
+                let mut fTemp834: F64 = 0.5 * fTemp833;
+                let mut fTemp835: F64 = 524287.0 * (1.0 - fTemp834);
+                let mut iTemp836: i32 = (fTemp835) as i32;
+                let mut iTemp837: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp837, 524287))),
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp836, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp839: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp838, 7)) as usize] };
-                let mut fTemp840: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp838 as usize] };
-                let mut fTemp841: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp838, 1)) as usize] }
-                        - fTemp840;
-                let mut fTemp842: F64 = 262143.5 * fTemp834;
-                let mut iTemp843: i32 = (fTemp842) as i32;
-                let mut iTemp844: i32 = std::cmp::max(
+                let mut fTemp838: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp837, 7)) as usize] };
+                let mut fTemp839: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp837 as usize] };
+                let mut fTemp840: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp837, 1)) as usize] }
+                        - fTemp839;
+                let mut fTemp841: F64 = 262143.5 * fTemp833;
+                let mut iTemp842: i32 = (fTemp841) as i32;
+                let mut iTemp843: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp843, 524287))),
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp842, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp845: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp844, 7)) as usize] };
-                let mut fTemp846: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp844 as usize] };
-                let mut fTemp847: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp844, 1)) as usize] }
-                        - fTemp846;
-                let mut fTemp848: F64 = if iTemp760 != 0 {
-                    fTemp846
-                        + fTemp769 * fTemp847
-                        + (fTemp842 - (iTemp843) as F64)
-                            * (fTemp845
-                                - (fTemp846
-                                    + fTemp769
-                                        * (fTemp847
+                let mut fTemp844: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp843, 7)) as usize] };
+                let mut fTemp845: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp843 as usize] };
+                let mut fTemp846: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp843, 1)) as usize] }
+                        - fTemp845;
+                let mut fTemp847: F64 = (if iTemp759 != 0 {
+                    fTemp845
+                        + fTemp768 * fTemp846
+                        + (fTemp841 - (iTemp842) as F64)
+                            * (fTemp844
+                                - (fTemp845
+                                    + fTemp768
+                                        * (fTemp846
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp844, 8)) as usize]
-                                            } - fTemp845))))
+                                                    [(i32::wrapping_add(iTemp843, 8)) as usize]
+                                            } - fTemp844))))
                 } else {
-                    1.0 - (fTemp840
-                        + fTemp769 * fTemp841
-                        + (fTemp836 - (iTemp837) as F64)
-                            * (fTemp839
-                                - (fTemp840
-                                    + fTemp769
-                                        * (fTemp841
+                    1.0 - (fTemp839
+                        + fTemp768 * fTemp840
+                        + (fTemp835 - (iTemp836) as F64)
+                            * (fTemp838
+                                - (fTemp839
+                                    + fTemp768
+                                        * (fTemp840
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp838, 8)) as usize]
-                                            } - fTemp839)))))
-                };
-                let mut fTemp849: F64 = fTemp774 + fTemp835;
-                let mut fTemp850: F64 = 524287.0 * (1.0 - fTemp849);
-                let mut iTemp851: i32 = (fTemp850) as i32;
-                let mut iTemp852: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp837, 8)) as usize]
+                                            } - fTemp838)))))
+                });
+                let mut fTemp848: F64 = fTemp773 + fTemp834;
+                let mut fTemp849: F64 = 524287.0 * (1.0 - fTemp848);
+                let mut iTemp850: i32 = (fTemp849) as i32;
+                let mut iTemp851: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp851, 524287))),
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp850, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp853: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp852, 7)) as usize] };
-                let mut fTemp854: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp852 as usize] };
-                let mut fTemp855: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp852, 1)) as usize] }
-                        - fTemp854;
-                let mut fTemp856: F64 = 524287.0 * fTemp849;
-                let mut iTemp857: i32 = (fTemp856) as i32;
-                let mut iTemp858: i32 = std::cmp::max(
+                let mut fTemp852: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp851, 7)) as usize] };
+                let mut fTemp853: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp851 as usize] };
+                let mut fTemp854: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp851, 1)) as usize] }
+                        - fTemp853;
+                let mut fTemp855: F64 = 524287.0 * fTemp848;
+                let mut iTemp856: i32 = (fTemp855) as i32;
+                let mut iTemp857: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp857, 524287))),
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp856, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp859: F64 = unsafe {
+                let mut fTemp858: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp858, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp857, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp860: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp858 as usize] };
-                let mut fTemp861: F64 = unsafe {
+                let mut fTemp859: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp857 as usize] };
+                let mut fTemp860: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp858, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp857, 1), 3670015),
                     )) as usize]
-                } - fTemp860;
-                let mut iTemp862: i32 = (fTemp830
-                    > ((if iTemp760 != 0 {
-                        fTemp860
-                            + fTemp769 * fTemp861
-                            + (fTemp856 - (iTemp857) as F64)
-                                * (fTemp859
-                                    - (fTemp860
-                                        + fTemp769
-                                            * (fTemp861
+                } - fTemp859;
+                let mut iTemp861: i32 = (fTemp829
+                    > (((if iTemp759 != 0 {
+                        fTemp859
+                            + fTemp768 * fTemp860
+                            + (fTemp855 - (iTemp856) as F64)
+                                * (fTemp858
+                                    - (fTemp859
+                                        + fTemp768
+                                            * (fTemp860
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp858, 8),
+                                                            i32::wrapping_add(iTemp857, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp859))))
+                                                } - fTemp858))))
                     } else {
-                        1.0 - (fTemp854
-                            + fTemp769 * fTemp855
-                            + (fTemp850 - (iTemp851) as F64)
-                                * (fTemp853
-                                    - (fTemp854
-                                        + fTemp769
-                                            * (fTemp855
+                        1.0 - (fTemp853
+                            + fTemp768 * fTemp854
+                            + (fTemp849 - (iTemp850) as F64)
+                                * (fTemp852
+                                    - (fTemp853
+                                        + fTemp768
+                                            * (fTemp854
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp852, 8)) as usize]
-                                                } - fTemp853)))))
-                    } - fTemp848)
-                        / (1.0 - fTemp848))) as i32;
-                let mut fTemp863: F64 = if iTemp862 != 0 { fTemp832 } else { fTemp835 };
-                let mut fTemp864: F64 = if iTemp862 != 0 { fTemp835 } else { fTemp833 };
-                let mut fTemp865: F64 = fTemp864 + fTemp863;
-                let mut fTemp866: F64 = 0.5 * fTemp865;
-                let mut fTemp867: F64 = 524287.0 * (1.0 - fTemp866);
-                let mut iTemp868: i32 = (fTemp867) as i32;
-                let mut iTemp869: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp851, 8)) as usize]
+                                                } - fTemp852)))))
+                    }) - fTemp847)
+                        / (1.0 - fTemp847))) as i32;
+                let mut fTemp862: F64 = (if iTemp861 != 0 { fTemp831 } else { fTemp834 });
+                let mut fTemp863: F64 = (if iTemp861 != 0 { fTemp834 } else { fTemp832 });
+                let mut fTemp864: F64 = fTemp863 + fTemp862;
+                let mut fTemp865: F64 = 0.5 * fTemp864;
+                let mut fTemp866: F64 = 524287.0 * (1.0 - fTemp865);
+                let mut iTemp867: i32 = (fTemp866) as i32;
+                let mut iTemp868: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp868, 524287))),
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp867, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp870: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp869, 7)) as usize] };
-                let mut fTemp871: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp869 as usize] };
-                let mut fTemp872: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp869, 1)) as usize] }
-                        - fTemp871;
-                let mut fTemp873: F64 = 262143.5 * fTemp865;
-                let mut iTemp874: i32 = (fTemp873) as i32;
-                let mut iTemp875: i32 = std::cmp::max(
+                let mut fTemp869: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp868, 7)) as usize] };
+                let mut fTemp870: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp868 as usize] };
+                let mut fTemp871: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp868, 1)) as usize] }
+                        - fTemp870;
+                let mut fTemp872: F64 = 262143.5 * fTemp864;
+                let mut iTemp873: i32 = (fTemp872) as i32;
+                let mut iTemp874: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp874, 524287))),
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp873, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp876: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp875, 7)) as usize] };
-                let mut fTemp877: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp875 as usize] };
-                let mut fTemp878: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp875, 1)) as usize] }
-                        - fTemp877;
-                let mut fTemp879: F64 = if iTemp760 != 0 {
-                    fTemp877
-                        + fTemp769 * fTemp878
-                        + (fTemp873 - (iTemp874) as F64)
-                            * (fTemp876
-                                - (fTemp877
-                                    + fTemp769
-                                        * (fTemp878
+                let mut fTemp875: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp874, 7)) as usize] };
+                let mut fTemp876: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp874 as usize] };
+                let mut fTemp877: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp874, 1)) as usize] }
+                        - fTemp876;
+                let mut fTemp878: F64 = (if iTemp759 != 0 {
+                    fTemp876
+                        + fTemp768 * fTemp877
+                        + (fTemp872 - (iTemp873) as F64)
+                            * (fTemp875
+                                - (fTemp876
+                                    + fTemp768
+                                        * (fTemp877
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp875, 8)) as usize]
-                                            } - fTemp876))))
+                                                    [(i32::wrapping_add(iTemp874, 8)) as usize]
+                                            } - fTemp875))))
                 } else {
-                    1.0 - (fTemp871
-                        + fTemp769 * fTemp872
-                        + (fTemp867 - (iTemp868) as F64)
-                            * (fTemp870
-                                - (fTemp871
-                                    + fTemp769
-                                        * (fTemp872
+                    1.0 - (fTemp870
+                        + fTemp768 * fTemp871
+                        + (fTemp866 - (iTemp867) as F64)
+                            * (fTemp869
+                                - (fTemp870
+                                    + fTemp768
+                                        * (fTemp871
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp869, 8)) as usize]
-                                            } - fTemp870)))))
-                };
-                let mut fTemp880: F64 = fTemp774 + fTemp866;
-                let mut fTemp881: F64 = 524287.0 * (1.0 - fTemp880);
-                let mut iTemp882: i32 = (fTemp881) as i32;
-                let mut iTemp883: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp868, 8)) as usize]
+                                            } - fTemp869)))))
+                });
+                let mut fTemp879: F64 = fTemp773 + fTemp865;
+                let mut fTemp880: F64 = 524287.0 * (1.0 - fTemp879);
+                let mut iTemp881: i32 = (fTemp880) as i32;
+                let mut iTemp882: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp882, 524287))),
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp881, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp884: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp883, 7)) as usize] };
-                let mut fTemp885: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp883 as usize] };
-                let mut fTemp886: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp883, 1)) as usize] }
-                        - fTemp885;
-                let mut fTemp887: F64 = 524287.0 * fTemp880;
-                let mut iTemp888: i32 = (fTemp887) as i32;
-                let mut iTemp889: i32 = std::cmp::max(
+                let mut fTemp883: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp882, 7)) as usize] };
+                let mut fTemp884: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp882 as usize] };
+                let mut fTemp885: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp882, 1)) as usize] }
+                        - fTemp884;
+                let mut fTemp886: F64 = 524287.0 * fTemp879;
+                let mut iTemp887: i32 = (fTemp886) as i32;
+                let mut iTemp888: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp888, 524287))),
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp887, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp890: F64 = unsafe {
+                let mut fTemp889: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp889, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp888, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp891: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp889 as usize] };
-                let mut fTemp892: F64 = unsafe {
+                let mut fTemp890: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp888 as usize] };
+                let mut fTemp891: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp889, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp888, 1), 3670015),
                     )) as usize]
-                } - fTemp891;
-                let mut iTemp893: i32 = (fTemp830
-                    > ((if iTemp760 != 0 {
-                        fTemp891
-                            + fTemp769 * fTemp892
-                            + (fTemp887 - (iTemp888) as F64)
-                                * (fTemp890
-                                    - (fTemp891
-                                        + fTemp769
-                                            * (fTemp892
+                } - fTemp890;
+                let mut iTemp892: i32 = (fTemp829
+                    > (((if iTemp759 != 0 {
+                        fTemp890
+                            + fTemp768 * fTemp891
+                            + (fTemp886 - (iTemp887) as F64)
+                                * (fTemp889
+                                    - (fTemp890
+                                        + fTemp768
+                                            * (fTemp891
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp889, 8),
+                                                            i32::wrapping_add(iTemp888, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp890))))
+                                                } - fTemp889))))
                     } else {
-                        1.0 - (fTemp885
-                            + fTemp769 * fTemp886
-                            + (fTemp881 - (iTemp882) as F64)
-                                * (fTemp884
-                                    - (fTemp885
-                                        + fTemp769
-                                            * (fTemp886
+                        1.0 - (fTemp884
+                            + fTemp768 * fTemp885
+                            + (fTemp880 - (iTemp881) as F64)
+                                * (fTemp883
+                                    - (fTemp884
+                                        + fTemp768
+                                            * (fTemp885
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp883, 8)) as usize]
-                                                } - fTemp884)))))
-                    } - fTemp879)
-                        / (1.0 - fTemp879))) as i32;
-                let mut fTemp894: F64 = if iTemp893 != 0 { fTemp863 } else { fTemp866 };
-                let mut fTemp895: F64 = if iTemp893 != 0 { fTemp866 } else { fTemp864 };
-                let mut fTemp896: F64 = fTemp895 + fTemp894;
-                let mut fTemp897: F64 = 0.5 * fTemp896;
-                let mut fTemp898: F64 = 524287.0 * (1.0 - fTemp897);
-                let mut iTemp899: i32 = (fTemp898) as i32;
-                let mut iTemp900: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp882, 8)) as usize]
+                                                } - fTemp883)))))
+                    }) - fTemp878)
+                        / (1.0 - fTemp878))) as i32;
+                let mut fTemp893: F64 = (if iTemp892 != 0 { fTemp862 } else { fTemp865 });
+                let mut fTemp894: F64 = (if iTemp892 != 0 { fTemp865 } else { fTemp863 });
+                let mut fTemp895: F64 = fTemp894 + fTemp893;
+                let mut fTemp896: F64 = 0.5 * fTemp895;
+                let mut fTemp897: F64 = 524287.0 * (1.0 - fTemp896);
+                let mut iTemp898: i32 = (fTemp897) as i32;
+                let mut iTemp899: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp899, 524287))),
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp898, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp901: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp900, 7)) as usize] };
-                let mut fTemp902: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp900 as usize] };
-                let mut fTemp903: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp900, 1)) as usize] }
-                        - fTemp902;
-                let mut fTemp904: F64 = 262143.5 * fTemp896;
-                let mut iTemp905: i32 = (fTemp904) as i32;
-                let mut iTemp906: i32 = std::cmp::max(
+                let mut fTemp900: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp899, 7)) as usize] };
+                let mut fTemp901: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp899 as usize] };
+                let mut fTemp902: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp899, 1)) as usize] }
+                        - fTemp901;
+                let mut fTemp903: F64 = 262143.5 * fTemp895;
+                let mut iTemp904: i32 = (fTemp903) as i32;
+                let mut iTemp905: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp905, 524287))),
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp904, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp907: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp906, 7)) as usize] };
-                let mut fTemp908: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp906 as usize] };
-                let mut fTemp909: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp906, 1)) as usize] }
-                        - fTemp908;
-                let mut fTemp910: F64 = if iTemp760 != 0 {
-                    fTemp908
-                        + fTemp769 * fTemp909
-                        + (fTemp904 - (iTemp905) as F64)
-                            * (fTemp907
-                                - (fTemp908
-                                    + fTemp769
-                                        * (fTemp909
+                let mut fTemp906: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp905, 7)) as usize] };
+                let mut fTemp907: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp905 as usize] };
+                let mut fTemp908: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp905, 1)) as usize] }
+                        - fTemp907;
+                let mut fTemp909: F64 = (if iTemp759 != 0 {
+                    fTemp907
+                        + fTemp768 * fTemp908
+                        + (fTemp903 - (iTemp904) as F64)
+                            * (fTemp906
+                                - (fTemp907
+                                    + fTemp768
+                                        * (fTemp908
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp906, 8)) as usize]
-                                            } - fTemp907))))
+                                                    [(i32::wrapping_add(iTemp905, 8)) as usize]
+                                            } - fTemp906))))
                 } else {
-                    1.0 - (fTemp902
-                        + fTemp769 * fTemp903
-                        + (fTemp898 - (iTemp899) as F64)
-                            * (fTemp901
-                                - (fTemp902
-                                    + fTemp769
-                                        * (fTemp903
+                    1.0 - (fTemp901
+                        + fTemp768 * fTemp902
+                        + (fTemp897 - (iTemp898) as F64)
+                            * (fTemp900
+                                - (fTemp901
+                                    + fTemp768
+                                        * (fTemp902
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp900, 8)) as usize]
-                                            } - fTemp901)))))
-                };
-                let mut fTemp911: F64 = fTemp774 + fTemp897;
-                let mut fTemp912: F64 = 524287.0 * (1.0 - fTemp911);
-                let mut iTemp913: i32 = (fTemp912) as i32;
-                let mut iTemp914: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp899, 8)) as usize]
+                                            } - fTemp900)))))
+                });
+                let mut fTemp910: F64 = fTemp773 + fTemp896;
+                let mut fTemp911: F64 = 524287.0 * (1.0 - fTemp910);
+                let mut iTemp912: i32 = (fTemp911) as i32;
+                let mut iTemp913: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp913, 524287))),
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp912, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp915: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp914, 7)) as usize] };
-                let mut fTemp916: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp914 as usize] };
-                let mut fTemp917: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp914, 1)) as usize] }
-                        - fTemp916;
-                let mut fTemp918: F64 = 524287.0 * fTemp911;
-                let mut iTemp919: i32 = (fTemp918) as i32;
-                let mut iTemp920: i32 = std::cmp::max(
+                let mut fTemp914: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp913, 7)) as usize] };
+                let mut fTemp915: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp913 as usize] };
+                let mut fTemp916: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp913, 1)) as usize] }
+                        - fTemp915;
+                let mut fTemp917: F64 = 524287.0 * fTemp910;
+                let mut iTemp918: i32 = (fTemp917) as i32;
+                let mut iTemp919: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp919, 524287))),
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp918, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp921: F64 = unsafe {
+                let mut fTemp920: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp920, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp919, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp922: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp920 as usize] };
-                let mut fTemp923: F64 = unsafe {
+                let mut fTemp921: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp919 as usize] };
+                let mut fTemp922: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp920, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp919, 1), 3670015),
                     )) as usize]
-                } - fTemp922;
-                let mut iTemp924: i32 = (fTemp830
-                    > ((if iTemp760 != 0 {
-                        fTemp922
-                            + fTemp769 * fTemp923
-                            + (fTemp918 - (iTemp919) as F64)
-                                * (fTemp921
-                                    - (fTemp922
-                                        + fTemp769
-                                            * (fTemp923
+                } - fTemp921;
+                let mut iTemp923: i32 = (fTemp829
+                    > (((if iTemp759 != 0 {
+                        fTemp921
+                            + fTemp768 * fTemp922
+                            + (fTemp917 - (iTemp918) as F64)
+                                * (fTemp920
+                                    - (fTemp921
+                                        + fTemp768
+                                            * (fTemp922
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp920, 8),
+                                                            i32::wrapping_add(iTemp919, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp921))))
+                                                } - fTemp920))))
                     } else {
-                        1.0 - (fTemp916
-                            + fTemp769 * fTemp917
-                            + (fTemp912 - (iTemp913) as F64)
-                                * (fTemp915
-                                    - (fTemp916
-                                        + fTemp769
-                                            * (fTemp917
+                        1.0 - (fTemp915
+                            + fTemp768 * fTemp916
+                            + (fTemp911 - (iTemp912) as F64)
+                                * (fTemp914
+                                    - (fTemp915
+                                        + fTemp768
+                                            * (fTemp916
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp914, 8)) as usize]
-                                                } - fTemp915)))))
-                    } - fTemp910)
-                        / (1.0 - fTemp910))) as i32;
-                let mut fTemp925: F64 = if iTemp924 != 0 { fTemp894 } else { fTemp897 };
-                let mut fTemp926: F64 = if iTemp924 != 0 { fTemp897 } else { fTemp895 };
-                let mut fTemp927: F64 = fTemp926 + fTemp925;
-                let mut fTemp928: F64 = 0.5 * fTemp927;
-                let mut fTemp929: F64 = 524287.0 * (1.0 - fTemp928);
-                let mut iTemp930: i32 = (fTemp929) as i32;
-                let mut iTemp931: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp913, 8)) as usize]
+                                                } - fTemp914)))))
+                    }) - fTemp909)
+                        / (1.0 - fTemp909))) as i32;
+                let mut fTemp924: F64 = (if iTemp923 != 0 { fTemp893 } else { fTemp896 });
+                let mut fTemp925: F64 = (if iTemp923 != 0 { fTemp896 } else { fTemp894 });
+                let mut fTemp926: F64 = fTemp925 + fTemp924;
+                let mut fTemp927: F64 = 0.5 * fTemp926;
+                let mut fTemp928: F64 = 524287.0 * (1.0 - fTemp927);
+                let mut iTemp929: i32 = (fTemp928) as i32;
+                let mut iTemp930: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp930, 524287))),
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp929, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp932: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp931, 7)) as usize] };
-                let mut fTemp933: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp931 as usize] };
-                let mut fTemp934: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp931, 1)) as usize] }
-                        - fTemp933;
-                let mut fTemp935: F64 = 262143.5 * fTemp927;
-                let mut iTemp936: i32 = (fTemp935) as i32;
-                let mut iTemp937: i32 = std::cmp::max(
+                let mut fTemp931: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp930, 7)) as usize] };
+                let mut fTemp932: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp930 as usize] };
+                let mut fTemp933: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp930, 1)) as usize] }
+                        - fTemp932;
+                let mut fTemp934: F64 = 262143.5 * fTemp926;
+                let mut iTemp935: i32 = (fTemp934) as i32;
+                let mut iTemp936: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp936, 524287))),
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp935, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp938: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp937, 7)) as usize] };
-                let mut fTemp939: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp937 as usize] };
-                let mut fTemp940: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp937, 1)) as usize] }
-                        - fTemp939;
-                let mut fTemp941: F64 = if iTemp760 != 0 {
-                    fTemp939
-                        + fTemp769 * fTemp940
-                        + (fTemp935 - (iTemp936) as F64)
-                            * (fTemp938
-                                - (fTemp939
-                                    + fTemp769
-                                        * (fTemp940
+                let mut fTemp937: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp936, 7)) as usize] };
+                let mut fTemp938: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp936 as usize] };
+                let mut fTemp939: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp936, 1)) as usize] }
+                        - fTemp938;
+                let mut fTemp940: F64 = (if iTemp759 != 0 {
+                    fTemp938
+                        + fTemp768 * fTemp939
+                        + (fTemp934 - (iTemp935) as F64)
+                            * (fTemp937
+                                - (fTemp938
+                                    + fTemp768
+                                        * (fTemp939
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp937, 8)) as usize]
-                                            } - fTemp938))))
+                                                    [(i32::wrapping_add(iTemp936, 8)) as usize]
+                                            } - fTemp937))))
                 } else {
-                    1.0 - (fTemp933
-                        + fTemp769 * fTemp934
-                        + (fTemp929 - (iTemp930) as F64)
-                            * (fTemp932
-                                - (fTemp933
-                                    + fTemp769
-                                        * (fTemp934
+                    1.0 - (fTemp932
+                        + fTemp768 * fTemp933
+                        + (fTemp928 - (iTemp929) as F64)
+                            * (fTemp931
+                                - (fTemp932
+                                    + fTemp768
+                                        * (fTemp933
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp931, 8)) as usize]
-                                            } - fTemp932)))))
-                };
-                let mut fTemp942: F64 = fTemp774 + fTemp928;
-                let mut fTemp943: F64 = 524287.0 * (1.0 - fTemp942);
-                let mut iTemp944: i32 = (fTemp943) as i32;
-                let mut iTemp945: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp930, 8)) as usize]
+                                            } - fTemp931)))))
+                });
+                let mut fTemp941: F64 = fTemp773 + fTemp927;
+                let mut fTemp942: F64 = 524287.0 * (1.0 - fTemp941);
+                let mut iTemp943: i32 = (fTemp942) as i32;
+                let mut iTemp944: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp944, 524287))),
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp943, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp946: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp945, 7)) as usize] };
-                let mut fTemp947: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp945 as usize] };
-                let mut fTemp948: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp945, 1)) as usize] }
-                        - fTemp947;
-                let mut fTemp949: F64 = 524287.0 * fTemp942;
-                let mut iTemp950: i32 = (fTemp949) as i32;
-                let mut iTemp951: i32 = std::cmp::max(
+                let mut fTemp945: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp944, 7)) as usize] };
+                let mut fTemp946: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp944 as usize] };
+                let mut fTemp947: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp944, 1)) as usize] }
+                        - fTemp946;
+                let mut fTemp948: F64 = 524287.0 * fTemp941;
+                let mut iTemp949: i32 = (fTemp948) as i32;
+                let mut iTemp950: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp950, 524287))),
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp949, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp952: F64 = unsafe {
+                let mut fTemp951: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp951, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp950, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp953: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp951 as usize] };
-                let mut fTemp954: F64 = unsafe {
+                let mut fTemp952: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp950 as usize] };
+                let mut fTemp953: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp951, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp950, 1), 3670015),
                     )) as usize]
-                } - fTemp953;
-                let mut iTemp955: i32 = (fTemp830
-                    > ((if iTemp760 != 0 {
-                        fTemp953
-                            + fTemp769 * fTemp954
-                            + (fTemp949 - (iTemp950) as F64)
-                                * (fTemp952
-                                    - (fTemp953
-                                        + fTemp769
-                                            * (fTemp954
+                } - fTemp952;
+                let mut iTemp954: i32 = (fTemp829
+                    > (((if iTemp759 != 0 {
+                        fTemp952
+                            + fTemp768 * fTemp953
+                            + (fTemp948 - (iTemp949) as F64)
+                                * (fTemp951
+                                    - (fTemp952
+                                        + fTemp768
+                                            * (fTemp953
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp951, 8),
+                                                            i32::wrapping_add(iTemp950, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp952))))
+                                                } - fTemp951))))
                     } else {
-                        1.0 - (fTemp947
-                            + fTemp769 * fTemp948
-                            + (fTemp943 - (iTemp944) as F64)
-                                * (fTemp946
-                                    - (fTemp947
-                                        + fTemp769
-                                            * (fTemp948
+                        1.0 - (fTemp946
+                            + fTemp768 * fTemp947
+                            + (fTemp942 - (iTemp943) as F64)
+                                * (fTemp945
+                                    - (fTemp946
+                                        + fTemp768
+                                            * (fTemp947
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp945, 8)) as usize]
-                                                } - fTemp946)))))
-                    } - fTemp941)
-                        / (1.0 - fTemp941))) as i32;
-                let mut fTemp956: F64 = if iTemp955 != 0 { fTemp925 } else { fTemp928 };
-                let mut fTemp957: F64 = if iTemp955 != 0 { fTemp928 } else { fTemp926 };
-                let mut fTemp958: F64 = fTemp957 + fTemp956;
-                let mut fTemp959: F64 = 0.5 * fTemp958;
-                let mut fTemp960: F64 = 524287.0 * (1.0 - fTemp959);
-                let mut iTemp961: i32 = (fTemp960) as i32;
-                let mut iTemp962: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp944, 8)) as usize]
+                                                } - fTemp945)))))
+                    }) - fTemp940)
+                        / (1.0 - fTemp940))) as i32;
+                let mut fTemp955: F64 = (if iTemp954 != 0 { fTemp924 } else { fTemp927 });
+                let mut fTemp956: F64 = (if iTemp954 != 0 { fTemp927 } else { fTemp925 });
+                let mut fTemp957: F64 = fTemp956 + fTemp955;
+                let mut fTemp958: F64 = 0.5 * fTemp957;
+                let mut fTemp959: F64 = 524287.0 * (1.0 - fTemp958);
+                let mut iTemp960: i32 = (fTemp959) as i32;
+                let mut iTemp961: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp961, 524287))),
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp960, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp963: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp962, 7)) as usize] };
-                let mut fTemp964: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp962 as usize] };
-                let mut fTemp965: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp962, 1)) as usize] }
-                        - fTemp964;
-                let mut fTemp966: F64 = 262143.5 * fTemp958;
-                let mut iTemp967: i32 = (fTemp966) as i32;
-                let mut iTemp968: i32 = std::cmp::max(
+                let mut fTemp962: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp961, 7)) as usize] };
+                let mut fTemp963: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp961 as usize] };
+                let mut fTemp964: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp961, 1)) as usize] }
+                        - fTemp963;
+                let mut fTemp965: F64 = 262143.5 * fTemp957;
+                let mut iTemp966: i32 = (fTemp965) as i32;
+                let mut iTemp967: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp967, 524287))),
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp966, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp969: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp968, 7)) as usize] };
-                let mut fTemp970: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp968 as usize] };
-                let mut fTemp971: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp968, 1)) as usize] }
-                        - fTemp970;
-                let mut fTemp972: F64 = if iTemp760 != 0 {
-                    fTemp970
-                        + fTemp769 * fTemp971
-                        + (fTemp966 - (iTemp967) as F64)
-                            * (fTemp969
-                                - (fTemp970
-                                    + fTemp769
-                                        * (fTemp971
+                let mut fTemp968: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp967, 7)) as usize] };
+                let mut fTemp969: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp967 as usize] };
+                let mut fTemp970: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp967, 1)) as usize] }
+                        - fTemp969;
+                let mut fTemp971: F64 = (if iTemp759 != 0 {
+                    fTemp969
+                        + fTemp768 * fTemp970
+                        + (fTemp965 - (iTemp966) as F64)
+                            * (fTemp968
+                                - (fTemp969
+                                    + fTemp768
+                                        * (fTemp970
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp968, 8)) as usize]
-                                            } - fTemp969))))
+                                                    [(i32::wrapping_add(iTemp967, 8)) as usize]
+                                            } - fTemp968))))
                 } else {
-                    1.0 - (fTemp964
-                        + fTemp769 * fTemp965
-                        + (fTemp960 - (iTemp961) as F64)
-                            * (fTemp963
-                                - (fTemp964
-                                    + fTemp769
-                                        * (fTemp965
+                    1.0 - (fTemp963
+                        + fTemp768 * fTemp964
+                        + (fTemp959 - (iTemp960) as F64)
+                            * (fTemp962
+                                - (fTemp963
+                                    + fTemp768
+                                        * (fTemp964
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp962, 8)) as usize]
-                                            } - fTemp963)))))
-                };
-                let mut fTemp973: F64 = fTemp774 + fTemp959;
-                let mut fTemp974: F64 = 524287.0 * (1.0 - fTemp973);
-                let mut iTemp975: i32 = (fTemp974) as i32;
-                let mut iTemp976: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp961, 8)) as usize]
+                                            } - fTemp962)))))
+                });
+                let mut fTemp972: F64 = fTemp773 + fTemp958;
+                let mut fTemp973: F64 = 524287.0 * (1.0 - fTemp972);
+                let mut iTemp974: i32 = (fTemp973) as i32;
+                let mut iTemp975: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp975, 524287))),
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp974, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp977: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp976, 7)) as usize] };
-                let mut fTemp978: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp976 as usize] };
-                let mut fTemp979: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp976, 1)) as usize] }
-                        - fTemp978;
-                let mut fTemp980: F64 = 524287.0 * fTemp973;
-                let mut iTemp981: i32 = (fTemp980) as i32;
-                let mut iTemp982: i32 = std::cmp::max(
+                let mut fTemp976: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp975, 7)) as usize] };
+                let mut fTemp977: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp975 as usize] };
+                let mut fTemp978: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp975, 1)) as usize] }
+                        - fTemp977;
+                let mut fTemp979: F64 = 524287.0 * fTemp972;
+                let mut iTemp980: i32 = (fTemp979) as i32;
+                let mut iTemp981: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp981, 524287))),
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp980, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp983: F64 = unsafe {
+                let mut fTemp982: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp982, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp981, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp984: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp982 as usize] };
-                let mut fTemp985: F64 = unsafe {
+                let mut fTemp983: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp981 as usize] };
+                let mut fTemp984: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp982, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp981, 1), 3670015),
                     )) as usize]
-                } - fTemp984;
-                let mut iTemp986: i32 = (fTemp830
-                    > ((if iTemp760 != 0 {
-                        fTemp984
-                            + fTemp769 * fTemp985
-                            + (fTemp980 - (iTemp981) as F64)
-                                * (fTemp983
-                                    - (fTemp984
-                                        + fTemp769
-                                            * (fTemp985
+                } - fTemp983;
+                let mut iTemp985: i32 = (fTemp829
+                    > (((if iTemp759 != 0 {
+                        fTemp983
+                            + fTemp768 * fTemp984
+                            + (fTemp979 - (iTemp980) as F64)
+                                * (fTemp982
+                                    - (fTemp983
+                                        + fTemp768
+                                            * (fTemp984
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp982, 8),
+                                                            i32::wrapping_add(iTemp981, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp983))))
+                                                } - fTemp982))))
                     } else {
-                        1.0 - (fTemp978
-                            + fTemp769 * fTemp979
-                            + (fTemp974 - (iTemp975) as F64)
-                                * (fTemp977
-                                    - (fTemp978
-                                        + fTemp769
-                                            * (fTemp979
+                        1.0 - (fTemp977
+                            + fTemp768 * fTemp978
+                            + (fTemp973 - (iTemp974) as F64)
+                                * (fTemp976
+                                    - (fTemp977
+                                        + fTemp768
+                                            * (fTemp978
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp976, 8)) as usize]
-                                                } - fTemp977)))))
-                    } - fTemp972)
-                        / (1.0 - fTemp972))) as i32;
-                let mut fTemp987: F64 = if iTemp986 != 0 { fTemp956 } else { fTemp959 };
-                let mut fTemp988: F64 = if iTemp986 != 0 { fTemp959 } else { fTemp957 };
-                let mut fTemp989: F64 = fTemp988 + fTemp987;
-                let mut fTemp990: F64 = 0.5 * fTemp989;
-                let mut fTemp991: F64 = 524287.0 * (1.0 - fTemp990);
-                let mut iTemp992: i32 = (fTemp991) as i32;
-                let mut iTemp993: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp975, 8)) as usize]
+                                                } - fTemp976)))))
+                    }) - fTemp971)
+                        / (1.0 - fTemp971))) as i32;
+                let mut fTemp986: F64 = (if iTemp985 != 0 { fTemp955 } else { fTemp958 });
+                let mut fTemp987: F64 = (if iTemp985 != 0 { fTemp958 } else { fTemp956 });
+                let mut fTemp988: F64 = fTemp987 + fTemp986;
+                let mut fTemp989: F64 = 0.5 * fTemp988;
+                let mut fTemp990: F64 = 524287.0 * (1.0 - fTemp989);
+                let mut iTemp991: i32 = (fTemp990) as i32;
+                let mut iTemp992: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp992, 524287))),
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp991, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp994: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp993, 7)) as usize] };
-                let mut fTemp995: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp993 as usize] };
-                let mut fTemp996: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp993, 1)) as usize] }
-                        - fTemp995;
-                let mut fTemp997: F64 = 262143.5 * fTemp989;
-                let mut iTemp998: i32 = (fTemp997) as i32;
-                let mut iTemp999: i32 = std::cmp::max(
+                let mut fTemp993: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp992, 7)) as usize] };
+                let mut fTemp994: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp992 as usize] };
+                let mut fTemp995: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp992, 1)) as usize] }
+                        - fTemp994;
+                let mut fTemp996: F64 = 262143.5 * fTemp988;
+                let mut iTemp997: i32 = (fTemp996) as i32;
+                let mut iTemp998: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
-                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp998, 524287))),
+                            iTemp763,
+                            i32::wrapping_mul(7, std::cmp::max(0, std::cmp::min(iTemp997, 524287))),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1000: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp999, 7)) as usize] };
-                let mut fTemp1001: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp999 as usize] };
-                let mut fTemp1002: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp999, 1)) as usize] }
-                        - fTemp1001;
-                let mut fTemp1003: F64 = if iTemp760 != 0 {
-                    fTemp1001
-                        + fTemp769 * fTemp1002
-                        + (fTemp997 - (iTemp998) as F64)
-                            * (fTemp1000
-                                - (fTemp1001
-                                    + fTemp769
-                                        * (fTemp1002
+                let mut fTemp999: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp998, 7)) as usize] };
+                let mut fTemp1000: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp998 as usize] };
+                let mut fTemp1001: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp998, 1)) as usize] }
+                        - fTemp1000;
+                let mut fTemp1002: F64 = (if iTemp759 != 0 {
+                    fTemp1000
+                        + fTemp768 * fTemp1001
+                        + (fTemp996 - (iTemp997) as F64)
+                            * (fTemp999
+                                - (fTemp1000
+                                    + fTemp768
+                                        * (fTemp1001
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp999, 8)) as usize]
-                                            } - fTemp1000))))
+                                                    [(i32::wrapping_add(iTemp998, 8)) as usize]
+                                            } - fTemp999))))
                 } else {
-                    1.0 - (fTemp995
-                        + fTemp769 * fTemp996
-                        + (fTemp991 - (iTemp992) as F64)
-                            * (fTemp994
-                                - (fTemp995
-                                    + fTemp769
-                                        * (fTemp996
+                    1.0 - (fTemp994
+                        + fTemp768 * fTemp995
+                        + (fTemp990 - (iTemp991) as F64)
+                            * (fTemp993
+                                - (fTemp994
+                                    + fTemp768
+                                        * (fTemp995
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp993, 8)) as usize]
-                                            } - fTemp994)))))
-                };
-                let mut fTemp1004: F64 = fTemp774 + fTemp990;
-                let mut fTemp1005: F64 = 524287.0 * (1.0 - fTemp1004);
-                let mut iTemp1006: i32 = (fTemp1005) as i32;
-                let mut iTemp1007: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp992, 8)) as usize]
+                                            } - fTemp993)))))
+                });
+                let mut fTemp1003: F64 = fTemp773 + fTemp989;
+                let mut fTemp1004: F64 = 524287.0 * (1.0 - fTemp1003);
+                let mut iTemp1005: i32 = (fTemp1004) as i32;
+                let mut iTemp1006: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1006, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1005, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1008: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1007, 7)) as usize] };
-                let mut fTemp1009: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1007 as usize] };
-                let mut fTemp1010: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1007, 1)) as usize] }
-                        - fTemp1009;
-                let mut fTemp1011: F64 = 524287.0 * fTemp1004;
-                let mut iTemp1012: i32 = (fTemp1011) as i32;
-                let mut iTemp1013: i32 = std::cmp::max(
+                let mut fTemp1007: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1006, 7)) as usize] };
+                let mut fTemp1008: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1006 as usize] };
+                let mut fTemp1009: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1006, 1)) as usize] }
+                        - fTemp1008;
+                let mut fTemp1010: F64 = 524287.0 * fTemp1003;
+                let mut iTemp1011: i32 = (fTemp1010) as i32;
+                let mut iTemp1012: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1012, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1011, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1014: F64 = unsafe {
+                let mut fTemp1013: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1013, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1012, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp1015: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1013 as usize] };
-                let mut fTemp1016: F64 = unsafe {
+                let mut fTemp1014: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1012 as usize] };
+                let mut fTemp1015: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1013, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1012, 1), 3670015),
                     )) as usize]
-                } - fTemp1015;
-                let mut iTemp1017: i32 = (fTemp830
-                    > ((if iTemp760 != 0 {
-                        fTemp1015
-                            + fTemp769 * fTemp1016
-                            + (fTemp1011 - (iTemp1012) as F64)
-                                * (fTemp1014
-                                    - (fTemp1015
-                                        + fTemp769
-                                            * (fTemp1016
+                } - fTemp1014;
+                let mut iTemp1016: i32 = (fTemp829
+                    > (((if iTemp759 != 0 {
+                        fTemp1014
+                            + fTemp768 * fTemp1015
+                            + (fTemp1010 - (iTemp1011) as F64)
+                                * (fTemp1013
+                                    - (fTemp1014
+                                        + fTemp768
+                                            * (fTemp1015
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp1013, 8),
+                                                            i32::wrapping_add(iTemp1012, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp1014))))
+                                                } - fTemp1013))))
                     } else {
-                        1.0 - (fTemp1009
-                            + fTemp769 * fTemp1010
-                            + (fTemp1005 - (iTemp1006) as F64)
-                                * (fTemp1008
-                                    - (fTemp1009
-                                        + fTemp769
-                                            * (fTemp1010
+                        1.0 - (fTemp1008
+                            + fTemp768 * fTemp1009
+                            + (fTemp1004 - (iTemp1005) as F64)
+                                * (fTemp1007
+                                    - (fTemp1008
+                                        + fTemp768
+                                            * (fTemp1009
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp1007, 8)) as usize]
-                                                } - fTemp1008)))))
-                    } - fTemp1003)
-                        / (1.0 - fTemp1003))) as i32;
-                let mut fTemp1018: F64 = if iTemp1017 != 0 { fTemp987 } else { fTemp990 };
-                let mut fTemp1019: F64 = if iTemp1017 != 0 { fTemp990 } else { fTemp988 };
-                let mut fTemp1020: F64 = fTemp1019 + fTemp1018;
-                let mut fTemp1021: F64 = 0.5 * fTemp1020;
-                let mut fTemp1022: F64 = 524287.0 * (1.0 - fTemp1021);
-                let mut iTemp1023: i32 = (fTemp1022) as i32;
-                let mut iTemp1024: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp1006, 8)) as usize]
+                                                } - fTemp1007)))))
+                    }) - fTemp1002)
+                        / (1.0 - fTemp1002))) as i32;
+                let mut fTemp1017: F64 = (if iTemp1016 != 0 { fTemp986 } else { fTemp989 });
+                let mut fTemp1018: F64 = (if iTemp1016 != 0 { fTemp989 } else { fTemp987 });
+                let mut fTemp1019: F64 = fTemp1018 + fTemp1017;
+                let mut fTemp1020: F64 = 0.5 * fTemp1019;
+                let mut fTemp1021: F64 = 524287.0 * (1.0 - fTemp1020);
+                let mut iTemp1022: i32 = (fTemp1021) as i32;
+                let mut iTemp1023: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1023, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1022, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1025: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1024, 7)) as usize] };
-                let mut fTemp1026: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1024 as usize] };
-                let mut fTemp1027: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1024, 1)) as usize] }
-                        - fTemp1026;
-                let mut fTemp1028: F64 = 262143.5 * fTemp1020;
-                let mut iTemp1029: i32 = (fTemp1028) as i32;
-                let mut iTemp1030: i32 = std::cmp::max(
+                let mut fTemp1024: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1023, 7)) as usize] };
+                let mut fTemp1025: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1023 as usize] };
+                let mut fTemp1026: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1023, 1)) as usize] }
+                        - fTemp1025;
+                let mut fTemp1027: F64 = 262143.5 * fTemp1019;
+                let mut iTemp1028: i32 = (fTemp1027) as i32;
+                let mut iTemp1029: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1029, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1028, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1031: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1030, 7)) as usize] };
-                let mut fTemp1032: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1030 as usize] };
-                let mut fTemp1033: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1030, 1)) as usize] }
-                        - fTemp1032;
-                let mut fTemp1034: F64 = if iTemp760 != 0 {
-                    fTemp1032
-                        + fTemp769 * fTemp1033
-                        + (fTemp1028 - (iTemp1029) as F64)
-                            * (fTemp1031
-                                - (fTemp1032
-                                    + fTemp769
-                                        * (fTemp1033
+                let mut fTemp1030: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1029, 7)) as usize] };
+                let mut fTemp1031: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1029 as usize] };
+                let mut fTemp1032: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1029, 1)) as usize] }
+                        - fTemp1031;
+                let mut fTemp1033: F64 = (if iTemp759 != 0 {
+                    fTemp1031
+                        + fTemp768 * fTemp1032
+                        + (fTemp1027 - (iTemp1028) as F64)
+                            * (fTemp1030
+                                - (fTemp1031
+                                    + fTemp768
+                                        * (fTemp1032
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp1030, 8)) as usize]
-                                            } - fTemp1031))))
+                                                    [(i32::wrapping_add(iTemp1029, 8)) as usize]
+                                            } - fTemp1030))))
                 } else {
-                    1.0 - (fTemp1026
-                        + fTemp769 * fTemp1027
-                        + (fTemp1022 - (iTemp1023) as F64)
-                            * (fTemp1025
-                                - (fTemp1026
-                                    + fTemp769
-                                        * (fTemp1027
+                    1.0 - (fTemp1025
+                        + fTemp768 * fTemp1026
+                        + (fTemp1021 - (iTemp1022) as F64)
+                            * (fTemp1024
+                                - (fTemp1025
+                                    + fTemp768
+                                        * (fTemp1026
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp1024, 8)) as usize]
-                                            } - fTemp1025)))))
-                };
-                let mut fTemp1035: F64 = fTemp774 + fTemp1021;
-                let mut fTemp1036: F64 = 524287.0 * (1.0 - fTemp1035);
-                let mut iTemp1037: i32 = (fTemp1036) as i32;
-                let mut iTemp1038: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp1023, 8)) as usize]
+                                            } - fTemp1024)))))
+                });
+                let mut fTemp1034: F64 = fTemp773 + fTemp1020;
+                let mut fTemp1035: F64 = 524287.0 * (1.0 - fTemp1034);
+                let mut iTemp1036: i32 = (fTemp1035) as i32;
+                let mut iTemp1037: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1037, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1036, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1039: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1038, 7)) as usize] };
-                let mut fTemp1040: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1038 as usize] };
-                let mut fTemp1041: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1038, 1)) as usize] }
-                        - fTemp1040;
-                let mut fTemp1042: F64 = 524287.0 * fTemp1035;
-                let mut iTemp1043: i32 = (fTemp1042) as i32;
-                let mut iTemp1044: i32 = std::cmp::max(
+                let mut fTemp1038: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1037, 7)) as usize] };
+                let mut fTemp1039: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1037 as usize] };
+                let mut fTemp1040: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1037, 1)) as usize] }
+                        - fTemp1039;
+                let mut fTemp1041: F64 = 524287.0 * fTemp1034;
+                let mut iTemp1042: i32 = (fTemp1041) as i32;
+                let mut iTemp1043: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1043, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1042, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1045: F64 = unsafe {
+                let mut fTemp1044: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1044, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1043, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp1046: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1044 as usize] };
-                let mut fTemp1047: F64 = unsafe {
+                let mut fTemp1045: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1043 as usize] };
+                let mut fTemp1046: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1044, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1043, 1), 3670015),
                     )) as usize]
-                } - fTemp1046;
-                let mut iTemp1048: i32 = (fTemp830
-                    > ((if iTemp760 != 0 {
-                        fTemp1046
-                            + fTemp769 * fTemp1047
-                            + (fTemp1042 - (iTemp1043) as F64)
-                                * (fTemp1045
-                                    - (fTemp1046
-                                        + fTemp769
-                                            * (fTemp1047
+                } - fTemp1045;
+                let mut iTemp1047: i32 = (fTemp829
+                    > (((if iTemp759 != 0 {
+                        fTemp1045
+                            + fTemp768 * fTemp1046
+                            + (fTemp1041 - (iTemp1042) as F64)
+                                * (fTemp1044
+                                    - (fTemp1045
+                                        + fTemp768
+                                            * (fTemp1046
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp1044, 8),
+                                                            i32::wrapping_add(iTemp1043, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp1045))))
+                                                } - fTemp1044))))
                     } else {
-                        1.0 - (fTemp1040
-                            + fTemp769 * fTemp1041
-                            + (fTemp1036 - (iTemp1037) as F64)
-                                * (fTemp1039
-                                    - (fTemp1040
-                                        + fTemp769
-                                            * (fTemp1041
+                        1.0 - (fTemp1039
+                            + fTemp768 * fTemp1040
+                            + (fTemp1035 - (iTemp1036) as F64)
+                                * (fTemp1038
+                                    - (fTemp1039
+                                        + fTemp768
+                                            * (fTemp1040
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp1038, 8)) as usize]
-                                                } - fTemp1039)))))
-                    } - fTemp1034)
-                        / (1.0 - fTemp1034))) as i32;
-                let mut fTemp1049: F64 = if iTemp1048 != 0 { fTemp1018 } else { fTemp1021 };
-                let mut fTemp1050: F64 = if iTemp1048 != 0 { fTemp1021 } else { fTemp1019 };
-                let mut fTemp1051: F64 = fTemp1050 + fTemp1049;
-                let mut fTemp1052: F64 = 0.5 * fTemp1051;
-                let mut fTemp1053: F64 = 524287.0 * (1.0 - fTemp1052);
-                let mut iTemp1054: i32 = (fTemp1053) as i32;
-                let mut iTemp1055: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp1037, 8)) as usize]
+                                                } - fTemp1038)))))
+                    }) - fTemp1033)
+                        / (1.0 - fTemp1033))) as i32;
+                let mut fTemp1048: F64 = (if iTemp1047 != 0 { fTemp1017 } else { fTemp1020 });
+                let mut fTemp1049: F64 = (if iTemp1047 != 0 { fTemp1020 } else { fTemp1018 });
+                let mut fTemp1050: F64 = fTemp1049 + fTemp1048;
+                let mut fTemp1051: F64 = 0.5 * fTemp1050;
+                let mut fTemp1052: F64 = 524287.0 * (1.0 - fTemp1051);
+                let mut iTemp1053: i32 = (fTemp1052) as i32;
+                let mut iTemp1054: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1054, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1053, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1056: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1055, 7)) as usize] };
-                let mut fTemp1057: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1055 as usize] };
-                let mut fTemp1058: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1055, 1)) as usize] }
-                        - fTemp1057;
-                let mut fTemp1059: F64 = 262143.5 * fTemp1051;
-                let mut iTemp1060: i32 = (fTemp1059) as i32;
-                let mut iTemp1061: i32 = std::cmp::max(
+                let mut fTemp1055: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1054, 7)) as usize] };
+                let mut fTemp1056: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1054 as usize] };
+                let mut fTemp1057: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1054, 1)) as usize] }
+                        - fTemp1056;
+                let mut fTemp1058: F64 = 262143.5 * fTemp1050;
+                let mut iTemp1059: i32 = (fTemp1058) as i32;
+                let mut iTemp1060: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1060, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1059, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1062: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1061, 7)) as usize] };
-                let mut fTemp1063: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1061 as usize] };
-                let mut fTemp1064: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1061, 1)) as usize] }
-                        - fTemp1063;
-                let mut fTemp1065: F64 = if iTemp760 != 0 {
-                    fTemp1063
-                        + fTemp769 * fTemp1064
-                        + (fTemp1059 - (iTemp1060) as F64)
-                            * (fTemp1062
-                                - (fTemp1063
-                                    + fTemp769
-                                        * (fTemp1064
+                let mut fTemp1061: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1060, 7)) as usize] };
+                let mut fTemp1062: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1060 as usize] };
+                let mut fTemp1063: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1060, 1)) as usize] }
+                        - fTemp1062;
+                let mut fTemp1064: F64 = (if iTemp759 != 0 {
+                    fTemp1062
+                        + fTemp768 * fTemp1063
+                        + (fTemp1058 - (iTemp1059) as F64)
+                            * (fTemp1061
+                                - (fTemp1062
+                                    + fTemp768
+                                        * (fTemp1063
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp1061, 8)) as usize]
-                                            } - fTemp1062))))
+                                                    [(i32::wrapping_add(iTemp1060, 8)) as usize]
+                                            } - fTemp1061))))
                 } else {
-                    1.0 - (fTemp1057
-                        + fTemp769 * fTemp1058
-                        + (fTemp1053 - (iTemp1054) as F64)
-                            * (fTemp1056
-                                - (fTemp1057
-                                    + fTemp769
-                                        * (fTemp1058
+                    1.0 - (fTemp1056
+                        + fTemp768 * fTemp1057
+                        + (fTemp1052 - (iTemp1053) as F64)
+                            * (fTemp1055
+                                - (fTemp1056
+                                    + fTemp768
+                                        * (fTemp1057
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp1055, 8)) as usize]
-                                            } - fTemp1056)))))
-                };
-                let mut fTemp1066: F64 = fTemp774 + fTemp1052;
-                let mut fTemp1067: F64 = 524287.0 * (1.0 - fTemp1066);
-                let mut iTemp1068: i32 = (fTemp1067) as i32;
-                let mut iTemp1069: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp1054, 8)) as usize]
+                                            } - fTemp1055)))))
+                });
+                let mut fTemp1065: F64 = fTemp773 + fTemp1051;
+                let mut fTemp1066: F64 = 524287.0 * (1.0 - fTemp1065);
+                let mut iTemp1067: i32 = (fTemp1066) as i32;
+                let mut iTemp1068: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1068, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1067, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1070: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1069, 7)) as usize] };
-                let mut fTemp1071: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1069 as usize] };
-                let mut fTemp1072: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1069, 1)) as usize] }
-                        - fTemp1071;
-                let mut fTemp1073: F64 = 524287.0 * fTemp1066;
-                let mut iTemp1074: i32 = (fTemp1073) as i32;
-                let mut iTemp1075: i32 = std::cmp::max(
+                let mut fTemp1069: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1068, 7)) as usize] };
+                let mut fTemp1070: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1068 as usize] };
+                let mut fTemp1071: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1068, 1)) as usize] }
+                        - fTemp1070;
+                let mut fTemp1072: F64 = 524287.0 * fTemp1065;
+                let mut iTemp1073: i32 = (fTemp1072) as i32;
+                let mut iTemp1074: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1074, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1073, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1076: F64 = unsafe {
+                let mut fTemp1075: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1075, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1074, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp1077: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1075 as usize] };
-                let mut fTemp1078: F64 = unsafe {
+                let mut fTemp1076: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1074 as usize] };
+                let mut fTemp1077: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1075, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1074, 1), 3670015),
                     )) as usize]
-                } - fTemp1077;
-                let mut iTemp1079: i32 = (fTemp830
-                    > ((if iTemp760 != 0 {
-                        fTemp1077
-                            + fTemp769 * fTemp1078
-                            + (fTemp1073 - (iTemp1074) as F64)
-                                * (fTemp1076
-                                    - (fTemp1077
-                                        + fTemp769
-                                            * (fTemp1078
+                } - fTemp1076;
+                let mut iTemp1078: i32 = (fTemp829
+                    > (((if iTemp759 != 0 {
+                        fTemp1076
+                            + fTemp768 * fTemp1077
+                            + (fTemp1072 - (iTemp1073) as F64)
+                                * (fTemp1075
+                                    - (fTemp1076
+                                        + fTemp768
+                                            * (fTemp1077
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp1075, 8),
+                                                            i32::wrapping_add(iTemp1074, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp1076))))
+                                                } - fTemp1075))))
                     } else {
-                        1.0 - (fTemp1071
-                            + fTemp769 * fTemp1072
-                            + (fTemp1067 - (iTemp1068) as F64)
-                                * (fTemp1070
-                                    - (fTemp1071
-                                        + fTemp769
-                                            * (fTemp1072
+                        1.0 - (fTemp1070
+                            + fTemp768 * fTemp1071
+                            + (fTemp1066 - (iTemp1067) as F64)
+                                * (fTemp1069
+                                    - (fTemp1070
+                                        + fTemp768
+                                            * (fTemp1071
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp1069, 8)) as usize]
-                                                } - fTemp1070)))))
-                    } - fTemp1065)
-                        / (1.0 - fTemp1065))) as i32;
-                let mut fTemp1080: F64 = if iTemp1079 != 0 { fTemp1049 } else { fTemp1052 };
-                let mut fTemp1081: F64 = if iTemp1079 != 0 { fTemp1052 } else { fTemp1050 };
-                let mut fTemp1082: F64 = fTemp1081 + fTemp1080;
-                let mut fTemp1083: F64 = 0.5 * fTemp1082;
-                let mut fTemp1084: F64 = 524287.0 * (1.0 - fTemp1083);
-                let mut iTemp1085: i32 = (fTemp1084) as i32;
-                let mut iTemp1086: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp1068, 8)) as usize]
+                                                } - fTemp1069)))))
+                    }) - fTemp1064)
+                        / (1.0 - fTemp1064))) as i32;
+                let mut fTemp1079: F64 = (if iTemp1078 != 0 { fTemp1048 } else { fTemp1051 });
+                let mut fTemp1080: F64 = (if iTemp1078 != 0 { fTemp1051 } else { fTemp1049 });
+                let mut fTemp1081: F64 = fTemp1080 + fTemp1079;
+                let mut fTemp1082: F64 = 0.5 * fTemp1081;
+                let mut fTemp1083: F64 = 524287.0 * (1.0 - fTemp1082);
+                let mut iTemp1084: i32 = (fTemp1083) as i32;
+                let mut iTemp1085: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1085, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1084, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1087: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1086, 7)) as usize] };
-                let mut fTemp1088: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1086 as usize] };
-                let mut fTemp1089: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1086, 1)) as usize] }
-                        - fTemp1088;
-                let mut fTemp1090: F64 = 262143.5 * fTemp1082;
-                let mut iTemp1091: i32 = (fTemp1090) as i32;
-                let mut iTemp1092: i32 = std::cmp::max(
+                let mut fTemp1086: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1085, 7)) as usize] };
+                let mut fTemp1087: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1085 as usize] };
+                let mut fTemp1088: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1085, 1)) as usize] }
+                        - fTemp1087;
+                let mut fTemp1089: F64 = 262143.5 * fTemp1081;
+                let mut iTemp1090: i32 = (fTemp1089) as i32;
+                let mut iTemp1091: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1091, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1090, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1093: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1092, 7)) as usize] };
-                let mut fTemp1094: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1092 as usize] };
-                let mut fTemp1095: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1092, 1)) as usize] }
-                        - fTemp1094;
-                let mut fTemp1096: F64 = if iTemp760 != 0 {
-                    fTemp1094
-                        + fTemp769 * fTemp1095
-                        + (fTemp1090 - (iTemp1091) as F64)
-                            * (fTemp1093
-                                - (fTemp1094
-                                    + fTemp769
-                                        * (fTemp1095
+                let mut fTemp1092: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1091, 7)) as usize] };
+                let mut fTemp1093: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1091 as usize] };
+                let mut fTemp1094: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1091, 1)) as usize] }
+                        - fTemp1093;
+                let mut fTemp1095: F64 = (if iTemp759 != 0 {
+                    fTemp1093
+                        + fTemp768 * fTemp1094
+                        + (fTemp1089 - (iTemp1090) as F64)
+                            * (fTemp1092
+                                - (fTemp1093
+                                    + fTemp768
+                                        * (fTemp1094
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp1092, 8)) as usize]
-                                            } - fTemp1093))))
+                                                    [(i32::wrapping_add(iTemp1091, 8)) as usize]
+                                            } - fTemp1092))))
                 } else {
-                    1.0 - (fTemp1088
-                        + fTemp769 * fTemp1089
-                        + (fTemp1084 - (iTemp1085) as F64)
-                            * (fTemp1087
-                                - (fTemp1088
-                                    + fTemp769
-                                        * (fTemp1089
+                    1.0 - (fTemp1087
+                        + fTemp768 * fTemp1088
+                        + (fTemp1083 - (iTemp1084) as F64)
+                            * (fTemp1086
+                                - (fTemp1087
+                                    + fTemp768
+                                        * (fTemp1088
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp1086, 8)) as usize]
-                                            } - fTemp1087)))))
-                };
-                let mut fTemp1097: F64 = fTemp774 + fTemp1083;
-                let mut fTemp1098: F64 = 524287.0 * (1.0 - fTemp1097);
-                let mut iTemp1099: i32 = (fTemp1098) as i32;
-                let mut iTemp1100: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp1085, 8)) as usize]
+                                            } - fTemp1086)))))
+                });
+                let mut fTemp1096: F64 = fTemp773 + fTemp1082;
+                let mut fTemp1097: F64 = 524287.0 * (1.0 - fTemp1096);
+                let mut iTemp1098: i32 = (fTemp1097) as i32;
+                let mut iTemp1099: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1099, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1098, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1101: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1100, 7)) as usize] };
-                let mut fTemp1102: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1100 as usize] };
-                let mut fTemp1103: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1100, 1)) as usize] }
-                        - fTemp1102;
-                let mut fTemp1104: F64 = 524287.0 * fTemp1097;
-                let mut iTemp1105: i32 = (fTemp1104) as i32;
-                let mut iTemp1106: i32 = std::cmp::max(
+                let mut fTemp1100: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1099, 7)) as usize] };
+                let mut fTemp1101: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1099 as usize] };
+                let mut fTemp1102: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1099, 1)) as usize] }
+                        - fTemp1101;
+                let mut fTemp1103: F64 = 524287.0 * fTemp1096;
+                let mut iTemp1104: i32 = (fTemp1103) as i32;
+                let mut iTemp1105: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1105, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1104, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1107: F64 = unsafe {
+                let mut fTemp1106: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1106, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1105, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp1108: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1106 as usize] };
-                let mut fTemp1109: F64 = unsafe {
+                let mut fTemp1107: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1105 as usize] };
+                let mut fTemp1108: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1106, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1105, 1), 3670015),
                     )) as usize]
-                } - fTemp1108;
-                let mut iTemp1110: i32 = (fTemp830
-                    > ((if iTemp760 != 0 {
-                        fTemp1108
-                            + fTemp769 * fTemp1109
-                            + (fTemp1104 - (iTemp1105) as F64)
-                                * (fTemp1107
-                                    - (fTemp1108
-                                        + fTemp769
-                                            * (fTemp1109
+                } - fTemp1107;
+                let mut iTemp1109: i32 = (fTemp829
+                    > (((if iTemp759 != 0 {
+                        fTemp1107
+                            + fTemp768 * fTemp1108
+                            + (fTemp1103 - (iTemp1104) as F64)
+                                * (fTemp1106
+                                    - (fTemp1107
+                                        + fTemp768
+                                            * (fTemp1108
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp1106, 8),
+                                                            i32::wrapping_add(iTemp1105, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp1107))))
+                                                } - fTemp1106))))
                     } else {
-                        1.0 - (fTemp1102
-                            + fTemp769 * fTemp1103
-                            + (fTemp1098 - (iTemp1099) as F64)
-                                * (fTemp1101
-                                    - (fTemp1102
-                                        + fTemp769
-                                            * (fTemp1103
+                        1.0 - (fTemp1101
+                            + fTemp768 * fTemp1102
+                            + (fTemp1097 - (iTemp1098) as F64)
+                                * (fTemp1100
+                                    - (fTemp1101
+                                        + fTemp768
+                                            * (fTemp1102
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp1100, 8)) as usize]
-                                                } - fTemp1101)))))
-                    } - fTemp1096)
-                        / (1.0 - fTemp1096))) as i32;
-                let mut fTemp1111: F64 = if iTemp1110 != 0 { fTemp1080 } else { fTemp1083 };
-                let mut fTemp1112: F64 = if iTemp1110 != 0 { fTemp1083 } else { fTemp1081 };
-                let mut fTemp1113: F64 = fTemp1112 + fTemp1111;
-                let mut fTemp1114: F64 = 0.5 * fTemp1113;
-                let mut fTemp1115: F64 = 524287.0 * (1.0 - fTemp1114);
-                let mut iTemp1116: i32 = (fTemp1115) as i32;
-                let mut iTemp1117: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp1099, 8)) as usize]
+                                                } - fTemp1100)))))
+                    }) - fTemp1095)
+                        / (1.0 - fTemp1095))) as i32;
+                let mut fTemp1110: F64 = (if iTemp1109 != 0 { fTemp1079 } else { fTemp1082 });
+                let mut fTemp1111: F64 = (if iTemp1109 != 0 { fTemp1082 } else { fTemp1080 });
+                let mut fTemp1112: F64 = fTemp1111 + fTemp1110;
+                let mut fTemp1113: F64 = 0.5 * fTemp1112;
+                let mut fTemp1114: F64 = 524287.0 * (1.0 - fTemp1113);
+                let mut iTemp1115: i32 = (fTemp1114) as i32;
+                let mut iTemp1116: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1116, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1115, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1118: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1117, 7)) as usize] };
-                let mut fTemp1119: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1117 as usize] };
-                let mut fTemp1120: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1117, 1)) as usize] }
-                        - fTemp1119;
-                let mut fTemp1121: F64 = 262143.5 * fTemp1113;
-                let mut iTemp1122: i32 = (fTemp1121) as i32;
-                let mut iTemp1123: i32 = std::cmp::max(
+                let mut fTemp1117: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1116, 7)) as usize] };
+                let mut fTemp1118: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1116 as usize] };
+                let mut fTemp1119: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1116, 1)) as usize] }
+                        - fTemp1118;
+                let mut fTemp1120: F64 = 262143.5 * fTemp1112;
+                let mut iTemp1121: i32 = (fTemp1120) as i32;
+                let mut iTemp1122: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1122, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1121, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1124: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1123, 7)) as usize] };
-                let mut fTemp1125: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1123 as usize] };
-                let mut fTemp1126: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1123, 1)) as usize] }
-                        - fTemp1125;
-                let mut fTemp1127: F64 = if iTemp760 != 0 {
-                    fTemp1125
-                        + fTemp769 * fTemp1126
-                        + (fTemp1121 - (iTemp1122) as F64)
-                            * (fTemp1124
-                                - (fTemp1125
-                                    + fTemp769
-                                        * (fTemp1126
+                let mut fTemp1123: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1122, 7)) as usize] };
+                let mut fTemp1124: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1122 as usize] };
+                let mut fTemp1125: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1122, 1)) as usize] }
+                        - fTemp1124;
+                let mut fTemp1126: F64 = (if iTemp759 != 0 {
+                    fTemp1124
+                        + fTemp768 * fTemp1125
+                        + (fTemp1120 - (iTemp1121) as F64)
+                            * (fTemp1123
+                                - (fTemp1124
+                                    + fTemp768
+                                        * (fTemp1125
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp1123, 8)) as usize]
-                                            } - fTemp1124))))
+                                                    [(i32::wrapping_add(iTemp1122, 8)) as usize]
+                                            } - fTemp1123))))
                 } else {
-                    1.0 - (fTemp1119
-                        + fTemp769 * fTemp1120
-                        + (fTemp1115 - (iTemp1116) as F64)
-                            * (fTemp1118
-                                - (fTemp1119
-                                    + fTemp769
-                                        * (fTemp1120
+                    1.0 - (fTemp1118
+                        + fTemp768 * fTemp1119
+                        + (fTemp1114 - (iTemp1115) as F64)
+                            * (fTemp1117
+                                - (fTemp1118
+                                    + fTemp768
+                                        * (fTemp1119
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp1117, 8)) as usize]
-                                            } - fTemp1118)))))
-                };
-                let mut fTemp1128: F64 = fTemp774 + fTemp1114;
-                let mut fTemp1129: F64 = 524287.0 * (1.0 - fTemp1128);
-                let mut iTemp1130: i32 = (fTemp1129) as i32;
-                let mut iTemp1131: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp1116, 8)) as usize]
+                                            } - fTemp1117)))))
+                });
+                let mut fTemp1127: F64 = fTemp773 + fTemp1113;
+                let mut fTemp1128: F64 = 524287.0 * (1.0 - fTemp1127);
+                let mut iTemp1129: i32 = (fTemp1128) as i32;
+                let mut iTemp1130: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1130, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1129, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1132: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1131, 7)) as usize] };
-                let mut fTemp1133: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1131 as usize] };
-                let mut fTemp1134: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1131, 1)) as usize] }
-                        - fTemp1133;
-                let mut fTemp1135: F64 = 524287.0 * fTemp1128;
-                let mut iTemp1136: i32 = (fTemp1135) as i32;
-                let mut iTemp1137: i32 = std::cmp::max(
+                let mut fTemp1131: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1130, 7)) as usize] };
+                let mut fTemp1132: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1130 as usize] };
+                let mut fTemp1133: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1130, 1)) as usize] }
+                        - fTemp1132;
+                let mut fTemp1134: F64 = 524287.0 * fTemp1127;
+                let mut iTemp1135: i32 = (fTemp1134) as i32;
+                let mut iTemp1136: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1136, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1135, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1138: F64 = unsafe {
+                let mut fTemp1137: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1137, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1136, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp1139: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1137 as usize] };
-                let mut fTemp1140: F64 = unsafe {
+                let mut fTemp1138: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1136 as usize] };
+                let mut fTemp1139: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1137, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1136, 1), 3670015),
                     )) as usize]
-                } - fTemp1139;
-                let mut iTemp1141: i32 = (fTemp830
-                    > ((if iTemp760 != 0 {
-                        fTemp1139
-                            + fTemp769 * fTemp1140
-                            + (fTemp1135 - (iTemp1136) as F64)
-                                * (fTemp1138
-                                    - (fTemp1139
-                                        + fTemp769
-                                            * (fTemp1140
+                } - fTemp1138;
+                let mut iTemp1140: i32 = (fTemp829
+                    > (((if iTemp759 != 0 {
+                        fTemp1138
+                            + fTemp768 * fTemp1139
+                            + (fTemp1134 - (iTemp1135) as F64)
+                                * (fTemp1137
+                                    - (fTemp1138
+                                        + fTemp768
+                                            * (fTemp1139
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp1137, 8),
+                                                            i32::wrapping_add(iTemp1136, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp1138))))
+                                                } - fTemp1137))))
                     } else {
-                        1.0 - (fTemp1133
-                            + fTemp769 * fTemp1134
-                            + (fTemp1129 - (iTemp1130) as F64)
-                                * (fTemp1132
-                                    - (fTemp1133
-                                        + fTemp769
-                                            * (fTemp1134
+                        1.0 - (fTemp1132
+                            + fTemp768 * fTemp1133
+                            + (fTemp1128 - (iTemp1129) as F64)
+                                * (fTemp1131
+                                    - (fTemp1132
+                                        + fTemp768
+                                            * (fTemp1133
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp1131, 8)) as usize]
-                                                } - fTemp1132)))))
-                    } - fTemp1127)
-                        / (1.0 - fTemp1127))) as i32;
-                let mut fTemp1142: F64 = if iTemp1141 != 0 { fTemp1111 } else { fTemp1114 };
-                let mut fTemp1143: F64 = if iTemp1141 != 0 { fTemp1114 } else { fTemp1112 };
-                let mut fTemp1144: F64 = fTemp1143 + fTemp1142;
-                let mut fTemp1145: F64 = 0.5 * fTemp1144;
-                let mut fTemp1146: F64 = 524287.0 * (1.0 - fTemp1145);
-                let mut iTemp1147: i32 = (fTemp1146) as i32;
-                let mut iTemp1148: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp1130, 8)) as usize]
+                                                } - fTemp1131)))))
+                    }) - fTemp1126)
+                        / (1.0 - fTemp1126))) as i32;
+                let mut fTemp1141: F64 = (if iTemp1140 != 0 { fTemp1110 } else { fTemp1113 });
+                let mut fTemp1142: F64 = (if iTemp1140 != 0 { fTemp1113 } else { fTemp1111 });
+                let mut fTemp1143: F64 = fTemp1142 + fTemp1141;
+                let mut fTemp1144: F64 = 0.5 * fTemp1143;
+                let mut fTemp1145: F64 = 524287.0 * (1.0 - fTemp1144);
+                let mut iTemp1146: i32 = (fTemp1145) as i32;
+                let mut iTemp1147: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1147, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1146, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1149: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1148, 7)) as usize] };
-                let mut fTemp1150: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1148 as usize] };
-                let mut fTemp1151: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1148, 1)) as usize] }
-                        - fTemp1150;
-                let mut fTemp1152: F64 = 262143.5 * fTemp1144;
-                let mut iTemp1153: i32 = (fTemp1152) as i32;
-                let mut iTemp1154: i32 = std::cmp::max(
+                let mut fTemp1148: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1147, 7)) as usize] };
+                let mut fTemp1149: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1147 as usize] };
+                let mut fTemp1150: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1147, 1)) as usize] }
+                        - fTemp1149;
+                let mut fTemp1151: F64 = 262143.5 * fTemp1143;
+                let mut iTemp1152: i32 = (fTemp1151) as i32;
+                let mut iTemp1153: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1153, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1152, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1155: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1154, 7)) as usize] };
-                let mut fTemp1156: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1154 as usize] };
-                let mut fTemp1157: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1154, 1)) as usize] }
-                        - fTemp1156;
-                let mut fTemp1158: F64 = if iTemp760 != 0 {
-                    fTemp1156
-                        + fTemp769 * fTemp1157
-                        + (fTemp1152 - (iTemp1153) as F64)
-                            * (fTemp1155
-                                - (fTemp1156
-                                    + fTemp769
-                                        * (fTemp1157
+                let mut fTemp1154: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1153, 7)) as usize] };
+                let mut fTemp1155: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1153 as usize] };
+                let mut fTemp1156: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1153, 1)) as usize] }
+                        - fTemp1155;
+                let mut fTemp1157: F64 = (if iTemp759 != 0 {
+                    fTemp1155
+                        + fTemp768 * fTemp1156
+                        + (fTemp1151 - (iTemp1152) as F64)
+                            * (fTemp1154
+                                - (fTemp1155
+                                    + fTemp768
+                                        * (fTemp1156
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp1154, 8)) as usize]
-                                            } - fTemp1155))))
+                                                    [(i32::wrapping_add(iTemp1153, 8)) as usize]
+                                            } - fTemp1154))))
                 } else {
-                    1.0 - (fTemp1150
-                        + fTemp769 * fTemp1151
-                        + (fTemp1146 - (iTemp1147) as F64)
-                            * (fTemp1149
-                                - (fTemp1150
-                                    + fTemp769
-                                        * (fTemp1151
+                    1.0 - (fTemp1149
+                        + fTemp768 * fTemp1150
+                        + (fTemp1145 - (iTemp1146) as F64)
+                            * (fTemp1148
+                                - (fTemp1149
+                                    + fTemp768
+                                        * (fTemp1150
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp1148, 8)) as usize]
-                                            } - fTemp1149)))))
-                };
-                let mut fTemp1159: F64 = fTemp774 + fTemp1145;
-                let mut fTemp1160: F64 = 524287.0 * (1.0 - fTemp1159);
-                let mut iTemp1161: i32 = (fTemp1160) as i32;
-                let mut iTemp1162: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp1147, 8)) as usize]
+                                            } - fTemp1148)))))
+                });
+                let mut fTemp1158: F64 = fTemp773 + fTemp1144;
+                let mut fTemp1159: F64 = 524287.0 * (1.0 - fTemp1158);
+                let mut iTemp1160: i32 = (fTemp1159) as i32;
+                let mut iTemp1161: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1161, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1160, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1163: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1162, 7)) as usize] };
-                let mut fTemp1164: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1162 as usize] };
-                let mut fTemp1165: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1162, 1)) as usize] }
-                        - fTemp1164;
-                let mut fTemp1166: F64 = 524287.0 * fTemp1159;
-                let mut iTemp1167: i32 = (fTemp1166) as i32;
-                let mut iTemp1168: i32 = std::cmp::max(
+                let mut fTemp1162: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1161, 7)) as usize] };
+                let mut fTemp1163: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1161 as usize] };
+                let mut fTemp1164: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1161, 1)) as usize] }
+                        - fTemp1163;
+                let mut fTemp1165: F64 = 524287.0 * fTemp1158;
+                let mut iTemp1166: i32 = (fTemp1165) as i32;
+                let mut iTemp1167: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1167, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1166, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1169: F64 = unsafe {
+                let mut fTemp1168: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1168, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1167, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp1170: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1168 as usize] };
-                let mut fTemp1171: F64 = unsafe {
+                let mut fTemp1169: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1167 as usize] };
+                let mut fTemp1170: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1168, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1167, 1), 3670015),
                     )) as usize]
-                } - fTemp1170;
-                let mut iTemp1172: i32 = (fTemp830
-                    > ((if iTemp760 != 0 {
-                        fTemp1170
-                            + fTemp769 * fTemp1171
-                            + (fTemp1166 - (iTemp1167) as F64)
-                                * (fTemp1169
-                                    - (fTemp1170
-                                        + fTemp769
-                                            * (fTemp1171
+                } - fTemp1169;
+                let mut iTemp1171: i32 = (fTemp829
+                    > (((if iTemp759 != 0 {
+                        fTemp1169
+                            + fTemp768 * fTemp1170
+                            + (fTemp1165 - (iTemp1166) as F64)
+                                * (fTemp1168
+                                    - (fTemp1169
+                                        + fTemp768
+                                            * (fTemp1170
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp1168, 8),
+                                                            i32::wrapping_add(iTemp1167, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp1169))))
+                                                } - fTemp1168))))
                     } else {
-                        1.0 - (fTemp1164
-                            + fTemp769 * fTemp1165
-                            + (fTemp1160 - (iTemp1161) as F64)
-                                * (fTemp1163
-                                    - (fTemp1164
-                                        + fTemp769
-                                            * (fTemp1165
+                        1.0 - (fTemp1163
+                            + fTemp768 * fTemp1164
+                            + (fTemp1159 - (iTemp1160) as F64)
+                                * (fTemp1162
+                                    - (fTemp1163
+                                        + fTemp768
+                                            * (fTemp1164
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp1162, 8)) as usize]
-                                                } - fTemp1163)))))
-                    } - fTemp1158)
-                        / (1.0 - fTemp1158))) as i32;
-                let mut fTemp1173: F64 = if iTemp1172 != 0 { fTemp1142 } else { fTemp1145 };
-                let mut fTemp1174: F64 = if iTemp1172 != 0 { fTemp1145 } else { fTemp1143 };
-                let mut fTemp1175: F64 = fTemp1174 + fTemp1173;
-                let mut fTemp1176: F64 = 0.5 * fTemp1175;
-                let mut fTemp1177: F64 = 524287.0 * (1.0 - fTemp1176);
-                let mut iTemp1178: i32 = (fTemp1177) as i32;
-                let mut iTemp1179: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp1161, 8)) as usize]
+                                                } - fTemp1162)))))
+                    }) - fTemp1157)
+                        / (1.0 - fTemp1157))) as i32;
+                let mut fTemp1172: F64 = (if iTemp1171 != 0 { fTemp1141 } else { fTemp1144 });
+                let mut fTemp1173: F64 = (if iTemp1171 != 0 { fTemp1144 } else { fTemp1142 });
+                let mut fTemp1174: F64 = fTemp1173 + fTemp1172;
+                let mut fTemp1175: F64 = 0.5 * fTemp1174;
+                let mut fTemp1176: F64 = 524287.0 * (1.0 - fTemp1175);
+                let mut iTemp1177: i32 = (fTemp1176) as i32;
+                let mut iTemp1178: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1178, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1177, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1180: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1179, 7)) as usize] };
-                let mut fTemp1181: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1179 as usize] };
-                let mut fTemp1182: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1179, 1)) as usize] }
-                        - fTemp1181;
-                let mut fTemp1183: F64 = 262143.5 * fTemp1175;
-                let mut iTemp1184: i32 = (fTemp1183) as i32;
-                let mut iTemp1185: i32 = std::cmp::max(
+                let mut fTemp1179: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1178, 7)) as usize] };
+                let mut fTemp1180: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1178 as usize] };
+                let mut fTemp1181: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1178, 1)) as usize] }
+                        - fTemp1180;
+                let mut fTemp1182: F64 = 262143.5 * fTemp1174;
+                let mut iTemp1183: i32 = (fTemp1182) as i32;
+                let mut iTemp1184: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1184, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1183, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1186: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1185, 7)) as usize] };
-                let mut fTemp1187: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1185 as usize] };
-                let mut fTemp1188: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1185, 1)) as usize] }
-                        - fTemp1187;
-                let mut fTemp1189: F64 = if iTemp760 != 0 {
-                    fTemp1187
-                        + fTemp769 * fTemp1188
-                        + (fTemp1183 - (iTemp1184) as F64)
-                            * (fTemp1186
-                                - (fTemp1187
-                                    + fTemp769
-                                        * (fTemp1188
+                let mut fTemp1185: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1184, 7)) as usize] };
+                let mut fTemp1186: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1184 as usize] };
+                let mut fTemp1187: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1184, 1)) as usize] }
+                        - fTemp1186;
+                let mut fTemp1188: F64 = (if iTemp759 != 0 {
+                    fTemp1186
+                        + fTemp768 * fTemp1187
+                        + (fTemp1182 - (iTemp1183) as F64)
+                            * (fTemp1185
+                                - (fTemp1186
+                                    + fTemp768
+                                        * (fTemp1187
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp1185, 8)) as usize]
-                                            } - fTemp1186))))
+                                                    [(i32::wrapping_add(iTemp1184, 8)) as usize]
+                                            } - fTemp1185))))
                 } else {
-                    1.0 - (fTemp1181
-                        + fTemp769 * fTemp1182
-                        + (fTemp1177 - (iTemp1178) as F64)
-                            * (fTemp1180
-                                - (fTemp1181
-                                    + fTemp769
-                                        * (fTemp1182
+                    1.0 - (fTemp1180
+                        + fTemp768 * fTemp1181
+                        + (fTemp1176 - (iTemp1177) as F64)
+                            * (fTemp1179
+                                - (fTemp1180
+                                    + fTemp768
+                                        * (fTemp1181
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp1179, 8)) as usize]
-                                            } - fTemp1180)))))
-                };
-                let mut fTemp1190: F64 = fTemp774 + fTemp1176;
-                let mut fTemp1191: F64 = 524287.0 * (1.0 - fTemp1190);
-                let mut iTemp1192: i32 = (fTemp1191) as i32;
-                let mut iTemp1193: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp1178, 8)) as usize]
+                                            } - fTemp1179)))))
+                });
+                let mut fTemp1189: F64 = fTemp773 + fTemp1175;
+                let mut fTemp1190: F64 = 524287.0 * (1.0 - fTemp1189);
+                let mut iTemp1191: i32 = (fTemp1190) as i32;
+                let mut iTemp1192: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1192, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1191, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1194: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1193, 7)) as usize] };
-                let mut fTemp1195: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1193 as usize] };
-                let mut fTemp1196: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1193, 1)) as usize] }
-                        - fTemp1195;
-                let mut fTemp1197: F64 = 524287.0 * fTemp1190;
-                let mut iTemp1198: i32 = (fTemp1197) as i32;
-                let mut iTemp1199: i32 = std::cmp::max(
+                let mut fTemp1193: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1192, 7)) as usize] };
+                let mut fTemp1194: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1192 as usize] };
+                let mut fTemp1195: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1192, 1)) as usize] }
+                        - fTemp1194;
+                let mut fTemp1196: F64 = 524287.0 * fTemp1189;
+                let mut iTemp1197: i32 = (fTemp1196) as i32;
+                let mut iTemp1198: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1198, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1197, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1200: F64 = unsafe {
+                let mut fTemp1199: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1199, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1198, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp1201: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1199 as usize] };
-                let mut fTemp1202: F64 = unsafe {
+                let mut fTemp1200: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1198 as usize] };
+                let mut fTemp1201: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1199, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1198, 1), 3670015),
                     )) as usize]
-                } - fTemp1201;
-                let mut iTemp1203: i32 = (fTemp830
-                    > ((if iTemp760 != 0 {
-                        fTemp1201
-                            + fTemp769 * fTemp1202
-                            + (fTemp1197 - (iTemp1198) as F64)
-                                * (fTemp1200
-                                    - (fTemp1201
-                                        + fTemp769
-                                            * (fTemp1202
+                } - fTemp1200;
+                let mut iTemp1202: i32 = (fTemp829
+                    > (((if iTemp759 != 0 {
+                        fTemp1200
+                            + fTemp768 * fTemp1201
+                            + (fTemp1196 - (iTemp1197) as F64)
+                                * (fTemp1199
+                                    - (fTemp1200
+                                        + fTemp768
+                                            * (fTemp1201
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp1199, 8),
+                                                            i32::wrapping_add(iTemp1198, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp1200))))
+                                                } - fTemp1199))))
                     } else {
-                        1.0 - (fTemp1195
-                            + fTemp769 * fTemp1196
-                            + (fTemp1191 - (iTemp1192) as F64)
-                                * (fTemp1194
-                                    - (fTemp1195
-                                        + fTemp769
-                                            * (fTemp1196
+                        1.0 - (fTemp1194
+                            + fTemp768 * fTemp1195
+                            + (fTemp1190 - (iTemp1191) as F64)
+                                * (fTemp1193
+                                    - (fTemp1194
+                                        + fTemp768
+                                            * (fTemp1195
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp1193, 8)) as usize]
-                                                } - fTemp1194)))))
-                    } - fTemp1189)
-                        / (1.0 - fTemp1189))) as i32;
-                let mut fTemp1204: F64 = if iTemp1203 != 0 { fTemp1173 } else { fTemp1176 };
-                let mut fTemp1205: F64 = if iTemp1203 != 0 { fTemp1176 } else { fTemp1174 };
-                let mut fTemp1206: F64 = fTemp1205 + fTemp1204;
-                let mut fTemp1207: F64 = 0.5 * fTemp1206;
-                let mut fTemp1208: F64 = 524287.0 * (1.0 - fTemp1207);
-                let mut iTemp1209: i32 = (fTemp1208) as i32;
-                let mut iTemp1210: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp1192, 8)) as usize]
+                                                } - fTemp1193)))))
+                    }) - fTemp1188)
+                        / (1.0 - fTemp1188))) as i32;
+                let mut fTemp1203: F64 = (if iTemp1202 != 0 { fTemp1172 } else { fTemp1175 });
+                let mut fTemp1204: F64 = (if iTemp1202 != 0 { fTemp1175 } else { fTemp1173 });
+                let mut fTemp1205: F64 = fTemp1204 + fTemp1203;
+                let mut fTemp1206: F64 = 0.5 * fTemp1205;
+                let mut fTemp1207: F64 = 524287.0 * (1.0 - fTemp1206);
+                let mut iTemp1208: i32 = (fTemp1207) as i32;
+                let mut iTemp1209: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1209, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1208, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1211: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1210, 7)) as usize] };
-                let mut fTemp1212: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1210 as usize] };
-                let mut fTemp1213: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1210, 1)) as usize] }
-                        - fTemp1212;
-                let mut fTemp1214: F64 = 262143.5 * fTemp1206;
-                let mut iTemp1215: i32 = (fTemp1214) as i32;
-                let mut iTemp1216: i32 = std::cmp::max(
+                let mut fTemp1210: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1209, 7)) as usize] };
+                let mut fTemp1211: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1209 as usize] };
+                let mut fTemp1212: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1209, 1)) as usize] }
+                        - fTemp1211;
+                let mut fTemp1213: F64 = 262143.5 * fTemp1205;
+                let mut iTemp1214: i32 = (fTemp1213) as i32;
+                let mut iTemp1215: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1215, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1214, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1217: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1216, 7)) as usize] };
-                let mut fTemp1218: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1216 as usize] };
-                let mut fTemp1219: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1216, 1)) as usize] }
-                        - fTemp1218;
-                let mut fTemp1220: F64 = if iTemp760 != 0 {
-                    fTemp1218
-                        + fTemp769 * fTemp1219
-                        + (fTemp1214 - (iTemp1215) as F64)
-                            * (fTemp1217
-                                - (fTemp1218
-                                    + fTemp769
-                                        * (fTemp1219
+                let mut fTemp1216: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1215, 7)) as usize] };
+                let mut fTemp1217: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1215 as usize] };
+                let mut fTemp1218: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1215, 1)) as usize] }
+                        - fTemp1217;
+                let mut fTemp1219: F64 = (if iTemp759 != 0 {
+                    fTemp1217
+                        + fTemp768 * fTemp1218
+                        + (fTemp1213 - (iTemp1214) as F64)
+                            * (fTemp1216
+                                - (fTemp1217
+                                    + fTemp768
+                                        * (fTemp1218
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp1216, 8)) as usize]
-                                            } - fTemp1217))))
+                                                    [(i32::wrapping_add(iTemp1215, 8)) as usize]
+                                            } - fTemp1216))))
                 } else {
-                    1.0 - (fTemp1212
-                        + fTemp769 * fTemp1213
-                        + (fTemp1208 - (iTemp1209) as F64)
-                            * (fTemp1211
-                                - (fTemp1212
-                                    + fTemp769
-                                        * (fTemp1213
+                    1.0 - (fTemp1211
+                        + fTemp768 * fTemp1212
+                        + (fTemp1207 - (iTemp1208) as F64)
+                            * (fTemp1210
+                                - (fTemp1211
+                                    + fTemp768
+                                        * (fTemp1212
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp1210, 8)) as usize]
-                                            } - fTemp1211)))))
-                };
-                let mut fTemp1221: F64 = fTemp774 + fTemp1207;
-                let mut fTemp1222: F64 = 524287.0 * (1.0 - fTemp1221);
-                let mut iTemp1223: i32 = (fTemp1222) as i32;
-                let mut iTemp1224: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp1209, 8)) as usize]
+                                            } - fTemp1210)))))
+                });
+                let mut fTemp1220: F64 = fTemp773 + fTemp1206;
+                let mut fTemp1221: F64 = 524287.0 * (1.0 - fTemp1220);
+                let mut iTemp1222: i32 = (fTemp1221) as i32;
+                let mut iTemp1223: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1223, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1222, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1225: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1224, 7)) as usize] };
-                let mut fTemp1226: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1224 as usize] };
-                let mut fTemp1227: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1224, 1)) as usize] }
-                        - fTemp1226;
-                let mut fTemp1228: F64 = 524287.0 * fTemp1221;
-                let mut iTemp1229: i32 = (fTemp1228) as i32;
-                let mut iTemp1230: i32 = std::cmp::max(
+                let mut fTemp1224: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1223, 7)) as usize] };
+                let mut fTemp1225: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1223 as usize] };
+                let mut fTemp1226: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1223, 1)) as usize] }
+                        - fTemp1225;
+                let mut fTemp1227: F64 = 524287.0 * fTemp1220;
+                let mut iTemp1228: i32 = (fTemp1227) as i32;
+                let mut iTemp1229: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1229, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1228, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1231: F64 = unsafe {
+                let mut fTemp1230: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1230, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1229, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp1232: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1230 as usize] };
-                let mut fTemp1233: F64 = unsafe {
+                let mut fTemp1231: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1229 as usize] };
+                let mut fTemp1232: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1230, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1229, 1), 3670015),
                     )) as usize]
-                } - fTemp1232;
-                let mut iTemp1234: i32 = (fTemp830
-                    > ((if iTemp760 != 0 {
-                        fTemp1232
-                            + fTemp769 * fTemp1233
-                            + (fTemp1228 - (iTemp1229) as F64)
-                                * (fTemp1231
-                                    - (fTemp1232
-                                        + fTemp769
-                                            * (fTemp1233
+                } - fTemp1231;
+                let mut iTemp1233: i32 = (fTemp829
+                    > (((if iTemp759 != 0 {
+                        fTemp1231
+                            + fTemp768 * fTemp1232
+                            + (fTemp1227 - (iTemp1228) as F64)
+                                * (fTemp1230
+                                    - (fTemp1231
+                                        + fTemp768
+                                            * (fTemp1232
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp1230, 8),
+                                                            i32::wrapping_add(iTemp1229, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp1231))))
+                                                } - fTemp1230))))
                     } else {
-                        1.0 - (fTemp1226
-                            + fTemp769 * fTemp1227
-                            + (fTemp1222 - (iTemp1223) as F64)
-                                * (fTemp1225
-                                    - (fTemp1226
-                                        + fTemp769
-                                            * (fTemp1227
+                        1.0 - (fTemp1225
+                            + fTemp768 * fTemp1226
+                            + (fTemp1221 - (iTemp1222) as F64)
+                                * (fTemp1224
+                                    - (fTemp1225
+                                        + fTemp768
+                                            * (fTemp1226
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp1224, 8)) as usize]
-                                                } - fTemp1225)))))
-                    } - fTemp1220)
-                        / (1.0 - fTemp1220))) as i32;
-                let mut fTemp1235: F64 = if iTemp1234 != 0 { fTemp1204 } else { fTemp1207 };
-                let mut fTemp1236: F64 = if iTemp1234 != 0 { fTemp1207 } else { fTemp1205 };
-                let mut fTemp1237: F64 = fTemp1236 + fTemp1235;
-                let mut fTemp1238: F64 = 0.5 * fTemp1237;
-                let mut fTemp1239: F64 = 524287.0 * (1.0 - fTemp1238);
-                let mut iTemp1240: i32 = (fTemp1239) as i32;
-                let mut iTemp1241: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp1223, 8)) as usize]
+                                                } - fTemp1224)))))
+                    }) - fTemp1219)
+                        / (1.0 - fTemp1219))) as i32;
+                let mut fTemp1234: F64 = (if iTemp1233 != 0 { fTemp1203 } else { fTemp1206 });
+                let mut fTemp1235: F64 = (if iTemp1233 != 0 { fTemp1206 } else { fTemp1204 });
+                let mut fTemp1236: F64 = fTemp1235 + fTemp1234;
+                let mut fTemp1237: F64 = 0.5 * fTemp1236;
+                let mut fTemp1238: F64 = 524287.0 * (1.0 - fTemp1237);
+                let mut iTemp1239: i32 = (fTemp1238) as i32;
+                let mut iTemp1240: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1240, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1239, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1242: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1241, 7)) as usize] };
-                let mut fTemp1243: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1241 as usize] };
-                let mut fTemp1244: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1241, 1)) as usize] }
-                        - fTemp1243;
-                let mut fTemp1245: F64 = 262143.5 * fTemp1237;
-                let mut iTemp1246: i32 = (fTemp1245) as i32;
-                let mut iTemp1247: i32 = std::cmp::max(
+                let mut fTemp1241: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1240, 7)) as usize] };
+                let mut fTemp1242: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1240 as usize] };
+                let mut fTemp1243: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1240, 1)) as usize] }
+                        - fTemp1242;
+                let mut fTemp1244: F64 = 262143.5 * fTemp1236;
+                let mut iTemp1245: i32 = (fTemp1244) as i32;
+                let mut iTemp1246: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1246, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1245, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1248: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1247, 7)) as usize] };
-                let mut fTemp1249: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1247 as usize] };
-                let mut fTemp1250: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1247, 1)) as usize] }
-                        - fTemp1249;
-                let mut fTemp1251: F64 = if iTemp760 != 0 {
-                    fTemp1249
-                        + fTemp769 * fTemp1250
-                        + (fTemp1245 - (iTemp1246) as F64)
-                            * (fTemp1248
-                                - (fTemp1249
-                                    + fTemp769
-                                        * (fTemp1250
+                let mut fTemp1247: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1246, 7)) as usize] };
+                let mut fTemp1248: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1246 as usize] };
+                let mut fTemp1249: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1246, 1)) as usize] }
+                        - fTemp1248;
+                let mut fTemp1250: F64 = (if iTemp759 != 0 {
+                    fTemp1248
+                        + fTemp768 * fTemp1249
+                        + (fTemp1244 - (iTemp1245) as F64)
+                            * (fTemp1247
+                                - (fTemp1248
+                                    + fTemp768
+                                        * (fTemp1249
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp1247, 8)) as usize]
-                                            } - fTemp1248))))
+                                                    [(i32::wrapping_add(iTemp1246, 8)) as usize]
+                                            } - fTemp1247))))
                 } else {
-                    1.0 - (fTemp1243
-                        + fTemp769 * fTemp1244
-                        + (fTemp1239 - (iTemp1240) as F64)
-                            * (fTemp1242
-                                - (fTemp1243
-                                    + fTemp769
-                                        * (fTemp1244
+                    1.0 - (fTemp1242
+                        + fTemp768 * fTemp1243
+                        + (fTemp1238 - (iTemp1239) as F64)
+                            * (fTemp1241
+                                - (fTemp1242
+                                    + fTemp768
+                                        * (fTemp1243
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp1241, 8)) as usize]
-                                            } - fTemp1242)))))
-                };
-                let mut fTemp1252: F64 = fTemp774 + fTemp1238;
-                let mut fTemp1253: F64 = 524287.0 * (1.0 - fTemp1252);
-                let mut iTemp1254: i32 = (fTemp1253) as i32;
-                let mut iTemp1255: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp1240, 8)) as usize]
+                                            } - fTemp1241)))))
+                });
+                let mut fTemp1251: F64 = fTemp773 + fTemp1237;
+                let mut fTemp1252: F64 = 524287.0 * (1.0 - fTemp1251);
+                let mut iTemp1253: i32 = (fTemp1252) as i32;
+                let mut iTemp1254: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1254, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1253, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1256: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1255, 7)) as usize] };
-                let mut fTemp1257: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1255 as usize] };
-                let mut fTemp1258: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1255, 1)) as usize] }
-                        - fTemp1257;
-                let mut fTemp1259: F64 = 524287.0 * fTemp1252;
-                let mut iTemp1260: i32 = (fTemp1259) as i32;
-                let mut iTemp1261: i32 = std::cmp::max(
+                let mut fTemp1255: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1254, 7)) as usize] };
+                let mut fTemp1256: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1254 as usize] };
+                let mut fTemp1257: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1254, 1)) as usize] }
+                        - fTemp1256;
+                let mut fTemp1258: F64 = 524287.0 * fTemp1251;
+                let mut iTemp1259: i32 = (fTemp1258) as i32;
+                let mut iTemp1260: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1260, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1259, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1262: F64 = unsafe {
+                let mut fTemp1261: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1261, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1260, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp1263: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1261 as usize] };
-                let mut fTemp1264: F64 = unsafe {
+                let mut fTemp1262: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1260 as usize] };
+                let mut fTemp1263: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1261, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1260, 1), 3670015),
                     )) as usize]
-                } - fTemp1263;
-                let mut iTemp1265: i32 = (fTemp830
-                    > ((if iTemp760 != 0 {
-                        fTemp1263
-                            + fTemp769 * fTemp1264
-                            + (fTemp1259 - (iTemp1260) as F64)
-                                * (fTemp1262
-                                    - (fTemp1263
-                                        + fTemp769
-                                            * (fTemp1264
+                } - fTemp1262;
+                let mut iTemp1264: i32 = (fTemp829
+                    > (((if iTemp759 != 0 {
+                        fTemp1262
+                            + fTemp768 * fTemp1263
+                            + (fTemp1258 - (iTemp1259) as F64)
+                                * (fTemp1261
+                                    - (fTemp1262
+                                        + fTemp768
+                                            * (fTemp1263
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp1261, 8),
+                                                            i32::wrapping_add(iTemp1260, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp1262))))
+                                                } - fTemp1261))))
                     } else {
-                        1.0 - (fTemp1257
-                            + fTemp769 * fTemp1258
-                            + (fTemp1253 - (iTemp1254) as F64)
-                                * (fTemp1256
-                                    - (fTemp1257
-                                        + fTemp769
-                                            * (fTemp1258
+                        1.0 - (fTemp1256
+                            + fTemp768 * fTemp1257
+                            + (fTemp1252 - (iTemp1253) as F64)
+                                * (fTemp1255
+                                    - (fTemp1256
+                                        + fTemp768
+                                            * (fTemp1257
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp1255, 8)) as usize]
-                                                } - fTemp1256)))))
-                    } - fTemp1251)
-                        / (1.0 - fTemp1251))) as i32;
-                let mut fTemp1266: F64 = if iTemp1265 != 0 { fTemp1235 } else { fTemp1238 };
-                let mut fTemp1267: F64 = if iTemp1265 != 0 { fTemp1238 } else { fTemp1236 };
-                let mut fTemp1268: F64 = fTemp1267 + fTemp1266;
-                let mut fTemp1269: F64 = 0.5 * fTemp1268;
-                let mut fTemp1270: F64 = 524287.0 * (1.0 - fTemp1269);
-                let mut iTemp1271: i32 = (fTemp1270) as i32;
-                let mut iTemp1272: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp1254, 8)) as usize]
+                                                } - fTemp1255)))))
+                    }) - fTemp1250)
+                        / (1.0 - fTemp1250))) as i32;
+                let mut fTemp1265: F64 = (if iTemp1264 != 0 { fTemp1234 } else { fTemp1237 });
+                let mut fTemp1266: F64 = (if iTemp1264 != 0 { fTemp1237 } else { fTemp1235 });
+                let mut fTemp1267: F64 = fTemp1266 + fTemp1265;
+                let mut fTemp1268: F64 = 0.5 * fTemp1267;
+                let mut fTemp1269: F64 = 524287.0 * (1.0 - fTemp1268);
+                let mut iTemp1270: i32 = (fTemp1269) as i32;
+                let mut iTemp1271: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1271, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1270, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1273: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1272, 7)) as usize] };
-                let mut fTemp1274: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1272 as usize] };
-                let mut fTemp1275: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1272, 1)) as usize] }
-                        - fTemp1274;
-                let mut fTemp1276: F64 = 262143.5 * fTemp1268;
-                let mut iTemp1277: i32 = (fTemp1276) as i32;
-                let mut iTemp1278: i32 = std::cmp::max(
+                let mut fTemp1272: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1271, 7)) as usize] };
+                let mut fTemp1273: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1271 as usize] };
+                let mut fTemp1274: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1271, 1)) as usize] }
+                        - fTemp1273;
+                let mut fTemp1275: F64 = 262143.5 * fTemp1267;
+                let mut iTemp1276: i32 = (fTemp1275) as i32;
+                let mut iTemp1277: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1277, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1276, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1279: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1278, 7)) as usize] };
-                let mut fTemp1280: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1278 as usize] };
-                let mut fTemp1281: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1278, 1)) as usize] }
-                        - fTemp1280;
-                let mut fTemp1282: F64 = if iTemp760 != 0 {
-                    fTemp1280
-                        + fTemp769 * fTemp1281
-                        + (fTemp1276 - (iTemp1277) as F64)
-                            * (fTemp1279
-                                - (fTemp1280
-                                    + fTemp769
-                                        * (fTemp1281
+                let mut fTemp1278: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1277, 7)) as usize] };
+                let mut fTemp1279: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1277 as usize] };
+                let mut fTemp1280: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1277, 1)) as usize] }
+                        - fTemp1279;
+                let mut fTemp1281: F64 = (if iTemp759 != 0 {
+                    fTemp1279
+                        + fTemp768 * fTemp1280
+                        + (fTemp1275 - (iTemp1276) as F64)
+                            * (fTemp1278
+                                - (fTemp1279
+                                    + fTemp768
+                                        * (fTemp1280
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp1278, 8)) as usize]
-                                            } - fTemp1279))))
+                                                    [(i32::wrapping_add(iTemp1277, 8)) as usize]
+                                            } - fTemp1278))))
                 } else {
-                    1.0 - (fTemp1274
-                        + fTemp769 * fTemp1275
-                        + (fTemp1270 - (iTemp1271) as F64)
-                            * (fTemp1273
-                                - (fTemp1274
-                                    + fTemp769
-                                        * (fTemp1275
+                    1.0 - (fTemp1273
+                        + fTemp768 * fTemp1274
+                        + (fTemp1269 - (iTemp1270) as F64)
+                            * (fTemp1272
+                                - (fTemp1273
+                                    + fTemp768
+                                        * (fTemp1274
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp1272, 8)) as usize]
-                                            } - fTemp1273)))))
-                };
-                let mut fTemp1283: F64 = fTemp774 + fTemp1269;
-                let mut fTemp1284: F64 = 524287.0 * (1.0 - fTemp1283);
-                let mut iTemp1285: i32 = (fTemp1284) as i32;
-                let mut iTemp1286: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp1271, 8)) as usize]
+                                            } - fTemp1272)))))
+                });
+                let mut fTemp1282: F64 = fTemp773 + fTemp1268;
+                let mut fTemp1283: F64 = 524287.0 * (1.0 - fTemp1282);
+                let mut iTemp1284: i32 = (fTemp1283) as i32;
+                let mut iTemp1285: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1285, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1284, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1287: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1286, 7)) as usize] };
-                let mut fTemp1288: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1286 as usize] };
-                let mut fTemp1289: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1286, 1)) as usize] }
-                        - fTemp1288;
-                let mut fTemp1290: F64 = 524287.0 * fTemp1283;
-                let mut iTemp1291: i32 = (fTemp1290) as i32;
-                let mut iTemp1292: i32 = std::cmp::max(
+                let mut fTemp1286: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1285, 7)) as usize] };
+                let mut fTemp1287: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1285 as usize] };
+                let mut fTemp1288: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1285, 1)) as usize] }
+                        - fTemp1287;
+                let mut fTemp1289: F64 = 524287.0 * fTemp1282;
+                let mut iTemp1290: i32 = (fTemp1289) as i32;
+                let mut iTemp1291: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1291, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1290, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1293: F64 = unsafe {
+                let mut fTemp1292: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1292, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1291, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp1294: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1292 as usize] };
-                let mut fTemp1295: F64 = unsafe {
+                let mut fTemp1293: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1291 as usize] };
+                let mut fTemp1294: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1292, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1291, 1), 3670015),
                     )) as usize]
-                } - fTemp1294;
-                let mut iTemp1296: i32 = (fTemp830
-                    > ((if iTemp760 != 0 {
-                        fTemp1294
-                            + fTemp769 * fTemp1295
-                            + (fTemp1290 - (iTemp1291) as F64)
-                                * (fTemp1293
-                                    - (fTemp1294
-                                        + fTemp769
-                                            * (fTemp1295
+                } - fTemp1293;
+                let mut iTemp1295: i32 = (fTemp829
+                    > (((if iTemp759 != 0 {
+                        fTemp1293
+                            + fTemp768 * fTemp1294
+                            + (fTemp1289 - (iTemp1290) as F64)
+                                * (fTemp1292
+                                    - (fTemp1293
+                                        + fTemp768
+                                            * (fTemp1294
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp1292, 8),
+                                                            i32::wrapping_add(iTemp1291, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp1293))))
+                                                } - fTemp1292))))
                     } else {
-                        1.0 - (fTemp1288
-                            + fTemp769 * fTemp1289
-                            + (fTemp1284 - (iTemp1285) as F64)
-                                * (fTemp1287
-                                    - (fTemp1288
-                                        + fTemp769
-                                            * (fTemp1289
+                        1.0 - (fTemp1287
+                            + fTemp768 * fTemp1288
+                            + (fTemp1283 - (iTemp1284) as F64)
+                                * (fTemp1286
+                                    - (fTemp1287
+                                        + fTemp768
+                                            * (fTemp1288
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp1286, 8)) as usize]
-                                                } - fTemp1287)))))
-                    } - fTemp1282)
-                        / (1.0 - fTemp1282))) as i32;
-                let mut fTemp1297: F64 = if iTemp1296 != 0 { fTemp1266 } else { fTemp1269 };
-                let mut fTemp1298: F64 = if iTemp1296 != 0 { fTemp1269 } else { fTemp1267 };
-                let mut fTemp1299: F64 = fTemp1298 + fTemp1297;
-                let mut fTemp1300: F64 = 0.5 * fTemp1299;
-                let mut fTemp1301: F64 = 524287.0 * (1.0 - fTemp1300);
-                let mut iTemp1302: i32 = (fTemp1301) as i32;
-                let mut iTemp1303: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp1285, 8)) as usize]
+                                                } - fTemp1286)))))
+                    }) - fTemp1281)
+                        / (1.0 - fTemp1281))) as i32;
+                let mut fTemp1296: F64 = (if iTemp1295 != 0 { fTemp1265 } else { fTemp1268 });
+                let mut fTemp1297: F64 = (if iTemp1295 != 0 { fTemp1268 } else { fTemp1266 });
+                let mut fTemp1298: F64 = fTemp1297 + fTemp1296;
+                let mut fTemp1299: F64 = 0.5 * fTemp1298;
+                let mut fTemp1300: F64 = 524287.0 * (1.0 - fTemp1299);
+                let mut iTemp1301: i32 = (fTemp1300) as i32;
+                let mut iTemp1302: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1302, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1301, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1304: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1303, 7)) as usize] };
-                let mut fTemp1305: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1303 as usize] };
-                let mut fTemp1306: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1303, 1)) as usize] }
-                        - fTemp1305;
-                let mut fTemp1307: F64 = 262143.5 * fTemp1299;
-                let mut iTemp1308: i32 = (fTemp1307) as i32;
-                let mut iTemp1309: i32 = std::cmp::max(
+                let mut fTemp1303: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1302, 7)) as usize] };
+                let mut fTemp1304: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1302 as usize] };
+                let mut fTemp1305: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1302, 1)) as usize] }
+                        - fTemp1304;
+                let mut fTemp1306: F64 = 262143.5 * fTemp1298;
+                let mut iTemp1307: i32 = (fTemp1306) as i32;
+                let mut iTemp1308: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1308, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1307, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1310: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1309, 7)) as usize] };
-                let mut fTemp1311: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1309 as usize] };
-                let mut fTemp1312: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1309, 1)) as usize] }
-                        - fTemp1311;
-                let mut fTemp1313: F64 = if iTemp760 != 0 {
-                    fTemp1311
-                        + fTemp769 * fTemp1312
-                        + (fTemp1307 - (iTemp1308) as F64)
-                            * (fTemp1310
-                                - (fTemp1311
-                                    + fTemp769
-                                        * (fTemp1312
+                let mut fTemp1309: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1308, 7)) as usize] };
+                let mut fTemp1310: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1308 as usize] };
+                let mut fTemp1311: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1308, 1)) as usize] }
+                        - fTemp1310;
+                let mut fTemp1312: F64 = (if iTemp759 != 0 {
+                    fTemp1310
+                        + fTemp768 * fTemp1311
+                        + (fTemp1306 - (iTemp1307) as F64)
+                            * (fTemp1309
+                                - (fTemp1310
+                                    + fTemp768
+                                        * (fTemp1311
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp1309, 8)) as usize]
-                                            } - fTemp1310))))
+                                                    [(i32::wrapping_add(iTemp1308, 8)) as usize]
+                                            } - fTemp1309))))
                 } else {
-                    1.0 - (fTemp1305
-                        + fTemp769 * fTemp1306
-                        + (fTemp1301 - (iTemp1302) as F64)
-                            * (fTemp1304
-                                - (fTemp1305
-                                    + fTemp769
-                                        * (fTemp1306
+                    1.0 - (fTemp1304
+                        + fTemp768 * fTemp1305
+                        + (fTemp1300 - (iTemp1301) as F64)
+                            * (fTemp1303
+                                - (fTemp1304
+                                    + fTemp768
+                                        * (fTemp1305
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp1303, 8)) as usize]
-                                            } - fTemp1304)))))
-                };
-                let mut fTemp1314: F64 = fTemp774 + fTemp1300;
-                let mut fTemp1315: F64 = 524287.0 * (1.0 - fTemp1314);
-                let mut iTemp1316: i32 = (fTemp1315) as i32;
-                let mut iTemp1317: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp1302, 8)) as usize]
+                                            } - fTemp1303)))))
+                });
+                let mut fTemp1313: F64 = fTemp773 + fTemp1299;
+                let mut fTemp1314: F64 = 524287.0 * (1.0 - fTemp1313);
+                let mut iTemp1315: i32 = (fTemp1314) as i32;
+                let mut iTemp1316: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1316, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1315, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1318: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1317, 7)) as usize] };
-                let mut fTemp1319: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1317 as usize] };
-                let mut fTemp1320: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1317, 1)) as usize] }
-                        - fTemp1319;
-                let mut fTemp1321: F64 = 524287.0 * fTemp1314;
-                let mut iTemp1322: i32 = (fTemp1321) as i32;
-                let mut iTemp1323: i32 = std::cmp::max(
+                let mut fTemp1317: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1316, 7)) as usize] };
+                let mut fTemp1318: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1316 as usize] };
+                let mut fTemp1319: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1316, 1)) as usize] }
+                        - fTemp1318;
+                let mut fTemp1320: F64 = 524287.0 * fTemp1313;
+                let mut iTemp1321: i32 = (fTemp1320) as i32;
+                let mut iTemp1322: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1322, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1321, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1324: F64 = unsafe {
+                let mut fTemp1323: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1323, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1322, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp1325: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1323 as usize] };
-                let mut fTemp1326: F64 = unsafe {
+                let mut fTemp1324: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1322 as usize] };
+                let mut fTemp1325: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1323, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1322, 1), 3670015),
                     )) as usize]
-                } - fTemp1325;
-                let mut iTemp1327: i32 = (fTemp830
-                    > ((if iTemp760 != 0 {
-                        fTemp1325
-                            + fTemp769 * fTemp1326
-                            + (fTemp1321 - (iTemp1322) as F64)
-                                * (fTemp1324
-                                    - (fTemp1325
-                                        + fTemp769
-                                            * (fTemp1326
+                } - fTemp1324;
+                let mut iTemp1326: i32 = (fTemp829
+                    > (((if iTemp759 != 0 {
+                        fTemp1324
+                            + fTemp768 * fTemp1325
+                            + (fTemp1320 - (iTemp1321) as F64)
+                                * (fTemp1323
+                                    - (fTemp1324
+                                        + fTemp768
+                                            * (fTemp1325
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp1323, 8),
+                                                            i32::wrapping_add(iTemp1322, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp1324))))
+                                                } - fTemp1323))))
                     } else {
-                        1.0 - (fTemp1319
-                            + fTemp769 * fTemp1320
-                            + (fTemp1315 - (iTemp1316) as F64)
-                                * (fTemp1318
-                                    - (fTemp1319
-                                        + fTemp769
-                                            * (fTemp1320
+                        1.0 - (fTemp1318
+                            + fTemp768 * fTemp1319
+                            + (fTemp1314 - (iTemp1315) as F64)
+                                * (fTemp1317
+                                    - (fTemp1318
+                                        + fTemp768
+                                            * (fTemp1319
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp1317, 8)) as usize]
-                                                } - fTemp1318)))))
-                    } - fTemp1313)
-                        / (1.0 - fTemp1313))) as i32;
-                let mut fTemp1328: F64 = if iTemp1327 != 0 { fTemp1297 } else { fTemp1300 };
-                let mut fTemp1329: F64 = if iTemp1327 != 0 { fTemp1300 } else { fTemp1298 };
-                let mut fTemp1330: F64 = fTemp1329 + fTemp1328;
-                let mut fTemp1331: F64 = 0.5 * fTemp1330;
-                let mut fTemp1332: F64 = 524287.0 * (1.0 - fTemp1331);
-                let mut iTemp1333: i32 = (fTemp1332) as i32;
-                let mut iTemp1334: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp1316, 8)) as usize]
+                                                } - fTemp1317)))))
+                    }) - fTemp1312)
+                        / (1.0 - fTemp1312))) as i32;
+                let mut fTemp1327: F64 = (if iTemp1326 != 0 { fTemp1296 } else { fTemp1299 });
+                let mut fTemp1328: F64 = (if iTemp1326 != 0 { fTemp1299 } else { fTemp1297 });
+                let mut fTemp1329: F64 = fTemp1328 + fTemp1327;
+                let mut fTemp1330: F64 = 0.5 * fTemp1329;
+                let mut fTemp1331: F64 = 524287.0 * (1.0 - fTemp1330);
+                let mut iTemp1332: i32 = (fTemp1331) as i32;
+                let mut iTemp1333: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1333, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1332, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1335: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1334, 7)) as usize] };
-                let mut fTemp1336: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1334 as usize] };
-                let mut fTemp1337: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1334, 1)) as usize] }
-                        - fTemp1336;
-                let mut fTemp1338: F64 = 262143.5 * fTemp1330;
-                let mut iTemp1339: i32 = (fTemp1338) as i32;
-                let mut iTemp1340: i32 = std::cmp::max(
+                let mut fTemp1334: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1333, 7)) as usize] };
+                let mut fTemp1335: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1333 as usize] };
+                let mut fTemp1336: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1333, 1)) as usize] }
+                        - fTemp1335;
+                let mut fTemp1337: F64 = 262143.5 * fTemp1329;
+                let mut iTemp1338: i32 = (fTemp1337) as i32;
+                let mut iTemp1339: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1339, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1338, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1341: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1340, 7)) as usize] };
-                let mut fTemp1342: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1340 as usize] };
-                let mut fTemp1343: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1340, 1)) as usize] }
-                        - fTemp1342;
-                let mut fTemp1344: F64 = if iTemp760 != 0 {
-                    fTemp1342
-                        + fTemp769 * fTemp1343
-                        + (fTemp1338 - (iTemp1339) as F64)
-                            * (fTemp1341
-                                - (fTemp1342
-                                    + fTemp769
-                                        * (fTemp1343
+                let mut fTemp1340: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1339, 7)) as usize] };
+                let mut fTemp1341: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1339 as usize] };
+                let mut fTemp1342: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1339, 1)) as usize] }
+                        - fTemp1341;
+                let mut fTemp1343: F64 = (if iTemp759 != 0 {
+                    fTemp1341
+                        + fTemp768 * fTemp1342
+                        + (fTemp1337 - (iTemp1338) as F64)
+                            * (fTemp1340
+                                - (fTemp1341
+                                    + fTemp768
+                                        * (fTemp1342
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp1340, 8)) as usize]
-                                            } - fTemp1341))))
+                                                    [(i32::wrapping_add(iTemp1339, 8)) as usize]
+                                            } - fTemp1340))))
                 } else {
-                    1.0 - (fTemp1336
-                        + fTemp769 * fTemp1337
-                        + (fTemp1332 - (iTemp1333) as F64)
-                            * (fTemp1335
-                                - (fTemp1336
-                                    + fTemp769
-                                        * (fTemp1337
+                    1.0 - (fTemp1335
+                        + fTemp768 * fTemp1336
+                        + (fTemp1331 - (iTemp1332) as F64)
+                            * (fTemp1334
+                                - (fTemp1335
+                                    + fTemp768
+                                        * (fTemp1336
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0
-                                                    [(i32::wrapping_add(iTemp1334, 8)) as usize]
-                                            } - fTemp1335)))))
-                };
-                let mut fTemp1345: F64 = fTemp774 + fTemp1331;
-                let mut fTemp1346: F64 = 524287.0 * (1.0 - fTemp1345);
-                let mut iTemp1347: i32 = (fTemp1346) as i32;
-                let mut iTemp1348: i32 = std::cmp::max(
+                                                    [(i32::wrapping_add(iTemp1333, 8)) as usize]
+                                            } - fTemp1334)))))
+                });
+                let mut fTemp1344: F64 = fTemp773 + fTemp1330;
+                let mut fTemp1345: F64 = 524287.0 * (1.0 - fTemp1344);
+                let mut iTemp1346: i32 = (fTemp1345) as i32;
+                let mut iTemp1347: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1347, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1346, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1349: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1348, 7)) as usize] };
-                let mut fTemp1350: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1348 as usize] };
-                let mut fTemp1351: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1348, 1)) as usize] }
-                        - fTemp1350;
-                let mut fTemp1352: F64 = 524287.0 * fTemp1345;
-                let mut iTemp1353: i32 = (fTemp1352) as i32;
-                let mut iTemp1354: i32 = std::cmp::max(
+                let mut fTemp1348: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1347, 7)) as usize] };
+                let mut fTemp1349: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1347 as usize] };
+                let mut fTemp1350: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1347, 1)) as usize] }
+                        - fTemp1349;
+                let mut fTemp1351: F64 = 524287.0 * fTemp1344;
+                let mut iTemp1352: i32 = (fTemp1351) as i32;
+                let mut iTemp1353: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1353, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1352, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1355: F64 = unsafe {
+                let mut fTemp1354: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1354, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1353, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp1356: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1354 as usize] };
-                let mut fTemp1357: F64 = unsafe {
+                let mut fTemp1355: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1353 as usize] };
+                let mut fTemp1356: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1354, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1353, 1), 3670015),
                     )) as usize]
-                } - fTemp1356;
-                let mut iTemp1358: i32 = (fTemp830
-                    > ((if iTemp760 != 0 {
-                        fTemp1356
-                            + fTemp769 * fTemp1357
-                            + (fTemp1352 - (iTemp1353) as F64)
-                                * (fTemp1355
-                                    - (fTemp1356
-                                        + fTemp769
-                                            * (fTemp1357
+                } - fTemp1355;
+                let mut iTemp1357: i32 = (fTemp829
+                    > (((if iTemp759 != 0 {
+                        fTemp1355
+                            + fTemp768 * fTemp1356
+                            + (fTemp1351 - (iTemp1352) as F64)
+                                * (fTemp1354
+                                    - (fTemp1355
+                                        + fTemp768
+                                            * (fTemp1356
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp1354, 8),
+                                                            i32::wrapping_add(iTemp1353, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp1355))))
+                                                } - fTemp1354))))
                     } else {
-                        1.0 - (fTemp1350
-                            + fTemp769 * fTemp1351
-                            + (fTemp1346 - (iTemp1347) as F64)
-                                * (fTemp1349
-                                    - (fTemp1350
-                                        + fTemp769
-                                            * (fTemp1351
+                        1.0 - (fTemp1349
+                            + fTemp768 * fTemp1350
+                            + (fTemp1345 - (iTemp1346) as F64)
+                                * (fTemp1348
+                                    - (fTemp1349
+                                        + fTemp768
+                                            * (fTemp1350
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp1348, 8)) as usize]
-                                                } - fTemp1349)))))
-                    } - fTemp1344)
-                        / (1.0 - fTemp1344))) as i32;
-                let mut fTemp1359: F64 = if iTemp1358 != 0 { fTemp1328 } else { fTemp1331 };
-                let mut fTemp1360: F64 = if iTemp1358 != 0 { fTemp1331 } else { fTemp1329 };
-                let mut fTemp1361: F64 = fTemp1360 + fTemp1359;
-                let mut fTemp1362: F64 = 0.5 * fTemp1361;
-                let mut fTemp1363: F64 = 524287.0 * (1.0 - fTemp1362);
-                let mut iTemp1364: i32 = (fTemp1363) as i32;
-                let mut iTemp1365: i32 = std::cmp::max(
+                                                        [(i32::wrapping_add(iTemp1347, 8)) as usize]
+                                                } - fTemp1348)))))
+                    }) - fTemp1343)
+                        / (1.0 - fTemp1343))) as i32;
+                let mut fTemp1358: F64 = (if iTemp1357 != 0 { fTemp1327 } else { fTemp1330 });
+                let mut fTemp1359: F64 = (if iTemp1357 != 0 { fTemp1330 } else { fTemp1328 });
+                let mut fTemp1360: F64 = fTemp1359 + fTemp1358;
+                let mut fTemp1361: F64 = 0.5 * fTemp1360;
+                let mut fTemp1362: F64 = 524287.0 * (1.0 - fTemp1361);
+                let mut iTemp1363: i32 = (fTemp1362) as i32;
+                let mut iTemp1364: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1364, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1363, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1366: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1365, 7)) as usize] };
-                let mut fTemp1367: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1365 as usize] };
-                let mut fTemp1368: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1365, 1)) as usize] }
-                        - fTemp1367;
-                let mut fTemp1369: F64 = 262143.5 * fTemp1361;
-                let mut iTemp1370: i32 = (fTemp1369) as i32;
-                let mut iTemp1371: i32 = std::cmp::max(
+                let mut fTemp1365: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1364, 7)) as usize] };
+                let mut fTemp1366: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1364 as usize] };
+                let mut fTemp1367: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1364, 1)) as usize] }
+                        - fTemp1366;
+                let mut fTemp1368: F64 = 262143.5 * fTemp1360;
+                let mut iTemp1369: i32 = (fTemp1368) as i32;
+                let mut iTemp1370: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1370, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1369, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1372: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1371, 7)) as usize] };
-                let mut fTemp1373: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1371 as usize] };
-                let mut fTemp1374: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1371, 1)) as usize] }
-                        - fTemp1373;
-                let mut fTemp1375: F64 = if iTemp760 != 0 {
-                    fTemp1373
-                        + fTemp769 * fTemp1374
-                        + (fTemp1369 - (iTemp1370) as F64)
-                            * (fTemp1372
-                                - (fTemp1373
-                                    + fTemp769
-                                        * (fTemp1374
+                let mut fTemp1371: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1370, 7)) as usize] };
+                let mut fTemp1372: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1370 as usize] };
+                let mut fTemp1373: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1370, 1)) as usize] }
+                        - fTemp1372;
+                let mut fTemp1374: F64 = (if iTemp759 != 0 {
+                    fTemp1372
+                        + fTemp768 * fTemp1373
+                        + (fTemp1368 - (iTemp1369) as F64)
+                            * (fTemp1371
+                                - (fTemp1372
+                                    + fTemp768
+                                        * (fTemp1373
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0[(std::cmp::max(
                                                     0,
                                                     std::cmp::min(
-                                                        i32::wrapping_add(iTemp1371, 8),
+                                                        i32::wrapping_add(iTemp1370, 8),
                                                         3670015,
                                                     ),
                                                 ))
                                                     as usize]
-                                            } - fTemp1372))))
+                                            } - fTemp1371))))
                 } else {
-                    1.0 - (fTemp1367
-                        + fTemp769 * fTemp1368
-                        + (fTemp1363 - (iTemp1364) as F64)
-                            * (fTemp1366
-                                - (fTemp1367
-                                    + fTemp769
-                                        * (fTemp1368
+                    1.0 - (fTemp1366
+                        + fTemp768 * fTemp1367
+                        + (fTemp1362 - (iTemp1363) as F64)
+                            * (fTemp1365
+                                - (fTemp1366
+                                    + fTemp768
+                                        * (fTemp1367
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0[(std::cmp::max(
                                                     0,
                                                     std::cmp::min(
-                                                        i32::wrapping_add(iTemp1365, 8),
+                                                        i32::wrapping_add(iTemp1364, 8),
                                                         3670015,
                                                     ),
                                                 ))
                                                     as usize]
-                                            } - fTemp1366)))))
-                };
-                let mut fTemp1376: F64 = fTemp774 + fTemp1362;
-                let mut fTemp1377: F64 = 524287.0 * (1.0 - fTemp1376);
-                let mut iTemp1378: i32 = (fTemp1377) as i32;
-                let mut iTemp1379: i32 = std::cmp::max(
+                                            } - fTemp1365)))))
+                });
+                let mut fTemp1375: F64 = fTemp773 + fTemp1361;
+                let mut fTemp1376: F64 = 524287.0 * (1.0 - fTemp1375);
+                let mut iTemp1377: i32 = (fTemp1376) as i32;
+                let mut iTemp1378: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1378, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1377, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1380: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1379, 7)) as usize] };
-                let mut fTemp1381: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1379 as usize] };
-                let mut fTemp1382: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1379, 1)) as usize] }
-                        - fTemp1381;
-                let mut fTemp1383: F64 = 524287.0 * fTemp1376;
-                let mut iTemp1384: i32 = (fTemp1383) as i32;
-                let mut iTemp1385: i32 = std::cmp::max(
+                let mut fTemp1379: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1378, 7)) as usize] };
+                let mut fTemp1380: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1378 as usize] };
+                let mut fTemp1381: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1378, 1)) as usize] }
+                        - fTemp1380;
+                let mut fTemp1382: F64 = 524287.0 * fTemp1375;
+                let mut iTemp1383: i32 = (fTemp1382) as i32;
+                let mut iTemp1384: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1384, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1383, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1386: F64 = unsafe {
+                let mut fTemp1385: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1385, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1384, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp1387: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1385 as usize] };
-                let mut fTemp1388: F64 = unsafe {
+                let mut fTemp1386: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1384 as usize] };
+                let mut fTemp1387: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1385, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1384, 1), 3670015),
                     )) as usize]
-                } - fTemp1387;
-                let mut iTemp1389: i32 = (fTemp830
-                    > ((if iTemp760 != 0 {
-                        fTemp1387
-                            + fTemp769 * fTemp1388
-                            + (fTemp1383 - (iTemp1384) as F64)
-                                * (fTemp1386
-                                    - (fTemp1387
-                                        + fTemp769
-                                            * (fTemp1388
+                } - fTemp1386;
+                let mut iTemp1388: i32 = (fTemp829
+                    > (((if iTemp759 != 0 {
+                        fTemp1386
+                            + fTemp768 * fTemp1387
+                            + (fTemp1382 - (iTemp1383) as F64)
+                                * (fTemp1385
+                                    - (fTemp1386
+                                        + fTemp768
+                                            * (fTemp1387
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0[(std::cmp::max(
                                                         0,
                                                         std::cmp::min(
-                                                            i32::wrapping_add(iTemp1385, 8),
+                                                            i32::wrapping_add(iTemp1384, 8),
                                                             3670015,
                                                         ),
                                                     ))
                                                         as usize]
-                                                } - fTemp1386))))
+                                                } - fTemp1385))))
                     } else {
-                        1.0 - (fTemp1381
-                            + fTemp769 * fTemp1382
-                            + (fTemp1377 - (iTemp1378) as F64)
-                                * (fTemp1380
-                                    - (fTemp1381
-                                        + fTemp769
-                                            * (fTemp1382
+                        1.0 - (fTemp1380
+                            + fTemp768 * fTemp1381
+                            + (fTemp1376 - (iTemp1377) as F64)
+                                * (fTemp1379
+                                    - (fTemp1380
+                                        + fTemp768
+                                            * (fTemp1381
                                                 - (unsafe {
                                                     ftbl0LambRs192kSIG0
-                                                        [(i32::wrapping_add(iTemp1379, 8)) as usize]
-                                                } - fTemp1380)))))
-                    } - fTemp1375)
-                        / (1.0 - fTemp1375))) as i32;
-                let mut fTemp1390: F64 = F64::min(
+                                                        [(i32::wrapping_add(iTemp1378, 8)) as usize]
+                                                } - fTemp1379)))))
+                    }) - fTemp1374)
+                        / (1.0 - fTemp1374))) as i32;
+                let mut fTemp1389: F64 = F64::min(
                     1.0,
                     F64::max(
                         0.0,
-                        0.5 * (if iTemp1389 != 0 { fTemp1362 } else { fTemp1360 }
-                            + if iTemp1389 != 0 { fTemp1359 } else { fTemp1362 }),
+                        0.5 * ((if iTemp1388 != 0 { fTemp1361 } else { fTemp1359 })
+                            + (if iTemp1388 != 0 { fTemp1358 } else { fTemp1361 })),
                     ),
                 );
-                self.fRec15[0] = fTemp1390;
-                let mut fTemp1391: F64 = 524287.0 * (1.0 - fTemp1390);
-                let mut iTemp1392: i32 = (fTemp1391) as i32;
-                let mut iTemp1393: i32 = std::cmp::max(
+                self.fRec15[0] = fTemp1389;
+                let mut fTemp1390: F64 = 524287.0 * (1.0 - fTemp1389);
+                let mut iTemp1391: i32 = (fTemp1390) as i32;
+                let mut iTemp1392: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1392, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1391, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1394: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1393, 7)) as usize] };
-                let mut fTemp1395: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1393 as usize] };
-                let mut fTemp1396: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1393, 1)) as usize] }
-                        - fTemp1395;
-                let mut fTemp1397: F64 = 524287.0 * fTemp1390;
-                let mut iTemp1398: i32 = (fTemp1397) as i32;
-                let mut iTemp1399: i32 = std::cmp::max(
+                let mut fTemp1393: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1392, 7)) as usize] };
+                let mut fTemp1394: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1392 as usize] };
+                let mut fTemp1395: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1392, 1)) as usize] }
+                        - fTemp1394;
+                let mut fTemp1396: F64 = 524287.0 * fTemp1389;
+                let mut iTemp1397: i32 = (fTemp1396) as i32;
+                let mut iTemp1398: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1398, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1397, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1400: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1399, 7)) as usize] };
-                let mut fTemp1401: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1399 as usize] };
-                let mut fTemp1402: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1399, 1)) as usize] }
-                        - fTemp1401;
-                let mut fTemp1403: F64 = if iTemp760 != 0 {
-                    fTemp1401
-                        + fTemp769 * fTemp1402
-                        + (fTemp1397 - (iTemp1398) as F64)
-                            * (fTemp1400
-                                - (fTemp1401
-                                    + fTemp769
-                                        * (fTemp1402
+                let mut fTemp1399: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1398, 7)) as usize] };
+                let mut fTemp1400: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1398 as usize] };
+                let mut fTemp1401: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1398, 1)) as usize] }
+                        - fTemp1400;
+                let mut fTemp1402: F64 = (if iTemp759 != 0 {
+                    fTemp1400
+                        + fTemp768 * fTemp1401
+                        + (fTemp1396 - (iTemp1397) as F64)
+                            * (fTemp1399
+                                - (fTemp1400
+                                    + fTemp768
+                                        * (fTemp1401
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0[(std::cmp::max(
                                                     0,
                                                     std::cmp::min(
-                                                        i32::wrapping_add(iTemp1399, 8),
+                                                        i32::wrapping_add(iTemp1398, 8),
                                                         3670015,
                                                     ),
                                                 ))
                                                     as usize]
-                                            } - fTemp1400))))
+                                            } - fTemp1399))))
                 } else {
-                    1.0 - (fTemp1395
-                        + fTemp769 * fTemp1396
-                        + (fTemp1391 - (iTemp1392) as F64)
-                            * (fTemp1394
-                                - (fTemp1395
-                                    + fTemp769
-                                        * (fTemp1396
+                    1.0 - (fTemp1394
+                        + fTemp768 * fTemp1395
+                        + (fTemp1390 - (iTemp1391) as F64)
+                            * (fTemp1393
+                                - (fTemp1394
+                                    + fTemp768
+                                        * (fTemp1395
                                             - (unsafe {
                                                 ftbl0LambRs192kSIG0[(std::cmp::max(
                                                     0,
                                                     std::cmp::min(
-                                                        i32::wrapping_add(iTemp1393, 8),
+                                                        i32::wrapping_add(iTemp1392, 8),
                                                         3670015,
                                                     ),
                                                 ))
                                                     as usize]
-                                            } - fTemp1394)))))
-                };
-                let mut fTemp1404: F64 = fTemp774 + fTemp1390;
-                let mut fTemp1405: F64 = 524287.0 * (1.0 - fTemp1404);
-                let mut iTemp1406: i32 = (fTemp1405) as i32;
-                let mut iTemp1407: i32 = std::cmp::max(
+                                            } - fTemp1393)))))
+                });
+                let mut fTemp1403: F64 = fTemp773 + fTemp1389;
+                let mut fTemp1404: F64 = 524287.0 * (1.0 - fTemp1403);
+                let mut iTemp1405: i32 = (fTemp1404) as i32;
+                let mut iTemp1406: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1406, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1405, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1408: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1407, 7)) as usize] };
-                let mut fTemp1409: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1407 as usize] };
-                let mut fTemp1410: F64 =
-                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1407, 1)) as usize] }
-                        - fTemp1409;
-                let mut fTemp1411: F64 = 524287.0 * fTemp1404;
-                let mut iTemp1412: i32 = (fTemp1411) as i32;
-                let mut iTemp1413: i32 = std::cmp::max(
+                let mut fTemp1407: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1406, 7)) as usize] };
+                let mut fTemp1408: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1406 as usize] };
+                let mut fTemp1409: F64 =
+                    unsafe { ftbl0LambRs192kSIG0[(i32::wrapping_add(iTemp1406, 1)) as usize] }
+                        - fTemp1408;
+                let mut fTemp1410: F64 = 524287.0 * fTemp1403;
+                let mut iTemp1411: i32 = (fTemp1410) as i32;
+                let mut iTemp1412: i32 = std::cmp::max(
                     0,
                     std::cmp::min(
                         i32::wrapping_add(
-                            iTemp764,
+                            iTemp763,
                             i32::wrapping_mul(
                                 7,
-                                std::cmp::max(0, std::cmp::min(iTemp1412, 524287)),
+                                std::cmp::max(0, std::cmp::min(iTemp1411, 524287)),
                             ),
                         ),
                         3670015,
                     ),
                 );
-                let mut fTemp1414: F64 = unsafe {
+                let mut fTemp1413: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1413, 7), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1412, 7), 3670015),
                     )) as usize]
                 };
-                let mut fTemp1415: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1413 as usize] };
-                let mut fTemp1416: F64 = unsafe {
+                let mut fTemp1414: F64 = unsafe { ftbl0LambRs192kSIG0[iTemp1412 as usize] };
+                let mut fTemp1415: F64 = unsafe {
                     ftbl0LambRs192kSIG0[(std::cmp::max(
                         0,
-                        std::cmp::min(i32::wrapping_add(iTemp1413, 1), 3670015),
+                        std::cmp::min(i32::wrapping_add(iTemp1412, 1), 3670015),
                     )) as usize]
-                } - fTemp1415;
-                let mut fTemp1417: F64 = self.fRec16[1]
-                    + if ((0.001 * fTemp773) == 0.0) as i32 != 0 {
-                        fTemp759
+                } - fTemp1414;
+                let mut fTemp1416: F64 = self.fRec16[1]
+                    + (if ((0.001 * fTemp772) == 0.0) as i32 != 0 {
+                        fTemp758
                     } else {
-                        fTemp759
-                            * (if iTemp760 != 0 {
-                                fTemp1415
-                                    + fTemp769 * fTemp1416
-                                    + (fTemp1411 - (iTemp1412) as F64)
-                                        * (fTemp1414
-                                            - (fTemp1415
-                                                + fTemp769
-                                                    * (fTemp1416
+                        fTemp758
+                            * ((if iTemp759 != 0 {
+                                fTemp1414
+                                    + fTemp768 * fTemp1415
+                                    + (fTemp1410 - (iTemp1411) as F64)
+                                        * (fTemp1413
+                                            - (fTemp1414
+                                                + fTemp768
+                                                    * (fTemp1415
                                                         - (unsafe {
                                                             ftbl0LambRs192kSIG0[(std::cmp::max(
                                                                 0,
                                                                 std::cmp::min(
-                                                                    i32::wrapping_add(iTemp1413, 8),
+                                                                    i32::wrapping_add(iTemp1412, 8),
                                                                     3670015,
                                                                 ),
                                                             ))
                                                                 as usize]
-                                                        } - fTemp1414))))
+                                                        } - fTemp1413))))
                             } else {
-                                1.0 - (fTemp1409
-                                    + fTemp769 * fTemp1410
-                                    + (fTemp1405 - (iTemp1406) as F64)
-                                        * (fTemp1408
-                                            - (fTemp1409
-                                                + fTemp769
-                                                    * (fTemp1410
+                                1.0 - (fTemp1408
+                                    + fTemp768 * fTemp1409
+                                    + (fTemp1404 - (iTemp1405) as F64)
+                                        * (fTemp1407
+                                            - (fTemp1408
+                                                + fTemp768
+                                                    * (fTemp1409
                                                         - (unsafe {
                                                             ftbl0LambRs192kSIG0[(i32::wrapping_add(
-                                                                iTemp1407, 8,
+                                                                iTemp1406, 8,
                                                             ))
                                                                 as usize]
-                                                        } - fTemp1408)))))
-                            } - fTemp1403)
-                            / (1.0 - fTemp1403)
-                    };
-                self.fRec16[0] = if iTemp772 != 0 {
-                    F64::min(fTemp1417, self.fRec16[1])
+                                                        } - fTemp1407)))))
+                            }) - fTemp1402)
+                            / (1.0 - fTemp1402)
+                    });
+                self.fRec16[0] = (if iTemp771 != 0 {
+                    F64::min(fTemp1416, self.fRec16[1])
                 } else {
-                    F64::max(fTemp1417, self.fRec16[1])
-                };
+                    F64::max(fTemp1416, self.fRec16[1])
+                });
                 self.fVec66[(self.IOTA0 & 32767) as usize] =
                     F64::powf(1e+01, 0.05 * self.fRec16[0]);
-                let mut fTemp1418: F64 =
+                let mut fTemp1417: F64 =
                     self.fVec66[((i32::wrapping_sub(self.IOTA0, iSlow78)) & 32767) as usize];
                 *output1 = 0.5
                     * fTemp2
@@ -8153,9 +8166,9 @@ mod dsp_192k {
                     + self.fRec14[0]
                         * fTemp4
                         * self.fVec4[((i32::wrapping_sub(self.IOTA0, iSlow79)) & 32767) as usize]
-                        * fTemp1418;
-                *output2 = fTemp3 + fTemp730 * fTemp4;
-                *output3 = fTemp3 + fTemp4 * fTemp1418;
+                        * fTemp1417;
+                *output2 = fTemp3 + fTemp729 * fTemp4;
+                *output3 = fTemp3 + fTemp4 * fTemp1417;
                 self.IOTA0 = i32::wrapping_add(self.IOTA0, 1);
                 self.fRec0[1] = self.fRec0[0];
                 self.fRec4[1] = self.fRec4[0];
@@ -8169,19 +8182,19 @@ mod dsp_192k {
                 self.fRec6[1] = self.fRec6[0];
                 self.fVec6[2] = self.fVec6[1];
                 self.fVec6[1] = self.fVec6[0];
-                for j0 in (1..=6).rev() {
+                for j0 in (1..=4).rev() {
                     self.fVec7[j0 as usize] = self.fVec7[(i32::wrapping_sub(j0, 1)) as usize];
                 }
-                for j1 in (1..=14).rev() {
+                for j1 in (1..=11).rev() {
                     self.fVec8[j1 as usize] = self.fVec8[(i32::wrapping_sub(j1, 1)) as usize];
                 }
                 self.fRec3[1] = self.fRec3[0];
                 self.fVec19[2] = self.fVec19[1];
                 self.fVec19[1] = self.fVec19[0];
-                for j2 in (1..=6).rev() {
+                for j2 in (1..=4).rev() {
                     self.fVec20[j2 as usize] = self.fVec20[(i32::wrapping_sub(j2, 1)) as usize];
                 }
-                for j3 in (1..=14).rev() {
+                for j3 in (1..=11).rev() {
                     self.fVec21[j3 as usize] = self.fVec21[(i32::wrapping_sub(j3, 1)) as usize];
                 }
                 self.fVec32[1] = self.fVec32[0];
@@ -8192,19 +8205,19 @@ mod dsp_192k {
                 self.fRec14[1] = self.fRec14[0];
                 self.fVec37[2] = self.fVec37[1];
                 self.fVec37[1] = self.fVec37[0];
-                for j4 in (1..=6).rev() {
+                for j4 in (1..=4).rev() {
                     self.fVec38[j4 as usize] = self.fVec38[(i32::wrapping_sub(j4, 1)) as usize];
                 }
-                for j5 in (1..=14).rev() {
+                for j5 in (1..=11).rev() {
                     self.fVec39[j5 as usize] = self.fVec39[(i32::wrapping_sub(j5, 1)) as usize];
                 }
                 self.fRec17[1] = self.fRec17[0];
                 self.fVec50[2] = self.fVec50[1];
                 self.fVec50[1] = self.fVec50[0];
-                for j6 in (1..=6).rev() {
+                for j6 in (1..=4).rev() {
                     self.fVec51[j6 as usize] = self.fVec51[(i32::wrapping_sub(j6, 1)) as usize];
                 }
-                for j7 in (1..=14).rev() {
+                for j7 in (1..=11).rev() {
                     self.fVec52[j7 as usize] = self.fVec52[(i32::wrapping_sub(j7, 1)) as usize];
                 }
                 self.fVec63[1] = self.fVec63[0];
@@ -8213,6 +8226,67 @@ mod dsp_192k {
                 self.fRec15[1] = self.fRec15[0];
                 self.fRec16[1] = self.fRec16[0];
             }
+        }
+    }
+
+    impl FaustDsp for LambRs192k {
+        type T = FaustFloat;
+        fn new() -> Self
+        where
+            Self: Sized,
+        {
+            Self::new()
+        }
+        fn metadata(&self, m: &mut dyn Meta) {
+            self.metadata(m)
+        }
+        fn get_sample_rate(&self) -> i32 {
+            self.get_sample_rate()
+        }
+        fn get_num_inputs(&self) -> i32 {
+            FAUST_INPUTS as i32
+        }
+        fn get_num_outputs(&self) -> i32 {
+            FAUST_OUTPUTS as i32
+        }
+        fn class_init(sample_rate: i32)
+        where
+            Self: Sized,
+        {
+            Self::class_init(sample_rate);
+        }
+        fn instance_reset_params(&mut self) {
+            self.instance_reset_params()
+        }
+        fn instance_clear(&mut self) {
+            self.instance_clear()
+        }
+        fn instance_constants(&mut self, sample_rate: i32) {
+            self.instance_constants(sample_rate)
+        }
+        fn instance_init(&mut self, sample_rate: i32) {
+            self.instance_init(sample_rate)
+        }
+        fn init(&mut self, sample_rate: i32) {
+            self.init(sample_rate)
+        }
+        fn build_user_interface(&self, ui_interface: &mut dyn UI<Self::T>) {
+            self.build_user_interface(ui_interface)
+        }
+        fn build_user_interface_static(ui_interface: &mut dyn UI<Self::T>)
+        where
+            Self: Sized,
+        {
+            Self::build_user_interface_static(ui_interface);
+        }
+        fn get_param(&self, param: ParamIndex) -> Option<Self::T> {
+            self.get_param(param)
+        }
+        fn set_param(&mut self, param: ParamIndex, value: Self::T) {
+            self.set_param(param, value)
+        }
+        fn compute(&mut self, count: i32, inputs: &[&[Self::T]], outputs: &mut [&mut [Self::T]]) {
+            self.compute(count as usize, inputs, outputs)
         }
     }
 }

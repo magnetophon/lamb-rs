@@ -60,9 +60,15 @@ impl DspVariant {
     }
     fn compute(&mut self, count: i32, inputs: &[&[f64]], outputs: &mut [&mut [f64]]) {
         match self {
-            DspVariant::Dsp48k(ref mut dsp) => dsp.compute(count, inputs, outputs),
-            DspVariant::Dsp96k(ref mut dsp) => dsp.compute(count, inputs, outputs),
-            DspVariant::Dsp192k(ref mut dsp) => dsp.compute(count, inputs, outputs),
+            DspVariant::Dsp48k(ref mut dsp) => {
+                dsp.compute(count.try_into().unwrap(), inputs, outputs)
+            }
+            DspVariant::Dsp96k(ref mut dsp) => {
+                dsp.compute(count.try_into().unwrap(), inputs, outputs)
+            }
+            DspVariant::Dsp192k(ref mut dsp) => {
+                dsp.compute(count.try_into().unwrap(), inputs, outputs)
+            }
         }
     }
 }
