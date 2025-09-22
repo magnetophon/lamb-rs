@@ -101,6 +101,7 @@ pub struct Lamb {
 
     /// If this is set at the start of the processing cycle, then the graph duration should be updated.
     should_update_time_scale: Arc<AtomicBool>,
+    duration: f32,
 }
 impl Default for Lamb {
     fn default() -> Self {
@@ -128,6 +129,7 @@ impl Default for Lamb {
             gr_bus_r: Default::default(),
             histogram_bus: Default::default(),
             should_update_time_scale,
+            duration: 8.0,
         }
     }
 }
@@ -253,6 +255,7 @@ impl Plugin for Lamb {
             self.gr_bus_l.clone(),
             self.gr_bus_r.clone(),
             self.histogram_bus.clone(),
+            self.duration.clone(),
         )
     }
 
@@ -342,6 +345,9 @@ impl Plugin for Lamb {
                 // self.level_buffer_r.lock().unwrap().set_duration(time_scale);
                 // self.gr_buffer_l.lock().unwrap().set_duration(time_scale);
                 // self.gr_buffer_r.lock().unwrap().set_duration(time_scale);
+                println!("UUUUUUUUUUUUUUUUUUUUUUUUUUUUpdate!");
+                // TODO:  doesn't work yet, only gets updated in AppEvent::UpdateDuration
+                self.duration = time_scale;
                 self.should_update_time_scale
                     .store(false, Ordering::Release);
             };

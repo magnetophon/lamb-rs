@@ -1,4 +1,5 @@
 use crate::LambParams;
+use crate::TimeScale;
 use crate::ZoomMode;
 use nih_plug::prelude::Editor;
 use nih_plug_vizia::vizia::prelude::*;
@@ -27,21 +28,31 @@ struct LambData {
     // histogram_buffer: Arc<Mutex<HistogramBuffer>>,
     show_left: bool,
     show_right: bool,
+    duration: f32,
 }
 
 impl LambData {}
 pub enum AppEvent {
     ShowLeft,
     ShowRight,
-    UpdateDuration(f32),
+    UpdateDuration,
 }
 impl Model for LambData {
     fn event(&mut self, _cx: &mut EventContext, event: &mut Event) {
         event.map(|app_event, _meta| match app_event {
             AppEvent::ShowLeft => self.show_left = self.params.show_left.value(),
             AppEvent::ShowRight => self.show_right = self.params.show_right.value(),
-            // AppEvent::UpdateDuration(duration) => self.duration = *duration,
-            AppEvent::UpdateDuration(duration) => println!("duration:{duration}"),
+            AppEvent::UpdateDuration => {
+                let time_scale = match self.params.time_scale.value() {
+                    TimeScale::OneSec => 1.0,
+                    TimeScale::TwoSec => 2.0,
+                    TimeScale::FourSec => 4.0,
+                    TimeScale::EightSec => 8.0,
+                    TimeScale::SixteenSec => 16.0,
+                    TimeScale::ThirtytwoSec => 32.0,
+                };
+                self.duration = time_scale;
+            }
         });
     }
 }
@@ -66,6 +77,7 @@ pub(crate) fn create(
     gr_bus_l: Arc<MonoBus>,
     gr_bus_r: Arc<MonoBus>,
     histogram_bus: Arc<MonoBus>,
+    duration: f32,
 ) -> Option<Box<dyn Editor>> {
     create_vizia_editor(editor_state, ViziaTheming::Custom, move |cx, _| {
         assets::register_noto_sans_light(cx);
@@ -90,6 +102,7 @@ pub(crate) fn create(
             // histogram_buffer: histogram_buffer.clone(),
             show_left: true,
             show_right: true,
+            duration: duration,
         }
         .build(cx);
 
@@ -213,7 +226,7 @@ pub(crate) fn create(
                         Label::new(cx, "gain reduction graph").class("fader-label");
                         HStack::new(cx, |cx| {
                             ParamSlider::new(cx, LambData::params, |params| &params.time_scale)
-                                // .on_changing(|cx, value| cx.emit(AppEvent::UpdateDuration(value)))
+                                .on_press(|cx| cx.emit(AppEvent::UpdateDuration))
                                 .width(Stretch(1.0));
                             ParamSlider::new(cx, LambData::params, |params| &params.in_out)
                                 .set_style(ParamSliderStyle::CurrentStepLabeled { even: true })
@@ -451,7 +464,7 @@ fn peak_graph(
             Graph::peak(
                 cx,
                 bus_l.clone(),
-                10.0, //duration
+                LambData::duration,
                 50.0, //decay
                 (METER_MIN, METER_MAX),
                 ValueScaling::Decibels,
@@ -463,7 +476,7 @@ fn peak_graph(
             Graph::peak(
                 cx,
                 bus_r.clone(),
-                10.0, //duration
+                LambData::duration,
                 50.0, //decay
                 (METER_MIN, METER_MAX),
                 ValueScaling::Decibels,
@@ -490,7 +503,7 @@ fn peak_graph(
             Graph::peak(
                 cx,
                 gr_bus_l.clone(),
-                10.0, //duration
+                LambData::duration,
                 50.0, //decay
                 (METER_MIN, METER_MAX),
                 ValueScaling::Decibels,
@@ -503,7 +516,7 @@ fn peak_graph(
             Graph::peak(
                 cx,
                 gr_bus_r.clone(),
-                10.0, //duration
+                LambData::duration,
                 50.0, //decay
                 (METER_MIN, METER_MAX),
                 ValueScaling::Decibels,
