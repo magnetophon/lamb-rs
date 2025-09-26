@@ -1,5 +1,4 @@
 #![warn(clippy::nursery)]
-use faust_types::FaustDsp;
 use nih_plug::prelude::*;
 use nih_plug_vizia::ViziaState;
 use std::sync::Arc;
@@ -335,41 +334,6 @@ impl Vst3Plugin for Lamb {
         Vst3SubCategory::Mastering,
         Vst3SubCategory::Stereo,
     ];
-}
-
-fn aa_clip_wave(sine_wave: &[f32]) -> Vec<f32> {
-    // Anti-aliasing clip based on derivative calculations
-    let mut result = Vec::with_capacity(sine_wave.len());
-    let mut f1n1 = 0.0;
-    let mut f2n1 = 0.0;
-    let mut x1 = 0.0;
-
-    for &x0 in sine_wave.iter() {
-        let f1: f32;
-        let f2: f32;
-
-        if x0.abs() >= 1.0 {
-            f1 = x0 * x0.signum() - 0.5;
-            f2 = ((x0 * x0 * 0.5) - (1.0 / 6.0)) * x0.signum();
-        } else {
-            f1 = 0.5 * x0 * x0;
-            f2 = x0 * x0 * x0 * (1.0 / 3.0);
-        }
-
-        let diff = x0 - x1;
-        let out = if diff.abs() < 2_f32.powi(-18) {
-            0.5 * (-1.0_f32).max(1.0_f32.min((x0 + 2.0 * x1) / 3.0))
-        } else {
-            (x0 * (f1 - f1n1) - (f2 - f2n1)) / (diff * diff)
-        };
-
-        f1n1 = f1;
-        f2n1 = f2;
-        x1 = x0;
-        result.push(out);
-    }
-
-    result
 }
 
 nih_export_clap!(Lamb);

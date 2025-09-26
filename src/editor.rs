@@ -260,7 +260,7 @@ pub struct AttackReleaseGraph<AttackReleaseDataL: Lens<Target = Arc<LambParams>>
 }
 
 impl<AttackReleaseDataL: Lens<Target = Arc<LambParams>>> AttackReleaseGraph<AttackReleaseDataL> {
-    pub fn new(cx: &mut Context, attack_release_data: AttackReleaseDataL) -> Handle<Self> {
+    pub fn new(cx: &mut Context, attack_release_data: AttackReleaseDataL) -> Handle<'_, Self> {
         Self {
             attack_release_data,
         }

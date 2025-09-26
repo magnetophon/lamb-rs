@@ -1,5 +1,4 @@
 use faust_types::ParamIndex;
-use std::sync::atomic::{AtomicBool, Ordering};
 
 #[derive(Params)]
 struct LambParams {
