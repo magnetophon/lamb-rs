@@ -4,7 +4,7 @@ license: "AGPLv3"
 name: "lamb-rs"
 version: "0.1"
 Code generated with Faust 2.79.3 (https://faust.grame.fr)
-Compilation options: -a /tmp/.tmp4G6396 -lang rust -ct 1 -cn LambRs96k -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0
+Compilation options: -a /tmp/.tmp4gFbA2 -lang rust -ct 1 -cn LambRs96k -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0
 ------------------------------------------------------------ */
 mod dsp_96k {
     #![allow(clippy::all)]
@@ -347,7 +347,7 @@ mod dsp_96k {
             );
             m.declare("basics.lib/tabulateNd:license", r"AGPL-3.0");
             m.declare("basics.lib/version", r"1.21.0");
-            m.declare("compile_options", r"-a /tmp/.tmp4G6396 -lang rust -ct 1 -cn LambRs96k -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0");
+            m.declare("compile_options", r"-a /tmp/.tmp4gFbA2 -lang rust -ct 1 -cn LambRs96k -es 1 -mcd 16 -mdd 1024 -mdy 33 -double -ftz 0");
             m.declare("filename", r"lamb-rs-96k.dsp");
             m.declare(
                 "interpolators.lib/interpolate_linear:author",
