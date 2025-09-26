@@ -88,27 +88,16 @@ pub struct Lamb {
     sample_rate: f32,
 
     // These buffers will hold the sample data for the visualizers.
-    // level_buffer_l: Arc<Mutex<PeakBuffer>>,
-    // level_buffer_r: Arc<Mutex<PeakBuffer>>,
-    // gr_buffer_l: Arc<Mutex<MinimaBuffer>>,
-    // gr_buffer_r: Arc<Mutex<MinimaBuffer>>,
-    // histogram_buffer: Arc<Mutex<HistogramBuffer>>,
     bus_l: Arc<MonoBus>,
     bus_r: Arc<MonoBus>,
     gr_bus_l: Arc<MonoBus>,
     gr_bus_r: Arc<MonoBus>,
     histogram_bus: Arc<MonoBus>,
-
-    /// If this is set at the start of the processing cycle, then the graph duration should be updated.
-    should_update_time_scale: Arc<AtomicBool>,
-    duration: f32,
 }
 impl Default for Lamb {
     fn default() -> Self {
-        let should_update_time_scale = Arc::new(AtomicBool::new(false));
         Self {
-            // params: Arc::new(LambParams::default(should_update_time_scale.clone())),
-            params: Arc::new(LambParams::new(should_update_time_scale.clone())),
+            params: Arc::new(LambParams::new()),
 
             dsp_variant: DspVariant::default(),
             accum_buffer: TempBuffer::default(),
@@ -118,18 +107,11 @@ impl Default for Lamb {
             temp_output_buffer_gr_l: f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             temp_output_buffer_gr_r: f64::default_boxed_array::<MAX_SOUNDCARD_BUFFER_SIZE>(),
             sample_rate: 48000.0,
-            // level_buffer_l: Arc::new(Mutex::new(PeakBuffer::new(1171, 7.0, 0.0))),
-            // level_buffer_r: Arc::new(Mutex::new(PeakBuffer::new(1171, 7.0, 0.0))),
-            // gr_buffer_l: Arc::new(Mutex::new(MinimaBuffer::new(1171, 7.0, 0.0))),
-            // gr_buffer_r: Arc::new(Mutex::new(MinimaBuffer::new(1171, 7.0, 0.0))),
-            // histogram_buffer: Arc::new(Mutex::new(HistogramBuffer::new(256, 1.0))),
             bus_l: Default::default(),
             bus_r: Default::default(),
             gr_bus_l: Default::default(),
             gr_bus_r: Default::default(),
             histogram_bus: Default::default(),
-            should_update_time_scale,
-            duration: 8.0,
         }
     }
 }
@@ -192,40 +174,6 @@ impl Plugin for Lamb {
         self.gr_bus_r.set_sample_rate(buffer_config.sample_rate);
         self.histogram_bus
             .set_sample_rate(buffer_config.sample_rate);
-        // match self.level_buffer_l.lock() {
-        // Ok(mut buffer) => {
-        // buffer.set_sample_rate(buffer_config.sample_rate);
-        // }
-        // Err(_) => return false,
-        // }
-
-        // match self.level_buffer_r.lock() {
-        // Ok(mut buffer) => {
-        // buffer.set_sample_rate(buffer_config.sample_rate);
-        // }
-        // Err(_) => return false,
-        // }
-
-        // match self.gr_buffer_l.lock() {
-        // Ok(mut buffer) => {
-        // buffer.set_sample_rate(buffer_config.sample_rate);
-        // }
-        // Err(_) => return false,
-        // }
-
-        // match self.gr_buffer_r.lock() {
-        // Ok(mut buffer) => {
-        // buffer.set_sample_rate(buffer_config.sample_rate);
-        // }
-        // Err(_) => return false,
-        // }
-
-        // match self.histogram_buffer.lock() {
-        // Ok(mut buffer) => {
-        // buffer.set_sample_rate(buffer_config.sample_rate);
-        // }
-        // Err(_) => return false,
-        // }
 
         // Resize buffers and perform other potentially expensive initialization operations here.
         // The `reset()` function is always called right after this function. You can remove this
@@ -238,24 +186,17 @@ impl Plugin for Lamb {
     fn reset(&mut self) {
         // Reset buffers and envelopes here. This can be called from the audio thread and may not
         // allocate. You can remove this function if you do not need it.
-        self.should_update_time_scale.store(true, Ordering::Release);
     }
 
     fn editor(&mut self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
         editor::create(
             self.params.clone(),
-            // self.level_buffer_l.clone(),
-            // self.level_buffer_r.clone(),
-            // self.gr_buffer_l.clone(),
-            // self.gr_buffer_r.clone(),
-            // self.histogram_buffer.clone(),
             self.params.editor_state.clone(),
             self.bus_l.clone(),
             self.bus_r.clone(),
             self.gr_bus_l.clone(),
             self.gr_bus_r.clone(),
             self.histogram_bus.clone(),
-            self.duration.clone(),
         )
     }
 
@@ -331,27 +272,6 @@ impl Plugin for Lamb {
         }
 
         if self.params.editor_state.is_open() {
-            if self.should_update_time_scale.load(Ordering::Relaxed) {
-                let time_scale = match self.params.time_scale.value() {
-                    TimeScale::OneSec => 1.0,
-                    TimeScale::TwoSec => 2.0,
-                    TimeScale::FourSec => 4.0,
-                    TimeScale::EightSec => 8.0,
-                    TimeScale::SixteenSec => 16.0,
-                    TimeScale::ThirtytwoSec => 32.0,
-                };
-                // TODO: adapt to cyma 0.2.0:
-                // self.level_buffer_l.lock().unwrap().set_duration(time_scale);
-                // self.level_buffer_r.lock().unwrap().set_duration(time_scale);
-                // self.gr_buffer_l.lock().unwrap().set_duration(time_scale);
-                // self.gr_buffer_r.lock().unwrap().set_duration(time_scale);
-                println!("UUUUUUUUUUUUUUUUUUUUUUUUUUUUpdate!");
-                // TODO:  doesn't work yet, only gets updated in AppEvent::UpdateDuration
-                self.duration = time_scale;
-                self.should_update_time_scale
-                    .store(false, Ordering::Release);
-            };
-
             if self.params.in_out.value() {
                 for i in 0..count as usize {
                     self.bus_l.send(self.temp_output_buffer_l[i] as f32);
@@ -381,22 +301,9 @@ impl Plugin for Lamb {
             for i in 0..count as usize {
                 self.gr_bus_l.send(self.temp_output_buffer_gr_l[i] as f32);
                 self.gr_bus_r.send(self.temp_output_buffer_gr_r[i] as f32);
-                // self.gr_buffer_l
-                // .lock()
-                // .unwrap()
-                // .enqueue(self.temp_output_buffer_gr_l[i] as f32);
-                // self.gr_buffer_r
-                // .lock()
-                // .unwrap()
-                // .enqueue(self.temp_output_buffer_gr_r[i] as f32);
             }
             // TODO: make this react to in_out?
             self.histogram_bus.send_buffer_summing(buffer);
-
-            // self.histogram_buffer
-            // .lock()
-            // .unwrap()
-            // .enqueue_buffer(buffer, None);
         }
 
         ProcessStatus::Normal

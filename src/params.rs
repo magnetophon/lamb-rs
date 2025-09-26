@@ -89,6 +89,19 @@ enum TimeScale {
     ThirtytwoSec,
 }
 
+impl TimeScale {
+    pub fn to_seconds(&self) -> f32 {
+        match self {
+            TimeScale::OneSec => 1.0,
+            TimeScale::TwoSec => 2.0,
+            TimeScale::FourSec => 4.0,
+            TimeScale::EightSec => 8.0,
+            TimeScale::SixteenSec => 16.0,
+            TimeScale::ThirtytwoSec => 32.0,
+        }
+    }
+}
+
 #[derive(Enum, Debug, PartialEq)]
 enum LatencyMode {
     /// Minimal, but variable latency
@@ -197,10 +210,8 @@ pub fn s2v_bool_in_out() -> Arc<dyn Fn(&str) -> Option<bool> + Send + Sync> {
 // impl LambParams {
 // impl Default for LambParams {
 // fn default() -> Self {
-// fn default(should_update_time_scale: Arc<AtomicBool>) -> Self {
-// pub fn new(should_update_time_scale: Arc<AtomicBool>) -> Self {
 impl LambParams {
-    pub fn new(should_update_time_scale: Arc<AtomicBool>) -> Self {
+    pub fn new() -> Self {
         Self {
             editor_state: editor::default_state(),
 
@@ -341,10 +352,6 @@ impl LambParams {
                 .hide()
                 .hide_in_generic_ui(),
             time_scale: EnumParam::new("time_scale", TimeScale::FourSec)
-                .with_callback({
-                    let should_update_time_scale = should_update_time_scale.clone();
-                    Arc::new(move |_| should_update_time_scale.store(true, Ordering::Release))
-                })
                 .hide()
                 .hide_in_generic_ui(),
             in_out: BoolParam::new("in_out", true)

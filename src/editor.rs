@@ -1,5 +1,4 @@
 use crate::LambParams;
-use crate::TimeScale;
 use crate::ZoomMode;
 use nih_plug::prelude::Editor;
 use nih_plug_vizia::vizia::prelude::*;
@@ -21,38 +20,20 @@ const METER_MAX: f32 = 3.05;
 #[derive(Lens, Clone)]
 struct LambData {
     params: Arc<LambParams>,
-    // level_buffer_l: Arc<Mutex<PeakBuffer>>,
-    // level_buffer_r: Arc<Mutex<PeakBuffer>>,
-    // gr_buffer_l: Arc<Mutex<MinimaBuffer>>,
-    // gr_buffer_r: Arc<Mutex<MinimaBuffer>>,
-    // histogram_buffer: Arc<Mutex<HistogramBuffer>>,
     show_left: bool,
     show_right: bool,
-    duration: f32,
 }
 
 impl LambData {}
 pub enum AppEvent {
     ShowLeft,
     ShowRight,
-    UpdateDuration,
 }
 impl Model for LambData {
     fn event(&mut self, _cx: &mut EventContext, event: &mut Event) {
         event.map(|app_event, _meta| match app_event {
             AppEvent::ShowLeft => self.show_left = self.params.show_left.value(),
             AppEvent::ShowRight => self.show_right = self.params.show_right.value(),
-            AppEvent::UpdateDuration => {
-                let time_scale = match self.params.time_scale.value() {
-                    TimeScale::OneSec => 1.0,
-                    TimeScale::TwoSec => 2.0,
-                    TimeScale::FourSec => 4.0,
-                    TimeScale::EightSec => 8.0,
-                    TimeScale::SixteenSec => 16.0,
-                    TimeScale::ThirtytwoSec => 32.0,
-                };
-                self.duration = time_scale;
-            }
         });
     }
 }
@@ -66,18 +47,12 @@ pub(crate) fn default_state() -> Arc<ViziaState> {
 
 pub(crate) fn create(
     params: Arc<LambParams>,
-    // level_buffer_l: Arc<Mutex<PeakBuffer>>,
-    // level_buffer_r: Arc<Mutex<PeakBuffer>>,
-    // gr_buffer_l: Arc<Mutex<MinimaBuffer>>,
-    // gr_buffer_r: Arc<Mutex<MinimaBuffer>>,
-    // histogram_buffer: Arc<Mutex<HistogramBuffer>>,
     editor_state: Arc<ViziaState>,
     bus_l: Arc<MonoBus>,
     bus_r: Arc<MonoBus>,
     gr_bus_l: Arc<MonoBus>,
     gr_bus_r: Arc<MonoBus>,
     histogram_bus: Arc<MonoBus>,
-    duration: f32,
 ) -> Option<Box<dyn Editor>> {
     create_vizia_editor(editor_state, ViziaTheming::Custom, move |cx, _| {
         assets::register_noto_sans_light(cx);
@@ -95,14 +70,8 @@ pub(crate) fn create(
 
         LambData {
             params: params.clone(),
-            // level_buffer_l: level_buffer_l.clone(),
-            // level_buffer_r: level_buffer_r.clone(),
-            // gr_buffer_l: gr_buffer_l.clone(),
-            // gr_buffer_r: gr_buffer_r.clone(),
-            // histogram_buffer: histogram_buffer.clone(),
             show_left: true,
             show_right: true,
-            duration: duration,
         }
         .build(cx);
 
@@ -226,7 +195,6 @@ pub(crate) fn create(
                         Label::new(cx, "gain reduction graph").class("fader-label");
                         HStack::new(cx, |cx| {
                             ParamSlider::new(cx, LambData::params, |params| &params.time_scale)
-                                .on_press(|cx| cx.emit(AppEvent::UpdateDuration))
                                 .width(Stretch(1.0));
                             ParamSlider::new(cx, LambData::params, |params| &params.in_out)
                                 .set_style(ParamSliderStyle::CurrentStepLabeled { even: true })
@@ -464,7 +432,7 @@ fn peak_graph(
             Graph::peak(
                 cx,
                 bus_l.clone(),
-                LambData::duration,
+                LambData::params.map(|params| params.time_scale.value().to_seconds()),
                 50.0, //decay
                 (METER_MIN, METER_MAX),
                 ValueScaling::Decibels,
@@ -476,7 +444,7 @@ fn peak_graph(
             Graph::peak(
                 cx,
                 bus_r.clone(),
-                LambData::duration,
+                LambData::params.map(|params| params.time_scale.value().to_seconds()),
                 50.0, //decay
                 (METER_MIN, METER_MAX),
                 ValueScaling::Decibels,
@@ -503,7 +471,7 @@ fn peak_graph(
             Graph::peak(
                 cx,
                 gr_bus_l.clone(),
-                LambData::duration,
+                LambData::params.map(|params| params.time_scale.value().to_seconds()),
                 50.0, //decay
                 (METER_MIN, METER_MAX),
                 ValueScaling::Decibels,
@@ -516,7 +484,7 @@ fn peak_graph(
             Graph::peak(
                 cx,
                 gr_bus_r.clone(),
-                LambData::duration,
+                LambData::params.map(|params| params.time_scale.value().to_seconds()),
                 50.0, //decay
                 (METER_MIN, METER_MAX),
                 ValueScaling::Decibels,
@@ -525,42 +493,10 @@ fn peak_graph(
             .color(Color::rgba(255, 0, 0, 255))
             .background_color(Color::rgba(250, 250, 250, 50))
             .fill_from_value(0.0);
-
-            // Graph::new(
-            // cx,
-            // LambData::gr_buffer_l,
-            // (METER_MIN, METER_MAX),
-            // ValueScaling::Decibels,
-            // )
-            // .visibility(LambData::show_left)
-            // .color(Color::rgba(0, 0, 255, 255))
-            // .background_color(Color::rgba(250, 250, 250, 50))
-            // .fill_from_value(0.0);
-            // gain reduction
-            // Graph::new(
-            // cx,
-            // LambData::gr_buffer_r,
-            // (METER_MIN, METER_MAX),
-            // ValueScaling::Decibels,
-            // )
-            // .visibility(LambData::show_right)
-            // .color(Color::rgba(255, 0, 0, 255))
-            // .background_color(Color::rgba(250, 250, 250, 50))
-            // .fill_from_value(0.0);
         });
 
         ZStack::new(cx, |cx| {
             HStack::new(cx, |cx| {
-                // gain reduction
-                // HStack::new(cx, |cx| {
-                // Meter::new(
-                // cx,
-                // LambData::gr_buffer_l,
-                // (METER_MIN, METER_MAX),
-                // ValueScaling::Decibels,
-                // Orientation::Vertical,
-                // )
-
                 Meter::peak(
                     cx,
                     gr_bus_l,
@@ -569,13 +505,12 @@ fn peak_graph(
                     ValueScaling::Decibels,
                     Orientation::Vertical,
                 )
-                        .visibility(LambData::show_left)
-                        .background_color(Color::rgb(203, 203, 203))
-                        .color(Color::rgb(0, 0, 255))
-                        .left(Pixels(4.0))
-                        .width(Pixels(15.0))
-                        .fill_from_value(0.0);
-
+                .visibility(LambData::show_left)
+                .background_color(Color::rgb(203, 203, 203))
+                .color(Color::rgb(0, 0, 255))
+                .left(Pixels(4.0))
+                .width(Pixels(15.0))
+                .fill_from_value(0.0);
 
                 Meter::peak(
                     cx,
@@ -585,35 +520,12 @@ fn peak_graph(
                     ValueScaling::Decibels,
                     Orientation::Vertical,
                 )
-                    .visibility(LambData::show_right)
-                    .background_color(Color::rgb(203, 203, 203))
-                    .color(Color::rgb(255, 0, 0))
-                    .width(Pixels(15.0))
-                    .fill_from_value(0.0);
+                .visibility(LambData::show_right)
+                .background_color(Color::rgb(203, 203, 203))
+                .color(Color::rgb(255, 0, 0))
+                .width(Pixels(15.0))
+                .fill_from_value(0.0);
 
-                // })
-                // ;
-                // .visibility(LambData::show_left)
-                // .left(Pixels(4.0))
-                // .width(Pixels(15.0));
-
-
-                // HStack::new(cx, |cx| {
-                // Meter::new(
-                // cx,
-                // LambData::gr_buffer_r,
-                // (METER_MIN, METER_MAX),
-                // ValueScaling::Decibels,
-                // Orientation::Vertical,
-                // )
-                // .visibility(LambData::show_right)
-                // .background_color(Color::rgb(203, 203, 203))
-                // .color(Color::rgb(255, 0, 0))
-                // .fill_from_value(0.0);
-                // })
-                // .visibility(LambData::show_right)
-                // .width(Pixels(15.0));
-                // level
                 Meter::peak(
                     cx,
                     bus_l,
@@ -622,10 +534,10 @@ fn peak_graph(
                     ValueScaling::Decibels,
                     Orientation::Vertical,
                 )
-                    .visibility(LambData::show_left)
-                    .width(Pixels(15.0))
-                    .color(Color::rgba(0, 0, 255, 255))
-                    .background_color(Color::rgba(178, 178, 178, 255));
+                .visibility(LambData::show_left)
+                .width(Pixels(15.0))
+                .color(Color::rgba(0, 0, 255, 255))
+                .background_color(Color::rgba(178, 178, 178, 255));
 
                 Meter::peak(
                     cx,
@@ -635,37 +547,13 @@ fn peak_graph(
                     ValueScaling::Decibels,
                     Orientation::Vertical,
                 )
-                    .visibility(LambData::show_right)
-                    .width(Pixels(15.0))
-                    .color(Color::rgba(255, 0, 0, 255))
-                    .background_color(Color::rgba(178, 178, 178, 255));
-
-                // Meter::new(
-                // cx,
-                // LambData::level_buffer_l,
-                // (METER_MIN, METER_MAX),
-                // ValueScaling::Decibels,
-                // Orientation::Vertical,
-                // )
-                // .visibility(LambData::show_left)
-                // .width(Pixels(15.0))
-                // .color(Color::rgba(0, 0, 255, 255))
-                // .background_color(Color::rgba(178, 178, 178, 255));
-                // Meter::new(
-                // cx,
-                // LambData::level_buffer_r,
-                // (METER_MIN, METER_MAX),
-                // ValueScaling::Decibels,
-                // Orientation::Vertical,
-                // )
-                // .visibility(LambData::show_right)
-                // .width(Pixels(15.0))
-                // .color(Color::rgba(255, 0, 0, 255))
-                // .background_color(Color::rgba(178, 178, 178, 255));
+                .visibility(LambData::show_right)
+                .width(Pixels(15.0))
+                .color(Color::rgba(255, 0, 0, 255))
+                .background_color(Color::rgba(178, 178, 178, 255));
             })
-                .col_between(Pixels(2.))
-                .width(Auto)
-                ;
+            .col_between(Pixels(2.))
+            .width(Auto);
             Grid::new(
                 cx,
                 ValueScaling::Linear,
@@ -673,12 +561,9 @@ fn peak_graph(
                 vec![0.0, -6.0, -12.0, -18.0, -24.0, -30.0, -36.0, -42.0, -48.0],
                 Orientation::Horizontal,
             )
-                .color(Color::rgba(160, 160, 160, 60));
-
+            .color(Color::rgba(160, 160, 160, 60));
         })
-            .width(Pixels(70.0))
-        // .width(Auto)
-            ;
+        .width(Pixels(70.0));
         UnitRuler::new(
             cx,
             (METER_MIN, METER_MAX),
